@@ -7,24 +7,54 @@
         </Console>
     </Appenders>
     <Loggers>
-        <Logger name="java.sql" level="INFO" additivity="false">
+	
+	    <Logger name="egovframework" level="DEBUG" additivity="false">
             <AppenderRef ref="console" />
+            <AppenderRef ref="file" />
         </Logger>
-        <Logger name="egovframework" level="DEBUG" additivity="false">
+        
+        <Logger name="org.egovframe.rte" level="INFO" additivity="false">
+		    <AppenderRef ref="console" />
+		    <AppenderRef ref="file" />
+		</Logger>
+
+        <Logger name="org.springframework" level="WARN" additivity="false">
             <AppenderRef ref="console" />
+            <AppenderRef ref="file" />
         </Logger>
-        <Logger name="org.egovframe" level="DEBUG" additivity="false">
+        
+        <!-- JDBC 레벨의 기본적인 동작 정보 -->
+		<Logger name="java.sql" level="INFO" additivity="false">
             <AppenderRef ref="console" />
+            <AppenderRef ref="file" />
         </Logger>
-          <!-- log SQL with timing information, post execution -->
-        <Logger name="jdbc.sqltiming" level="INFO" additivity="false">
-            <AppenderRef ref="console" />
-        </Logger>
-        <Logger name="org.springframework" level="INFO" additivity="false">
-            <AppenderRef ref="console" />
-        </Logger>
-        <Root level="INFO">
+        <!-- 실행된 SQL 쿼리의 실행 시간을 기록 -->
+		<logger name="jdbc.sqltiming" level="ERROR" additivity="false">	<!-- 로컬에서 테스트시 	DEBUG -->
+			 <AppenderRef ref="console" />
+			 <AppenderRef ref="file" />
+		</logger>
+		<!-- 실행되는 SQL 쿼리 자체만 기록 -->
+		<logger name="jdbc.sqlonly" level="DEBUG" additivity="false">	로컬에서 테스트시 	DEBUG
+			 <AppenderRef ref="console" />
+			 <AppenderRef ref="file" />
+		</logger>
+		<!-- ResultSet에 담긴 데이터 조회(fetch) 과정 -->
+		<!-- <logger name="jdbc.audit" level="WARN" additivity="false"> 
+			 <AppenderRef ref="console" />
+			 <AppenderRef ref="file" />
+		</logger>  -->
+		<!-- ResultSet의 내용을 표(Table) 형태 -->
+		<!-- <logger name="jdbc.resultset" level="ERROR" additivity="false">
+			 <AppenderRef ref="console" />
+			 <AppenderRef ref="file" />
+		</logger> -->
+		<logger name="jdbc.resultsettable" level="INFO" additivity="false">	<!-- 로컬에서 테스트시 	DEBUG -->
+			 <AppenderRef ref="console" />
+			 <AppenderRef ref="file" />
+		</logger> 
+        <Root level="INFO">	<!-- 로컬에서 테스트시 	DEBUG -->
             <AppenderRef ref="console" />
         </Root>
-    </Loggers>
+	    
+	</Loggers>
 </Configuration>
