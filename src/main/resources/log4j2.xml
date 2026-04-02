@@ -13,12 +13,12 @@
             <AppenderRef ref="file" />
         </Logger>
         
-        <Logger name="org.egovframe.rte" level="INFO" additivity="false">
+        <Logger name="org.egovframe.rte" level="DEBUG" additivity="false">
 		    <AppenderRef ref="console" />
 		    <AppenderRef ref="file" />
 		</Logger>
 
-        <Logger name="org.springframework" level="WARN" additivity="false">
+        <Logger name="org.springframework" level="DEBUG" additivity="false">
             <AppenderRef ref="console" />
             <AppenderRef ref="file" />
         </Logger>
@@ -34,7 +34,7 @@
 			 <AppenderRef ref="file" />
 		</logger>
 		<!-- 실행되는 SQL 쿼리 자체만 기록 -->
-		<logger name="jdbc.sqlonly" level="DEBUG" additivity="false">	로컬에서 테스트시 	DEBUG
+		<logger name="jdbc.sqlonly" level="DEBUG" additivity="false">	<!-- 로컬에서 테스트시 	DEBUG -->
 			 <AppenderRef ref="console" />
 			 <AppenderRef ref="file" />
 		</logger>
