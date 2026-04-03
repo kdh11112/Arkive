@@ -60,10 +60,9 @@ import org.apache.ibatis.mapping.ParameterMapping;
 import org.egovframe.rte.fdl.cmmn.exception.FdlException;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
-import twitter4j.JSONArray;
-import twitter4j.JSONObject;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.ServletRequestUtils;
 import org.springframework.web.servlet.ModelAndView;
@@ -81,12 +80,14 @@ import net.bramp.ffmpeg.FFprobe;
 import net.bramp.ffmpeg.builder.FFmpegBuilder;
 import net.bramp.ffmpeg.probe.FFmpegFormat;
 import net.bramp.ffmpeg.probe.FFmpegProbeResult;
+import twitter4j.JSONArray;
+import twitter4j.JSONObject;
 import ws.schild.jave.InputFormatException;
 
-
+@Component
 public class CommUtil {
 
-protected final static   org.slf4j.Logger logger = LoggerFactory.getLogger(CommUtil.class);
+	protected final static   org.slf4j.Logger logger = LoggerFactory.getLogger(CommUtil.class);
 	
 	public static String PUBLIC_KEY 	= EgovProperties.getProperty("Globals.PUBLIC_KEY");		//공개키
 	public static String RSA_WEB_KEY 	= EgovProperties.getProperty("Globals.RSA_WEB_KEY");	// 개인키 sssion key

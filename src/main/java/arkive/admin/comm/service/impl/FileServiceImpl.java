@@ -25,6 +25,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.ibatis.session.SqlSessionException;
 import org.apache.log4j.Logger;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -46,7 +47,10 @@ public class FileServiceImpl extends FormBasedFileUtil implements FileService {
 	protected  String FILE_TEMP_PATH 	= EgovProperties.getProperty("Globals.FILE_TEMP_PATH");
 	protected  String FILE_REAL_PATH 	= EgovProperties.getProperty("Globals.FILE_REAL_PATH");
 	protected final String SEPERATOR 	= File.separator;
-	private CommUtil cmmUtil = new CommUtil();
+	
+	
+	@Autowired
+	private CommUtil cmmUtil;
 	
 	@Resource(name = "fileMapper")
 	private FileMapper fileMapper;

@@ -2,10 +2,10 @@ package arkive.admin.comm.service.impl;
 
 import java.util.List;
 
-import org.apache.ibatis.annotations.Mapper;
+import org.egovframe.rte.psl.dataaccess.mapper.EgovMapper;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 
-//@Mapper("fileMapper")
+@EgovMapper("fileMapper")
 public interface FileMapper {
 	
 	public List<EgovMap> getFileList(EgovMap egovMap);

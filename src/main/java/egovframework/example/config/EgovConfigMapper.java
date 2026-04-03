@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 @Configuration
-@MapperScan(basePackages="egovframework.example.sample.service.impl")
+@MapperScan(basePackages = {"egovframework.example.sample.service.impl","arkive.admin.*.service.impl"})
 public class EgovConfigMapper {
 
 	@Bean(name = "sqlSession") // DAO 방식을 활용할 경우 EgovAbstractMapper 가 찾는 Bean Name
