@@ -72,6 +72,7 @@ import com.google.gson.GsonBuilder;
 
 import arkive.admin.comm.service.EgovProperties;
 import egovframework.com.com.service.impl.EgovComAbstractDAO;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import net.bramp.ffmpeg.FFmpeg;
@@ -104,7 +105,9 @@ public class CommUtil {
 	
 	public static String alg = "AES/CBC/PKCS5Padding";
 	private static final String key = EgovProperties.getProperty("private.key");
-    private static final String iv = key.substring(0, 16); 	//16byte
+    //private static final String iv = key.substring(0, 16); 	//16byte
+    private static final String iv = ""; 	//16byte
+    
     
 	/**
      * rsa 개인키 생성

@@ -4,6 +4,7 @@ import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import jakarta.annotation.Resource;
@@ -21,4 +22,11 @@ public class SystemController {
 	
 	public static int pageUnit = 10;
 	public static int pageSize = 5;
+	
+	@RequestMapping("/menuList")
+	public String index(ModelMap model) throws Exception {
+		return "system/menuList";
+	}
+	
+	
 }

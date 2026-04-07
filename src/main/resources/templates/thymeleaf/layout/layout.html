@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+
+<head th:replace="layout/header :: header"></head>
+
+<body id="page-top">
+    <div id="wrapper">
+	    <div th:replace="~{layout/left :: left}"></div>
+	    <div layout:fragment="content">공통 레이아웃</div>
+    </div>
+
+
+    <footer th:replace="~{layout/footer :: footer}"></footer>
+</body>
+<script>
+$(document).ready(function() {	
+	
+});
+</script>
+
+</html>

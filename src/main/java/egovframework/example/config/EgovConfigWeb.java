@@ -22,6 +22,7 @@ import org.thymeleaf.templatemode.TemplateMode;
 
 import egovframework.example.pagination.EgovKrdsPaginationRenderer;
 import egovframework.example.pagination.EgovPaginationDialect;
+import nz.net.ultraq.thymeleaf.layoutdialect.LayoutDialect;
 
 @Configuration
 @Import({
@@ -60,6 +61,7 @@ public class EgovConfigWeb implements WebMvcConfigurer, ApplicationContextAware 
 		templateEngine.setEnableSpringELCompiler(true);
 		// add custom tag
 		templateEngine.addDialect(new EgovPaginationDialect(egovKrdsPaginationRenderer));
+		templateEngine.addDialect(new LayoutDialect());
 		return templateEngine;
 	}
 
