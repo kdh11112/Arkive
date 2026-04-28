@@ -9,7 +9,7 @@
                 <div class="sidebar-brand-icon rotate-n-15">
                     <i class="fas fa-laugh-wink"></i>
                 </div>
-                <div class="sidebar-brand-text mx-3">SB Admin <sup>2</sup></div>
+                <div class="sidebar-brand-text mx-3">아카이브</div>
             </a>
 
             <!-- Divider -->
@@ -29,18 +29,41 @@
             <div class="sidebar-heading">
                 Interface
             </div>
+            
+		    <!-- <th:block th:each="menu, status : ${menuList}">
+			  <th:block th:if="${menu.grad == '1'}">
+			    <th:block th:if="${menu.ordr == '1' or menu.ordr == null}">
+			      <li th:classappend="${session.menuId eq menu.menuId} ? 'active ' : ''" 
+			          th:class="'one ' + ${menu.imageClass}">
+			        <a th:href="@{javascript:goMenu(${menu.url}, ${menu.menuId})}" class="onea" th:text="${menu.menuNm}"></a>
+			      </li>
+			    </th:block>
+			    
+			    <th:block th:if="${menu.lastDownOrdr != '1' and menu.lastDownOrdr != null}" th:with="vsLv1LastDownOrdr=${menu.lastDownOrdr}">
+			      <li th:class="'one smenuin '+${menu.imageClass}">
+			        <a href="#" class="onea" th:text="${menu.menuNm}"></a>
+			        <div class="smenu_wrap">
+			          <ul class="smenu">
+			            하위 메뉴 반복 등 추가
+			          </ul>
+			        </div>
+			      </li>
+			    </th:block>
+			    
+			  </th:block>
+			</th:block> -->
+
 
             <!-- Nav Item - Pages Collapse Menu -->
             <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
-                    aria-expanded="true" aria-controls="collapseTwo">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
                     <i class="fas fa-fw fa-cog"></i>
                     <span>Components</span>
                 </a>
                 <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Custom Components:</h6>
-                        <a class="collapse-item" href="/buttons">Buttons</a>
+                        <a class="collapse-item" href="/system/menuList">메뉴리스트</a>
                         <a class="collapse-item" href="/cards">Cards</a>
                     </div>
                 </div>
@@ -118,7 +141,7 @@
 
             <!-- Sidebar Message -->
             <div class="sidebar-card d-none d-lg-flex">
-                <img class="sidebar-card-illustration mb-2" src="img/undraw_rocket.svg" alt="...">
+                <img class="sidebar-card-illustration mb-2" src="/img/undraw_rocket.svg" alt="...">
                 <p class="text-center mb-2"><strong>SB Admin Pro</strong> is packed with premium features, components, and more!</p>
                 <a class="btn btn-success btn-sm" href="https://startbootstrap.com/theme/sb-admin-pro">Upgrade to Pro!</a>
             </div>

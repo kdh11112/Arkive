@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.example.sample.service.impl.SampleMapper">
+<!-- egovframework.example.sample.service.impl.SampleMapper 수정 -->
+	
+	<!-- 내부 메뉴 조회 -->
+	<select id="getSelectAdminMenu" resultType="egovMap">
+	
+		WITH RECURSIVE MENU_TREE ( 
+						    MENU_ID,
+						    MENU_NM,
+						    UP_MENU_ID,
+						    GRAD,
+						    USE_YN,
+						    ORDR,
+						    MENU_COURS,
+						    PATH,
+						    PATH_ORDR
+						) AS (
+								SELECT
+							        MENU_ID,
+							        MENU_NM,
+							        UP_MENU_ID,
+							        GRAD,
+							        USE_YN,
+							        ORDR,
+							        MENU_COURS,
+							        CAST(MENU_ID AS VARCHAR(50)) AS PATH,
+							        LPAD(CAST(ORDR AS VARCHAR(3)), 3, '0') AS PATH_ORDR
+							    FROM MENU
+							    WHERE UP_MENU_ID = 'ME02000000'
+							    UNION ALL
+							    SELECT
+							        M.MENU_ID,
+							        M.MENU_NM,
+							        M.UP_MENU_ID,
+							        M.GRAD,
+							        M.USE_YN,
+							        CAST(CAST(MT.ORDR AS VARCHAR(10)) || CAST(M.ORDR AS VARCHAR(10)) AS INTEGER) AS ORDR,
+							        M.MENU_COURS,
+							        CAST(MT.PATH || '_' || M.MENU_ID AS VARCHAR(255)) AS PATH,
+							        MT.PATH_ORDR || '_' || LPAD(CAST(M.ORDR AS VARCHAR(3)), 3, '0') AS PATH_ORDR
+							    FROM MENU M
+							    JOIN MENU_TREE MT ON M.UP_MENU_ID = MT.MENU_ID
+							)
+		SELECT
+		*
+		FROM MENU_TREE MT
+		JOIN (
+				SELECT MENU_ID
+				FROM MENU_AUTHOR A
+				LEFT JOIN TS_USER B ON B.USER_AUTHOR = A.AUTHOR_ID
+				WHERE B.USER_ID = #{ userId }
+				AND A.USE_YN = 'Y'
+			) SUB_A ON SUB_A.MENU_ID = MT.MENU_ID
+	
+	
+	
+	
+		WITH RECURSIVE MENU_TREE AS (
+			SELECT
+				MENU_ID,
+				MENU_NM,
+				UP_MENU_ID,
+				GRAD,
+				USE_AT,
+				ORDR,
+				MENU_COURS,
+				CAST(MENU_ID AS TEXT) AS PATH,
+				LPAD(CAST(ORDR AS TEXT), 3, '0') AS PATH_ORDR
+			FROM "GTEMS".TS_MENU
+			WHERE UP_MENU_ID = 'ME02000000'
+			UNION ALL
+			SELECT
+				M.MENU_ID,
+				M.MENU_NM,
+				M.UP_MENU_ID,
+				M.GRAD,
+				M.USE_AT,
+				(MT.ORDR::TEXT||M.ORDR::TEXT)::integer as ORDR,
+				M.MENU_COURS,
+				CAST(CONCAT(MT.PATH, '_', M.MENU_ID) AS TEXT) AS PATH,
+				CONCAT(MT.PATH_ORDR, '_', LPAD(CAST(M.ORDR AS TEXT), 3, '0')) AS PATH_ORDR
+			FROM "GTEMS".TS_MENU M
+			INNER JOIN MENU_TREE MT ON M.UP_MENU_ID = MT.MENU_ID
+		)
+		SELECT
+			MT.MENU_ID,
+			MT.MENU_NM,
+			MT.UP_MENU_ID,
+			MT.USE_AT,
+			SUB_B.LVL3_MENU_ID,
+			SUB_B.LVL3_MENU_COURS,
+			MT.GRAD,
+			MT.ORDR,
+			MT.MENU_COURS,
+			MT.PATH,
+			MT.PATH_ORDR
+		FROM MENU_TREE MT
+		INNER JOIN (
+			SELECT A.MENU_ID
+			FROM "GTEMS".TS_AUTHOR_MENU A
+			LEFT JOIN "GTEMS".TS_USER B ON B.USER_AUTHOR = A.AUTHOR_ID
+			WHERE B.USER_ID = #{ userId }
+			AND A.USE_AT = 'Y'
+		) SUB_A ON SUB_A.MENU_ID = MT.MENU_ID
+		LEFT JOIN (
+			SELECT 
+				A.MENU_ID AS LVL2_MENU_ID,
+				B.MENU_ID AS LVL3_MENU_ID,
+				B.MENU_COURS AS LVL3_MENU_COURS
+			FROM "GTEMS".TS_MENU A
+			INNER JOIN "GTEMS".TS_MENU B ON A.MENU_ID = B.UP_MENU_ID
+			WHERE B.ORDR = 1
+			AND A.GRAD = 2
+		) SUB_B ON SUB_B.LVL2_MENU_ID = MT.MENU_ID
+		WHERE MT.USE_AT = 'Y'
+		  AND MT.MENU_ID LIKE 'ME02%'
+		ORDER BY MT.ORDR::TEXT ASC
+	</select>
+
+</mapper>

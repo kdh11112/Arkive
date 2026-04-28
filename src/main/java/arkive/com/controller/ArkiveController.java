@@ -19,6 +19,11 @@ public class ArkiveController {
 	private EgovPropertyService propertiesService;
 	
 	@RequestMapping("/")
+	public String dashboard(ModelMap model) throws Exception {
+		return "main/dashboard";
+	}
+	
+	@RequestMapping("/index")
 	public String index(ModelMap model) throws Exception {
 		return "bootstrap/index";
 	}

@@ -15,6 +15,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.handler.SimpleMappingExceptionResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
+import org.springframework.web.servlet.view.json.MappingJackson2JsonView;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
@@ -126,5 +127,10 @@ public class EgovConfigWeb implements WebMvcConfigurer, ApplicationContextAware 
 		smer.setStatusCodes(statusCode);
 		resolvers.add(smer);
 	}
+	
+	@Bean
+    public MappingJackson2JsonView jsonView() {
+        return new MappingJackson2JsonView();
+    }
 
 }

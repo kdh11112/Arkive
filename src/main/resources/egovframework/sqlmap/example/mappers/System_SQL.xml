@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.system.service.impl.SystemMapper">
+	
+	<!-- 메뉴 트리 조회 -->
+	<select id="selectMenuList" resultType="egovMap">
+		SELECT
+			MENU_ID AS ID,
+			MENU_NM AS TEXT,
+			GRAD,
+			NVL(UP_MENU_ID, '#') AS PARENT,
+			ORDR,
+			'R' AS CRUD
+		FROM MENU
+		WHERE 1=1
+		AND USE_YN = 'Y'
+		ORDER BY GRAD, PARENT, ORDR
+	</select>
+	
+	<!-- 하위매뉴 목록 -->
+	<select id="selectMenuDetailList" resultType="egovMap">
+		SELECT
+			MENU_ID
+			, MENU_NM
+	 		, MENU_COURS
+			, ORDR
+			, USE_YN
+			, 'R' AS CRUD
+		FROM MENU
+		WHERE UP_MENU_ID = #{ menuId }
+		ORDER BY ORDR
+	</select>
+	
+	<!-- 메뉴 중복 확인 -->
+	<select id="getChkMenuId" resultType="int">
+		SELECT COUNT(*)
+		FROM MENU
+		WHERE MENU_ID = #{ menuId }
+	</select>
+	
+	<!-- 하위메뉴 중복 확인 -->
+	<select id="getChkUpMenuId" resultType="int">
+		SELECT COUNT(*)
+		FROM MENU
+		WHERE UP_MENU_ID = #{ menuId }
+	</select>
+	
+	<!-- 메뉴 등록 -->
+	<insert id="setInsertMenu">
+		INSERT INTO MENU (
+			MENU_ID
+			, MENU_NM
+			, MENU_COURS
+			, GRAD
+			, UP_MENU_ID
+			, ORDR
+			, USE_YN
+			, REGIST_DT
+			, REGISTER
+		)
+		VALUES(		
+			#{ menuId }
+			, #{ menuNm }
+			, #{ menuCours }
+			, #{ grad }::INTEGER
+			, #{ upMenuId }
+			, #{ ordr }
+			, #{ useYn }
+			, NOW()
+			, #{ userId }
+		)
+	</insert>
+	
+	<!-- 메뉴 수정 -->
+	<update id="setUpdateMenu">
+		UPDATE MENU
+		SET
+			MENU_NM  = #{ menuNm }
+			, MENU_COURS = #{ menuCours }
+			, ORDR = #{ ordr }
+			, USE_YN = #{ useYn }
+			, UPDT_DT = NOW()
+			, UPDUSR = #{ userId }
+		WHERE MENU_ID  = #{ menuId }
+	</update>
+	
+	<!-- 메뉴 삭제 -->
+	<delete id="setDeleteMenu" parameterType="String">
+		DELETE FROM MENU
+		WHERE UP_MENU_ID = #{ menuId }
+	</delete>
+
+</mapper>
