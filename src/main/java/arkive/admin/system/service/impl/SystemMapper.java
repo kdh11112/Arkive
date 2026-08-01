@@ -8,13 +8,27 @@ import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 @EgovMapper("systemMapper")
 public interface SystemMapper {
 
-	List<EgovMap> selectMenuList(EgovMap egovMap) throws Exception;
+	List<EgovMap> selectMenuList(EgovMap paramMap) throws Exception;
 
 	List<EgovMap> selectMenuDetailList(EgovMap egovMap) throws Exception;
 
 	int getChkMenuId(EgovMap egovMap) throws Exception;
 
 	int getChkUpMenuId(EgovMap paramMap) throws Exception;
+
+	int setDeleteMenu(String upMenuId) throws Exception;
+
+	int setInsertMenu(EgovMap egovMap) throws Exception;
+
+	List<EgovMap> getCodeInfoList(EgovMap egovMap) throws Exception;
+
+	List<EgovMap> getCodeDetailInfoList(EgovMap egovMap) throws Exception;
+
+	int setInsertCodeInfoList(EgovMap paramList) throws Exception;
+
+	int setUpdateCodeInfoList(EgovMap paramList) throws Exception;
+
+	int setDeleteCodeInfoList(EgovMap paramList) throws Exception;
 	
 	
 }
