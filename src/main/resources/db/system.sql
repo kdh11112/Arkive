@@ -35,18 +35,18 @@ CREATE TABLE menu_author (
     CONSTRAINT idx_menu_author_pk PRIMARY KEY (menu_id)
 );		
 
-DROP TABLE IF EXISTS code;
-CREATE TABLE code (
-    mastr_code VARCHAR(100) NOT NULL,-- 마스터 코드
-    code VARCHAR(100) NULL, 		-- 코드
-    code_nm VARCHAR(200) NULL, 		-- 코드명
+DROP TABLE IF EXISTS user;
+CREATE TABLE user (
+    menu_id VARCHAR(20) NOT NULL,	-- 메뉴ID
+    menu_nm VARCHAR(100) NULL, 		-- 메뉴명
+    menu_cours VARCHAR(200) NULL, 	-- 메뉴경로
+    grad INTEGER NULL, 				-- 등급
+    up_menu_id VARCHAR(10) NULL, 	-- 상위메뉴ID
     ordr INTEGER NULL, 				-- 순서
-    refrn_1 VARCHAR(100) NULL, 		-- 추가
-    refrn_2 INTEGER NULL, 			-- 추가2
     use_yn VARCHAR(1) NULL, 		-- 사용여부
     regist_dt TIMESTAMP NULL, 		-- 등록일시
     register VARCHAR(50) NULL,		-- 등록자
     updt_dt TIMESTAMP NULL, 		-- 수정일시
     updusr VARCHAR(50) NULL, 		-- 수정자
-    CONSTRAINT idx_code_pk PRIMARY KEY (mastr_code)
+    CONSTRAINT idx_user_pk PRIMARY KEY (menu_id)
 );		
