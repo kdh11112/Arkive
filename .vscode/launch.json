@@ -1,0 +1,15 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-EgovBootApplication<Arkive>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "egovframework.example.EgovBootApplication",
+            "projectName": "Arkive",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env",
+            "vmArgs": " -Dfile.encoding=UTF-8"
+        }
+    ]
+}
