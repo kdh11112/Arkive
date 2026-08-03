@@ -1,0 +1,33 @@
+# Maven Build Directory
+target/
+bin/
+
+# IDE Files
+.idea/
+.vscode/
+.settings/
+.classpath
+.project
+.factorypath
+
+# Binary & Font Assets
+*.woff
+*.woff2
+*.ttf
+*.eot
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.svg
+*.pdf
+*.zip
+*.jar
+
+# Minified Vendor Libraries
+*.min.js
+*.min.css
+
+# Logs
+*.log
