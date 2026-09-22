@@ -80,6 +80,21 @@ public class SystemServiceImpl extends EgovAbstractServiceImpl implements System
 	public int getChkUpMenuId(EgovMap paramMap) throws Exception {
 		return systemMapper.getChkUpMenuId(paramMap);
 	}
+
+	@Override
+	public void setInsertMenu(EgovMap egovMap) throws Exception {
+		systemMapper.setInsertMenu(egovMap);
+	}
+
+	@Override
+	public void setUpdateMenu(EgovMap egovMap) throws Exception {
+		systemMapper.setUpdateMenu(egovMap);
+	}
+
+	@Override
+	public void setDeleteMenu(EgovMap egovMap) throws Exception {
+		systemMapper.setDeleteMenu(egovMap);
+	}
 	
 	
 	

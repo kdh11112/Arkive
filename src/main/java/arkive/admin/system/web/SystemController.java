@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import arkive.admin.comm.web.CommUtil;
@@ -86,6 +88,31 @@ public class SystemController {
 			
 		return "jsonView";
 	}
-	
+
+	@RequestMapping(name = "메뉴 등록", value = "/setInsertMenu.json")
+	public String setInsertMenu(HttpServletRequest request, ModelMap model) throws Exception {
+		EgovMap paramMap = cmmUtil.makeRequestEgovMap(request);
+		systemService.setInsertMenu(paramMap);
+		model.put("result", "success");
+		return "jsonView";
+	}
+
+	@RequestMapping(name = "메뉴 수정", value = "/setUpdateMenu.json")
+	public String setUpdateMenu(HttpServletRequest request, ModelMap model) throws Exception {
+		EgovMap paramMap = cmmUtil.makeRequestEgovMap(request);
+		systemService.setUpdateMenu(paramMap);
+		model.put("result", "success");
+		return "jsonView";
+	}
+
+	@RequestMapping(name = "메뉴 삭제", value = "/setDeleteMenu.json")
+	public String setDeleteMenu(HttpServletRequest request, ModelMap model) throws Exception {
+		EgovMap paramMap = cmmUtil.makeRequestEgovMap(request);
+		systemService.setDeleteMenu(paramMap);
+		model.put("result", "success");
+		return "jsonView";
+	}
+
+
 	
 }

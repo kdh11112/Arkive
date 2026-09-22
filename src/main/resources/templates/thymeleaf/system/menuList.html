@@ -4,98 +4,324 @@
       layout:decorate="~{layout/layout}">
 <head>
     <meta charset="utf-8">
-    <title></title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
+    <title>메뉴 관리</title>
 </head>
 <body>
 
 <div layout:fragment="content" class="container-fluid">
+<!-- test -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">메뉴 관리</h1>
     </div>
 
     <div class="row">
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">상위메뉴 목록</h6>
+        <!-- 상위메뉴 목록 -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow mb-3">
+                <div class="card-header py-2 px-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary" style="font-size: 0.9rem;">상위메뉴 목록</h6>
+                    <div>
+                        <button type="button" class="btn btn-primary btn-sm px-1 py-0" style="font-size: 0.75rem;" onclick="fnOpenMenuModal('insert', 'upper')"><i class="fas fa-plus"></i> 추가</button>
+                        <button type="button" class="btn btn-success btn-sm px-1 py-0" style="font-size: 0.75rem;" onclick="fnOpenMenuModal('update', 'upper')"><i class="fas fa-edit"></i> 수정</button>
+                        <button type="button" class="btn btn-danger btn-sm px-1 py-0" style="font-size: 0.75rem;" onclick="fnDeleteMenu()"><i class="fas fa-trash"></i> 삭제</button>
+                    </div>
                 </div>
                 <div class="card-body" id="jstree" style="height: 588px; overflow: auto; border: 1px solid #d5d5d5;"></div>
             </div>
         </div>
 
-        <div class="col-lg-6 mb-4">
+        <!-- 하위메뉴 목록 -->
+        <div class="col-lg-8 mb-4">
             <div class="card shadow mb-4">
-                <div class="card-header py-3">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                     <h6 class="m-0 font-weight-bold text-primary">하위메뉴 목록</h6>
+                    <div>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="fnOpenMenuModal('insert', 'lower')"><i class="fas fa-plus"></i> 하위메뉴 추가</button>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <div class="text-center">
-                        <img class="img-fluid px-3 px-sm-4 mt-3 mb-4" style="width: 25rem;"
-                            src="/img/undraw_posting_photo.svg" alt="...">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>메뉴ID</th>
+                                    <th>메뉴명</th>
+                                    <th>메뉴경로</th>
+                                    <th>순서</th>
+                                    <th>사용여부</th>
+                                    <th>관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="menuLowTbody">
+                                <tr>
+                                    <td colspan="6" class="text-center">상위 메뉴를 선택하세요.</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-                    <p>Add some quality, svg illustrations to your project courtesy of <a
-                            target="_blank" rel="nofollow" href="https://undraw.co/">unDraw</a>, a
-                        constantly updated collection of beautiful svg images that you can use
-                        completely free and without attribution!</p>
-                    <a target="_blank" rel="nofollow" href="https://undraw.co/">Browse Illustrations on
-                        unDraw &rarr;</a>
                 </div>
             </div>
         </div>
     </div>
-</div>
+
+    <!-- 메뉴 등록/수정 모달 -->
+    <div class="modal fade" id="menuModal" tabindex="-1" role="dialog" aria-labelledby="menuModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <form id="menuForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="menuModalLabel">메뉴 등록</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="mode" name="mode">
+                        <input type="hidden" id="grad" name="grad" value="1">
+                        <input type="hidden" id="upMenuId" name="upMenuId" value="ME00000000">
+
+                        <div class="form-group">
+                            <label for="menuId">메뉴 ID <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="menuId" name="menuId" required placeholder="예: ME00000001">
+                        </div>
+                        <div class="form-group">
+                            <label for="menuNm">메뉴명 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="menuNm" name="menuNm" required placeholder="메뉴명을 입력하세요">
+                        </div>
+                        <div class="form-group">
+                            <label for="menuCours">메뉴 경로 (URL)</label>
+                            <input type="text" class="form-control" id="menuCours" name="menuCours" placeholder="예: /system/menuList">
+                        </div>
+                        <div class="form-group">
+                            <label for="ordr">출력 순서</label>
+                            <input type="number" class="form-control" id="ordr" name="ordr" value="1" placeholder="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="useYn">사용 여부</label>
+                            <select class="form-control" id="useYn" name="useYn">
+                                <option value="Y">Y</option>
+                                <option value="N">N</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">취소</button>
+                        <button type="button" class="btn btn-primary" onclick="fnSaveMenu()">저장</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
 <script>
-function getMenuList(menuId) {
-	$.getJSON(
-		"/system/getMenuList.json",
-		function(data) {
-			//메뉴 트리 생성
-			$('#jstree').jstree({
-				'core' : {
-					'multiple' : false,
-					'data' : data.menuList
-				}
-			});
-			//지정한 메뉴 선택
-			$('#jstree').bind('ready.jstree', function(e, data) {
-				$('#jstree').jstree("select_node", menuId);
-				$('#jstree').jstree("open_node", menuId);
-			});
-			
-			$('#jstree').on('changed.jstree', function (e, data) {
-				getMenuLow(data.instance.get_node(data.selected).id);
-			});
-		}
-	);
-}
+    var selectedNodeId = "ME00000000";
+    var selectedNodeText = "";
+    var selectedNodeGrad = 1;
 
-//하위메뉴 목록 조회
-function getMenuLow(pId){
-	var lsMenuId = pId;
-	$.ajax({
-		type: "post",
-		url: "/system/getMenuDetailList.json",
-		shrinkToFit:true,
-		data: {
-			"menuId": lsMenuId
-		},
-		dataType: "json",
-		success: function(data){
-			//qcell.setData(data.menuList);
-		},
-		error: function(request,status,error){
-			alert("에러가 발생하였습니다. 관리자에게 문의하세요.");
-		}
+    function getMenuList(menuId) {
+    	$.getJSON(
+    		"/system/getMenuList.json",
+    		function(data) {
+    			if($('#jstree').jstree(true)) {
+    				$('#jstree').jstree(true).destroy();
+    			}
+    			$('#jstree').jstree({
+    				'core' : {
+    					'multiple' : false,
+    					'data' : data.menuList
+    				}
+    			});
+    			
+    			$('#jstree').bind('ready.jstree', function(e, data) {
+    				$('#jstree').jstree("select_node", menuId);
+    				$('#jstree').jstree("open_node", menuId);
+    			});
+    			
+    			$('#jstree').off('changed.jstree').on('changed.jstree', function (e, data) {
+    				if(data.selected && data.selected.length > 0) {
+    					var node = data.instance.get_node(data.selected[0]);
+    					selectedNodeId = node.id;
+    					selectedNodeText = node.text;
+    					selectedNodeGrad = node.original ? (node.original.grad || 1) : 1;
+    					getMenuLow(selectedNodeId);
+    				}
+    			});
+    		}
+    	);
+    }
+
+    // 하위메뉴 목록 조회
+    function getMenuLow(pId){
+    	$.ajax({
+    		type: "post",
+    		url: "/system/getMenuDetailList.json",
+    		data: {
+    			"menuId": pId
+    		},
+    		dataType: "json",
+    		success: function(data){
+    			var html = "";
+    			if(data.menuList && data.menuList.length > 0) {
+    				$.each(data.menuList, function(i, item) {
+    					html += "<tr>";
+    					html += "<td>" + (item.menuId || '') + "</td>";
+    					html += "<td>" + (item.menuNm || '') + "</td>";
+    					html += "<td>" + (item.menuCours || '') + "</td>";
+    					html += "<td>" + (item.ordr || '') + "</td>";
+    					html += "<td>" + (item.useYn || '') + "</td>";
+    					html += "<td>";
+    					html += "<button type='button' class='btn btn-warning btn-sm mr-1' onclick='fnEditLowerMenu(\"" + item.menuId + "\", \"" + item.menuNm + "\", \"" + (item.menuCours || '') + "\", " + (item.ordr || 1) + ", \"" + item.useYn + "\")'>수정</button>";
+    					html += "<button type='button' class='btn btn-danger btn-sm' onclick='fnDeleteLowerMenu(\"" + item.menuId + "\")'>삭제</button>";
+    					html += "</td>";
+    					html += "</tr>";
+    				});
+    			} else {
+    				html += "<tr><td colspan='6' class='text-center'>하위 메뉴가 존재하지 않습니다.</td></tr>";
+    			}
+    			$("#menuLowTbody").html(html);
+    		},
+    		error: function(request,status,error){
+    			alert("에러가 발생하였습니다. 관리자에게 문의하세요.");
+    		}
+    	});
+    }
+
+    // 모달 오픈 (추가/수정, 상위/하위)
+    function fnOpenMenuModal(type, target) {
+        $("#menuForm")[0].reset();
+        $("#menuId").prop("readonly", false);
+
+        if (type === 'insert') {
+            $("#mode").val("insert");
+            if (target === 'upper') {
+                $("#menuModalLabel").text("상위메뉴 등록");
+                $("#grad").val(1);
+                $("#upMenuId").val("ME00000000");
+            } else {
+                if (!selectedNodeId || selectedNodeId === "ME00000000") {
+                    alert("상위 메뉴를 먼저 선택하세요.");
+                    return;
+                }
+                $("#menuModalLabel").text("하위메뉴 등록 (상위: " + selectedNodeText + ")");
+                $("#grad").val(Number(selectedNodeGrad) + 1);
+                $("#upMenuId").val(selectedNodeId);
+            }
+            $("#menuId").val("ME" + Math.floor(10000000 + Math.random() * 90000000));
+        } else if (type === 'update') {
+            if (!selectedNodeId || selectedNodeId === "ME00000000") {
+                alert("수정할 상위 메뉴를 선택하세요.");
+                return;
+            }
+            $("#mode").val("update");
+            $("#menuModalLabel").text("상위메뉴 수정");
+            $("#menuId").val(selectedNodeId).prop("readonly", true);
+            $("#menuNm").val(selectedNodeText);
+            $("#grad").val(selectedNodeGrad);
+            $("#upMenuId").val("ME00000000");
+        }
+        $("#menuModal").modal("show");
+    }
+
+    // 하위메뉴 수정 모달 오픈
+    function fnEditLowerMenu(menuId, menuNm, menuCours, ordr, useYn) {
+        $("#menuForm")[0].reset();
+        $("#mode").val("update");
+        $("#menuModalLabel").text("하위메뉴 수정");
+        $("#menuId").val(menuId).prop("readonly", true);
+        $("#menuNm").val(menuNm);
+        $("#menuCours").val(menuCours);
+        $("#ordr").val(ordr);
+        $("#useYn").val(useYn);
+        $("#grad").val(2);
+        $("#upMenuId").val(selectedNodeId);
+        $("#menuModal").modal("show");
+    }
+
+    // 메뉴 저장 (등록/수정)
+    function fnSaveMenu() {
+        var mode = $("#mode").val();
+        var url = (mode === 'insert') ? "/system/setInsertMenu.json" : "/system/setUpdateMenu.json";
+
+        var formData = {
+            menuId: $("#menuId").val(),
+            menuNm: $("#menuNm").val(),
+            menuCours: $("#menuCours").val(),
+            grad: $("#grad").val(),
+            upMenuId: $("#upMenuId").val(),
+            ordr: $("#ordr").val() || 1,
+            useYn: $("#useYn").val()
+        };
+
+        if(!formData.menuId || !formData.menuNm) {
+            alert("메뉴 ID와 메뉴명은 필수 입력 항목입니다.");
+            return;
+        }
+
+        $.ajax({
+            type: "post",
+            url: url,
+            data: formData,
+            dataType: "json",
+            success: function(response) {
+                alert("저장되었습니다.");
+                $("#menuModal").modal("hide");
+                getMenuList(selectedNodeId);
+            },
+            error: function(request, status, error) {
+                alert("저장 중 에러가 발생하였습니다.");
+            }
+        });
+    }
+
+    // 상위메뉴 삭제
+    function fnDeleteMenu() {
+        if (!selectedNodeId || selectedNodeId === "ME00000000") {
+            alert("삭제할 상위 메뉴를 선택하세요.");
+            return;
+        }
+        if (confirm("정말 삭제하시겠습니까? 하위 메뉴가 함께 삭제될 수 있습니다.")) {
+            $.ajax({
+                type: "post",
+                url: "/system/setDeleteMenu.json",
+                data: { menuId: selectedNodeId },
+                dataType: "json",
+                success: function(response) {
+                    alert("삭제되었습니다.");
+                    getMenuList("ME00000000");
+                    $("#menuLowTbody").html("<tr><td colspan='6' class='text-center'>상위 메뉴를 선택하세요.</td></tr>");
+                },
+                error: function(request, status, error) {
+                    alert("삭제 중 에러가 발생하였습니다.");
+                }
+            });
+        }
+    }
+
+    // 하위메뉴 삭제
+    function fnDeleteLowerMenu(menuId) {
+        if (confirm("정말 이 하위 메뉴를 삭제하시겠습니까?")) {
+            $.ajax({
+                type: "post",
+                url: "/system/setDeleteMenu.json",
+                data: { menuId: menuId },
+                dataType: "json",
+                success: function(response) {
+                    alert("삭제되었습니다.");
+                    getMenuList(selectedNodeId);
+                    getMenuLow(selectedNodeId);
+                },
+                error: function(request, status, error) {
+                    alert("삭제 중 에러가 발생하였습니다.");
+                }
+            });
+        }
+    }
+
+	$(function() {
+		getMenuList("ME00000000");
 	});
-}
-
-$(document).ready(function() {
-	getMenuList("ME00000000");
-});
 </script>
+</div>
 
 </body>
 </html>

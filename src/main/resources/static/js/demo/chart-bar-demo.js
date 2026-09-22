@@ -29,6 +29,7 @@ function number_format(number, decimals, dec_point, thousands_sep) {
 
 // Bar Chart Example
 var ctx = document.getElementById("myBarChart");
+if (ctx) {
 var myBarChart = new Chart(ctx, {
   type: 'bar',
   data: {
@@ -109,3 +110,4 @@ var myBarChart = new Chart(ctx, {
     },
   }
 });
+}

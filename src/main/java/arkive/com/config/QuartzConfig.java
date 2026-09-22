@@ -5,11 +5,19 @@ import org.quartz.Trigger;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.TriggerBuilder;
 import org.quartz.JobBuilder;
+import org.springframework.boot.autoconfigure.quartz.SchedulerFactoryBeanCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class QuartzConfig {
+
+    @Bean
+    public SchedulerFactoryBeanCustomizer schedulerFactoryBeanCustomizer() {
+        return schedulerFactoryBean -> {
+            schedulerFactoryBean.setApplicationContextSchedulerContextKey("applicationContext");
+        };
+    }
 
     @Bean
     public JobDetail DBJobDetail() {

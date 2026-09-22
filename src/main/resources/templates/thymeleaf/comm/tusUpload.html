@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>TUS 파일업로드</title>
+</head>
+<body>
+
+<div layout:fragment="content" class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">TUS 파일업로드 관리</h1>
+    </div>
+
+    <form id="detailForm" name="detailForm" method="post">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">파일 첨부 등록</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <tr>
+                            <th>TUS 파일첨부</th>
+                            <td>
+                                <div id="addFileList1" style="margin-bottom: 10px;" class="text-primary font-weight-bold"></div>
+                                <button type="button" class="btn btn-primary btn-sm mb-2" id="fileBtn" onclick="addFile()">파일첨부</button>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="mt-3">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="list();">목록</button>
+                    <button type="button" class="btn btn-success btn-sm" onclick="save();">저장</button>
+                </div>
+            </div>
+        </div>
+
+        <input type="hidden" name="searchCondition" value=""/>
+        <input type="hidden" name="searchKeyword" value=""/>
+        <input type="hidden" name="pageIndex" value="1"/>
+        <input type="hidden" id="atchFileGrpid" name="atchFileGrpid" value=""/>
+    </form>
+</div>
+
+<script type="text/javascript">
+//파일 추가 팝업
+function addFile(div){
+	window.open("/system/tusPopup", "newWindow", "top=300,left=1000,width=600,height=600,status=no,menubar=no,toolbar=no,resizable=no");
+}
+
+//파일 업로드 콜백함수
+function callBackFileUpload(name) {
+	var name = JSON.parse(name);
+	console.log(name);
+		
+	var fileNames = "";
+	name.forEach(function(item, idx){
+		fileNames += item + "<br>";
+	});
+	
+	$('#addFileList1').append(fileNames);
+}
+
+function save(){
+	$.ajax({
+	    url: '/system/addTus.do',
+	    type: 'post',
+	    dataType: 'json',
+	    data: {
+	    	id : $("#id").val(),
+	    	description : $("#description").val(),
+	    	atchFileGrpid : $("#atchFileGrpid").val()
+	    },
+	    async: false,
+	    success: function(data){
+	        console.log("성공");
+	        list();
+	    },
+		error: function(error){
+			alert('에러가 발생하였습니다. 관리자에게 문의하세요.');
+		}
+	});
+}
+
+function list(){
+	var f = document.detailForm;
+	f.action = '/system/menuList';
+	f.submit();
+}
+</script>
+
+</body>
+</html>

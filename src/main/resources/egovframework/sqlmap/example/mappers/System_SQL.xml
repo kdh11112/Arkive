@@ -5,16 +5,19 @@
 	<!-- 메뉴 트리 조회 -->
 	<select id="selectMenuList" resultType="egovMap">
 		SELECT
-			MENU_ID AS ID,
-			MENU_NM AS TEXT,
+			MENU_ID AS id,
+			MENU_NM AS text,
+			COALESCE(UP_MENU_ID, '#') AS parent,
+			MENU_ID,
+			MENU_NM,
+			MENU_COURS,
 			GRAD,
-			NVL(UP_MENU_ID, '#') AS PARENT,
+			UP_MENU_ID,
 			ORDR,
-			'R' AS CRUD
+			USE_YN
 		FROM MENU
-		WHERE 1=1
-		AND USE_YN = 'Y'
-		ORDER BY GRAD, PARENT, ORDR
+		WHERE USE_YN = 'Y'
+		ORDER BY GRAD, UP_MENU_ID, ORDR
 	</select>
 	
 	<!-- 하위매뉴 목록 -->
@@ -62,7 +65,7 @@
 			#{ menuId }
 			, #{ menuNm }
 			, #{ menuCours }
-			, #{ grad }::INTEGER
+			, #{ grad }
 			, #{ upMenuId }
 			, #{ ordr }
 			, #{ useYn }
@@ -87,7 +90,7 @@
 	<!-- 메뉴 삭제 -->
 	<delete id="setDeleteMenu" parameterType="String">
 		DELETE FROM MENU
-		WHERE UP_MENU_ID = #{ menuId }
+		WHERE MENU_ID = #{ menuId }
 	</delete>
 
 </mapper>

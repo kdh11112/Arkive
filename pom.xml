@@ -58,6 +58,12 @@
 	</repositories>
 
 	<dependencies>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
 		<!-- 표준프레임워크 실행환경 -->
 		<!-- 전자정부 표준프레임워크 MVC (웹 요청 및 Controller 기능 제공) -->
 		<dependency>
@@ -136,6 +142,7 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
 			<optional>true</optional>
 		</dependency>
 		

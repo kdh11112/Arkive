@@ -19,7 +19,10 @@
 
 ---
 
-## 2. 명명 규칙 (Naming Conventions)
+## 2. 명명 및 컨벤션 규칙 (Naming & Coding Conventions)
+*   **카멜케이스(CamelCase) 및 네이밍 원칙**: 
+    *   **SQL (Mapper XML)**: 데이터베이스 컬럼 및 언더바 표기법(Snake Case)을 그대로 유지하거나 명시적인 스네이크 케이스를 사용합니다.
+    *   **Java 및 HTML (Thymeleaf)**: 자바 코드(변수, 메서드, VO 필드) 및 HTML/Thymeleaf 템플릿 속성 접근은 **카멜케이스(CamelCase)**를 기준으로 작성합니다 (예: `menuId`, `menuNm`, `menuCours`, `upMenuId`, `grad`).
 *   **Controller**: `*Controller.java` (예: `SystemController.java`, `EgovSampleController.java`)
 *   **Service Interface**: `*Service.java` (예: `SystemService.java`)
 *   **Service Implementation**: `*ServiceImpl.java` (예: `SystemServiceImpl.java`)
@@ -87,5 +90,19 @@
     **설명 방식**: 코드 생성 후 적용된 전자정부프레임워크 및 Arkive 프로젝트 표준 규칙에 대해 간략히 설명한다.
 
 ---
-*최종 수정일: 2026-08-02*
+
+## 9. 외부 프로젝트 기능 및 코드 이관/통합 규칙 (External Code Integration Rules)
+*   **패키지 구조 맞춤**: 타 프로젝트에서 코드를 가져올 때 Arkive 프로젝트의 패키지 구조(`arkive.{domain}` 및 `arkive.admin.comm` 등)에 맞게 패키지 경로 및 import를 수정한다.
+*   **중복 방지 및 유틸리티 통합**: 유사하거나 중복된 유틸리티 클래스가 이미 존재하는 경우 기존 Arkive 공통 유틸([`src/main/java/arkive/admin/comm/web`](src/main/java/arkive/admin/comm/web) 등)을 재사용하거나 통합한다.
+*   **설정 및 의존성 확인**: 가져온 기능이 사용하는 라이브러리나 설정값이 [`pom.xml`](pom.xml) 또는 [`src/main/resources/application.properties`](src/main/resources/application.properties)에 누락되지 않았는지 확인한다.
+*   **보안 및 표준 준수**: `System.out.println` 대신 `@Slf4j` 로깅을 사용하고, SQL 및 XSS 보안 규칙을 준수한다.
+
+---
+
+## 10. AI 컨텍스트 효율화 및 탐색 규칙 (Context Efficiency)
+
+컨텍스트 효율화 및 탐색 규칙은 프로젝트 루트의 [`AGENTS.md`](AGENTS.md)를 기준으로 관리한다. 이 문서에는 아키텍처와 코딩 규칙만 유지하여 중복과 규칙 불일치를 방지한다.
+
+---
+*최종 수정일: 2026-08-09*
 *작성자: Zoo (AI Software Engineer)*

@@ -1,4 +1,6 @@
 {
     "files.encoding": "utf8",
-    "files.autoGuessEncoding": true
+    "files.autoGuessEncoding": true,
+    "java.autobuild.enabled": true,
+    "java.debug.settings.onBuildFailureProceed": true
 }

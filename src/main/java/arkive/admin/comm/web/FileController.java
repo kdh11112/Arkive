@@ -14,11 +14,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
@@ -37,10 +39,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
@@ -809,5 +814,154 @@ public class FileController extends FormBasedFileUtil{
         
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
+
+	// --- UploadController에서 이전된 TUS 및 업로드 뷰/API 엔드포인트 ---
+	
+	@RequestMapping(name = "TUS 파일업로드", value = "/system/tusUpload")
+	public String tusUpload(HttpServletRequest request, ModelMap model) throws Exception {
+		return "comm/tusUpload";
+	}
+	
+	@RequestMapping(name = "TUS 팝업", value = "/system/tusPopup")
+	public String tusPopup(HttpServletRequest request, ModelMap model) throws Exception {
+		return "comm/tusPopup";
+	}
+	
+	@RequestMapping(name = "멀파트 업로드", value = "/system/multipartUpload")
+	public String multipartUpload(HttpServletRequest request, ModelMap model) throws Exception {
+		return "comm/multipartUpload";
+	}
+	
+	@RequestMapping(name = "기타 업로드", value = "/system/otherUpload")
+	public String otherUpload(HttpServletRequest request, ModelMap model) throws Exception {
+		return "comm/otherUpload";
+	}
+	
+	@RequestMapping(value = "/system/tus/**", method = RequestMethod.OPTIONS)
+	public ResponseEntity<?> tusOptions(HttpServletRequest request, HttpServletResponse response) {
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("Tus-Resumable", "1.0.0");
+		headers.add("Tus-Version", "1.0.0");
+		headers.add("Tus-Extension", "creation,termination");
+		headers.add("Tus-Max-Size", "1073741824");
+		headers.add("Access-Control-Allow-Origin", "*");
+		headers.add("Access-Control-Allow-Methods", "POST, HEAD, PATCH, DELETE, OPTIONS");
+		headers.add("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Upload-Length, Upload-Offset, Tus-Resumable, Upload-Metadata");
+		return new ResponseEntity<>(headers, HttpStatus.NO_CONTENT);
+	}
+
+	@RequestMapping(value = "/system/tus", method = RequestMethod.POST)
+	public ResponseEntity<?> tusPost(HttpServletRequest request, HttpServletResponse response) {
+		try {
+			String fileId = CommUtil.getFileId();
+			String tempPath = EgovProperties.getProperty("Globals.FILE_TEMP_PATH");
+			if (tempPath == null || tempPath.trim().isEmpty()) {
+				tempPath = System.getProperty("java.io.tmpdir");
+			}
+			File dir = new File(tempPath);
+			if (!dir.exists()) {
+				dir.mkdirs();
+			}
+			File file = new File(dir, fileId);
+			if (!file.exists()) {
+				file.createNewFile();
+			}
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.add("Tus-Resumable", "1.0.0");
+			headers.add("Location", "/system/tus/" + fileId);
+			headers.add("Upload-Offset", "0");
+			headers.add("Access-Control-Allow-Origin", "*");
+			return new ResponseEntity<>(headers, HttpStatus.CREATED);
+		} catch (Exception e) {
+			logger.error("tusPost error", e);
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@RequestMapping(value = "/system/tus/{fileId}", method = RequestMethod.HEAD)
+	public ResponseEntity<?> tusHead(@PathVariable("fileId") String fileId, HttpServletRequest request) {
+		try {
+			String tempPath = EgovProperties.getProperty("Globals.FILE_TEMP_PATH");
+			if (tempPath == null || tempPath.trim().isEmpty()) {
+				tempPath = System.getProperty("java.io.tmpdir");
+			}
+			File file = new File(tempPath, fileId);
+			long offset = file.exists() ? file.length() : 0;
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.add("Tus-Resumable", "1.0.0");
+			headers.add("Upload-Offset", String.valueOf(offset));
+			headers.add("Upload-Length", String.valueOf(offset));
+			headers.add("Access-Control-Allow-Origin", "*");
+			return new ResponseEntity<>(headers, HttpStatus.OK);
+		} catch (Exception e) {
+			logger.error("tusHead error", e);
+			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+		}
+	}
+
+	@RequestMapping(value = "/system/tus/{fileId}", method = RequestMethod.PATCH)
+	public ResponseEntity<?> tusPatch(@PathVariable("fileId") String fileId, HttpServletRequest request) {
+		try {
+			String uploadOffsetStr = request.getHeader("Upload-Offset");
+			long requestOffset = uploadOffsetStr != null ? Long.parseLong(uploadOffsetStr) : 0;
+
+			String tempPath = EgovProperties.getProperty("Globals.FILE_TEMP_PATH");
+			if (tempPath == null || tempPath.trim().isEmpty()) {
+				tempPath = System.getProperty("java.io.tmpdir");
+			}
+			File file = new File(tempPath, fileId);
+			long currentOffset = file.exists() ? file.length() : 0;
+
+			if (requestOffset != currentOffset) {
+				HttpHeaders headers = new HttpHeaders();
+				headers.add("Tus-Resumable", "1.0.0");
+				headers.add("Upload-Offset", String.valueOf(currentOffset));
+				return new ResponseEntity<>(headers, HttpStatus.CONFLICT);
+			}
+
+			try (RandomAccessFile raf = new RandomAccessFile(file, "rw");
+				 InputStream in = request.getInputStream()) {
+				raf.seek(currentOffset);
+				byte[] buffer = new byte[8192];
+				int bytesRead;
+				while ((bytesRead = in.read(buffer)) != -1) {
+					raf.write(buffer, 0, bytesRead);
+				}
+			}
+
+			long newOffset = file.length();
+			HttpHeaders headers = new HttpHeaders();
+			headers.add("Tus-Resumable", "1.0.0");
+			headers.add("Upload-Offset", String.valueOf(newOffset));
+			headers.add("Access-Control-Allow-Origin", "*");
+			return new ResponseEntity<>(headers, HttpStatus.NO_CONTENT);
+		} catch (Exception e) {
+			logger.error("tusPatch error", e);
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@RequestMapping(value = "/system/tus/{fileId}", method = RequestMethod.DELETE)
+	public ResponseEntity<?> tusDelete(@PathVariable("fileId") String fileId, HttpServletRequest request) {
+		try {
+			String tempPath = EgovProperties.getProperty("Globals.FILE_TEMP_PATH");
+			if (tempPath == null || tempPath.trim().isEmpty()) {
+				tempPath = System.getProperty("java.io.tmpdir");
+			}
+			File file = new File(tempPath, fileId);
+			if (file.exists()) {
+				file.delete();
+			}
+			HttpHeaders headers = new HttpHeaders();
+			headers.add("Tus-Resumable", "1.0.0");
+			headers.add("Access-Control-Allow-Origin", "*");
+			return new ResponseEntity<>(headers, HttpStatus.NO_CONTENT);
+		} catch (Exception e) {
+			logger.error("tusDelete error", e);
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 
 }

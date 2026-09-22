@@ -15,6 +15,12 @@ public interface SystemMapper {
 	int getChkMenuId(EgovMap egovMap) throws Exception;
 
 	int getChkUpMenuId(EgovMap paramMap) throws Exception;
+
+	void setInsertMenu(EgovMap egovMap) throws Exception;
+
+	void setUpdateMenu(EgovMap egovMap) throws Exception;
+
+	void setDeleteMenu(EgovMap egovMap) throws Exception;
 	
 	
 }
