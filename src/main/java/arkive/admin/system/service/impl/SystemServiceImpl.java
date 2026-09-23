@@ -2,7 +2,8 @@ package arkive.admin.system.service.impl;
 import java.io.File;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +19,7 @@ import twitter4j.JSONObject;
 @Service("systemService")
 public class SystemServiceImpl extends EgovAbstractServiceImpl implements SystemService {
 
-	protected final Logger logger = Logger.getLogger(getClass());	
+	protected final Logger logger = LoggerFactory.getLogger(getClass());
 	
 //	@Autowired
 //	private CommUtil cmmUtil;

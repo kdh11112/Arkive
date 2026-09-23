@@ -28,8 +28,9 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.ibatis.session.SqlSessionException;
-import org.apache.log4j.Logger;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -58,13 +59,12 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
+
 @Controller
 public class FileController extends FormBasedFileUtil{
 
-	protected final Logger logger = Logger.getLogger(getClass());		//log4j 사용 정의
+	protected final Logger logger = LoggerFactory.getLogger(getClass());
 	
 	protected final int BUFFER_SIZE = 8192;
 
@@ -72,6 +72,12 @@ public class FileController extends FormBasedFileUtil{
 	
 	public static String FILE_TEMP_PATH 	= "";
 	public static String FILE_REAL_PATH 	= "";
+	
+//	@Value("${Globals.FILE_TEMP_PATH:${java.io.tmpdir}/arkive/temp/}")
+//    private String FILE_TEMP_PATH;
+//
+//    @Value("${Globals.FILE_REAL_PATH:${user.home}/arkive/uploads/}")
+//    private String FILE_REAL_PATH;
 	
 	@Resource(name = "fileService")
 	private FileService fileService;
@@ -171,7 +177,13 @@ public class FileController extends FormBasedFileUtil{
 		if(EgovProperties.getProperty("Globals.FILE_TEMP_PATH") != null) {
 			FILE_TEMP_PATH 	= EgovProperties.getProperty("Globals.FILE_TEMP_PATH");
 		}
+		if (FILE_TEMP_PATH == null || FILE_TEMP_PATH.trim().isEmpty() || "99".equals(FILE_TEMP_PATH.trim())) {
+			throw new IOException("Globals.FILE_TEMP_PATH is not configured or globals.properties could not be loaded");
+		}
 		for (MultipartFile mf : fileList) {
+			if (mf == null || mf.isEmpty()) {
+				continue;
+			}
 			String lsFileId = CommUtil.getFileId();
 			
 			String tmp = mf.getOriginalFilename();
@@ -179,7 +191,12 @@ public class FileController extends FormBasedFileUtil{
 			
 			try {
 				is = mf.getInputStream();
-				fileService.saveFile(is, new File(CommUtil.filePathBlackList(FILE_TEMP_PATH + SEPERATOR + lsFileId)));
+				File tempFile = new File(CommUtil.filePathBlackList(FILE_TEMP_PATH + SEPERATOR + lsFileId));
+				long savedSize = fileService.saveFile(is, tempFile);
+				if (!tempFile.isFile() || savedSize != mf.getSize()) {
+					throw new IOException("Uploaded file was not fully saved: " + tempFile.getAbsolutePath());
+				}
+				logger.info("Multipart upload saved to temporary storage: {} ({} bytes)", tempFile.getAbsolutePath(), savedSize);
 				EgovMap loFileMap	= new EgovMap();
 				if(i == 1) {
 					if(pExistFileId != null && !pExistFileId.equals("") && !pExistFileId.equals("undefined")) {
@@ -199,7 +216,8 @@ public class FileController extends FormBasedFileUtil{
 				i++;
 				loTempFileList.add(loFileMap);
 			}catch (IOException e){
-				logger.debug("IOexception");
+				logger.error("Failed to save uploaded file to temporary storage", e);
+				throw e;
 			}
 			finally {
 				if (is != null) {
@@ -430,7 +448,7 @@ public class FileController extends FormBasedFileUtil{
 	public void fileZipDownload(HttpServletRequest req, HttpServletResponse res) throws DataAccessException, IOException {
 
 		EgovMap param = cmmUtil.makeRequestEgovMap(req);
-		log.info("param----------------------------- type=[{}]", new Object[]{param});
+		logger.info("param----------------------------- type=[{}]", new Object[]{param});
 		
 		List<EgovMap> fileList = fileService.getFileList(param);
 		List<File> files = new ArrayList<>();
@@ -490,7 +508,7 @@ public class FileController extends FormBasedFileUtil{
 			}
 			zos.finish();
 	    } catch (IOException e) {
-			log.error("ZIP 다운로드 에러");
+	    	logger.error("ZIP 다운로드 에러");
 			res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "압축 파일 전송 실패");
 		}
 	}
@@ -774,8 +792,8 @@ public class FileController extends FormBasedFileUtil{
 		String fileId = (String) map.get("fileId");
 		param.put("groupId", fileId);
 		
-		log.info("--------------------------> /getFileList.json");
-		log.info("getFileList ----------------------------- type=[{}]", new Object[] { param });
+		logger.info("--------------------------> /getFileList.json");
+		logger.info("getFileList ----------------------------- type=[{}]", new Object[] { param });
 		
 		List<EgovMap> result = fileService.getFileList(param);
 		

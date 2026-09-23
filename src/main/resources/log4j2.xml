@@ -37,6 +37,19 @@
 		<Logger name="org.springframework" level="WARN" additivity="false">
             <AppenderRef ref="console" />
         </Logger>
+        
+        <!-- JMX 모니터링 로그 끄기 -->
+		<Logger name="javax.management.remote.rmi" level="WARN" additivity="false">
+			<AppenderRef ref="console" />
+		</Logger>
+
+		<Logger name="javax.management.mbeanserver" level="WARN" additivity="false">
+			<AppenderRef ref="console" />
+		</Logger>
+
+		<Logger name="sun.rmi" level="WARN" additivity="false">
+			<AppenderRef ref="console" />
+		</Logger>
 
         <Root level="DEBUG">
             <AppenderRef ref="console" />

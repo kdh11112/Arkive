@@ -10,9 +10,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EgovProperties{
+	private static final Logger LOGGER = LoggerFactory.getLogger(EgovProperties.class);
 	
 	//프로퍼티값 로드시 에러발생하면 반환되는 에러문자열 
 	public static final String ERR_CODE =" EXCEPTION OCCURRED";
@@ -72,11 +74,13 @@ public class EgovProperties{
 		FileInputStream fis = null;
 		try{
 			Properties props = new Properties();
-			if(GLOBALS_PROPERTIES_FILE != null && !GLOBALS_PROPERTIES_FILE.equals("")) {
-				fis  = new FileInputStream(GLOBALS_PROPERTIES_FILE.replace("/", File.separator));
-			}
-			
-			if(fis.read() > 0 && props!= null) {
+			java.io.InputStream input = EgovProperties.class.getClassLoader().getResourceAsStream("egovProps/globals.properties");
+			if (input != null) {
+				try (java.io.InputStream classpathInput = input) {
+					props.load(classpathInput);
+				}
+			} else if(GLOBALS_PROPERTIES_FILE != null && !GLOBALS_PROPERTIES_FILE.equals("")) {
+				fis = new FileInputStream(GLOBALS_PROPERTIES_FILE.replace("/", File.separator));
 				props.load(new java.io.BufferedInputStream(fis));
 			}
 			value = props.getProperty(keyName);
@@ -151,8 +155,7 @@ public class EgovProperties{
 	 */
 	private static void debug(Object obj) {
 		if (obj instanceof java.lang.Exception) {
-			//((Exception)obj).printStackTrace();
-			Logger.getLogger(EgovProperties.class).debug("IGNORED: " + ((Exception)obj).getMessage());
+			LOGGER.debug("IGNORED: " + ((Exception)obj).getMessage());
 		}
 	}
 }

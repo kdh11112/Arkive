@@ -62,6 +62,12 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<!-- 표준프레임워크 실행환경 -->
@@ -112,12 +118,24 @@
 		<dependency>
 		    <groupId>org.springframework.boot</groupId>
 		    <artifactId>spring-boot-starter-mail</artifactId>
+		    <exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		
 		<!-- Spring Boot Thymeleaf 템플릿 엔진 지원 (서버 사이드 HTML 렌더링용) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-thymeleaf</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		
 		<!-- Thymeleaf에서 HTML 레이아웃을 효율적으로 관리 ,  Tiles처럼 HTML 파일에서 조각들을 조합해서 전체 페이지를 구성 -->
@@ -136,6 +154,12 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		
 		<!-- Spring Boot 개발 편의 도구 (코드 변경 시 자동 재시작 등 제공) -->
@@ -275,6 +299,12 @@
 		<dependency>
 		    <groupId>org.springframework.boot</groupId>
 		    <artifactId>spring-boot-starter-quartz</artifactId>
+		    <exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		
 		<!-- 엑셀 -->
@@ -371,6 +401,49 @@
 			<version>3.0.8</version>
 		</dependency>
 		-->
+		
+				
+		<dependency>
+	        <groupId>com.itextpdf</groupId>
+	        <artifactId>kernel</artifactId>
+	        <version>7.0.4</version>
+	    </dependency>
+	    <dependency>
+	        <groupId>com.itextpdf</groupId>
+	        <artifactId>io</artifactId>
+	        <version>7.0.4</version>
+	    </dependency>
+	    <dependency>
+	        <groupId>com.itextpdf</groupId>
+	        <artifactId>layout</artifactId>
+	        <version>7.0.4</version>
+	    </dependency>
+	    <dependency>
+	        <groupId>com.itextpdf</groupId>
+	        <artifactId>forms</artifactId>
+	        <version>7.0.4</version>
+	    </dependency>
+	    <dependency>
+	        <groupId>com.itextpdf</groupId>
+	        <artifactId>pdfa</artifactId>
+	        <version>7.0.4</version>
+	    </dependency>
+	    <dependency>
+	        <groupId>com.itextpdf</groupId>
+	        <artifactId>pdftest</artifactId>
+	        <version>7.0.4</version>
+	        <exclusions>
+	            <exclusion>
+	                <groupId>ch.qos.logback</groupId>
+	                <artifactId>logback-classic</artifactId>
+	            </exclusion>
+	        </exclusions>
+	    </dependency>
+	    <dependency>
+	         <groupId>com.itextpdf</groupId>
+	         <artifactId>itext-pdfa</artifactId>
+	         <version>5.5.0</version>
+	      </dependency>
 		
 	</dependencies>
 

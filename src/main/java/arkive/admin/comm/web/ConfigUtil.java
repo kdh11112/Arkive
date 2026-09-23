@@ -14,11 +14,11 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.configuration2.ex.ConversionException;
 import org.apache.commons.configuration2.reloading.PeriodicReloadingTrigger;
 import org.apache.commons.configuration2.reloading.ReloadingController;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConfigUtil {
-    private static final Log logger = LogFactory.getLog(ConfigUtil.class);
+	private static final Logger logger = LoggerFactory.getLogger(ConfigUtil.class);
     
     private static CompositeConfiguration config;
     private static final String XML_CONFIG_FILE_NAME = "egovProps/global_common_config.xml";

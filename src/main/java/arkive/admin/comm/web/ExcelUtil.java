@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.ibatis.session.SqlSessionException;
-import org.apache.log4j.Logger;
 import org.apache.poi.hssf.usermodel.DVConstraint;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
@@ -45,13 +44,14 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import twitter4j.JSONArray;
 import twitter4j.JSONObject;
 
 public class ExcelUtil {
 	
-	protected final Logger logger = Logger.getLogger(getClass());		//log4j 사용 정의
+	protected final Logger logger = LoggerFactory.getLogger(getClass());
 	
 	/* 정규표현식 패턴 */
 	public static final String YYYYMM_PATTERN	= "^[1-2][0-9][0-9][0-9][0-1][0-9]$";	// yyyymm
@@ -92,7 +92,7 @@ public class ExcelUtil {
 				result = Long.toString((long) cell.getNumericCellValue());
 			}
 		}catch(SqlSessionException e) {
-			Logger.getLogger("ExcelUtil").debug("오류발생");
+			LoggerFactory.getLogger(ExcelUtil.class).debug("오류발생");
 		}
 		
 		if(result != null) {
@@ -182,7 +182,7 @@ public class ExcelUtil {
 				result = Long.toString((long) cell.getNumericCellValue());
 			}
 		}catch(SqlSessionException e) {
-			Logger.getLogger("ExcelUtil").debug("오류발생");
+			LoggerFactory.getLogger(ExcelUtil.class).debug("오류발생");
 		}
 		
 		if(result != null) {
@@ -217,7 +217,7 @@ public class ExcelUtil {
 				result = new SimpleDateFormat("yyyyMMdd").format(date);
 			}
 		}catch(SqlSessionException e) {
-			Logger.getLogger("ExcelUtil").debug("오류발생");
+			LoggerFactory.getLogger(ExcelUtil.class).debug("오류발생");
 		}
 		
 		if(result != null) {
