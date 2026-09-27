@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,8 @@ public class SystemServiceImpl extends EgovAbstractServiceImpl implements System
 	private SystemMapper systemMapper;
 
 	@Override
+	// 매 페이지 요청마다 반복 실행되는 메뉴 조회 쿼리를 메모리에 캐싱하여 DB 부하 감소
+	@Cacheable("menuListCache")
 	public List<EgovMap> selectMenuList(EgovMap egovMap) throws Exception {
 		return systemMapper.selectMenuList(egovMap);
 	}
@@ -83,16 +87,19 @@ public class SystemServiceImpl extends EgovAbstractServiceImpl implements System
 	}
 
 	@Override
-	public void setInsertMenu(EgovMap egovMap) throws Exception {
+	@CacheEvict(value = "menuListCache", allEntries = true)
+	public void setInsertMenu(EgovMap egovMap) throws Exception { 
 		systemMapper.setInsertMenu(egovMap);
 	}
 
 	@Override
+	@CacheEvict(value = "menuListCache", allEntries = true)
 	public void setUpdateMenu(EgovMap egovMap) throws Exception {
 		systemMapper.setUpdateMenu(egovMap);
 	}
 
 	@Override
+	@CacheEvict(value = "menuListCache", allEntries = true)
 	public void setDeleteMenu(EgovMap egovMap) throws Exception {
 		systemMapper.setDeleteMenu(egovMap);
 	}

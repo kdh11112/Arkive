@@ -8,7 +8,7 @@
 완료 기준: 분석 범위의 각 기능에 호출자·사전조건·처리·결과·오류·근거가 작성되고 미확인 동작이 별도 표시되어 있다.
 -->
 
-> 이 문서는 현재 저장소 구현에서 관찰한 동작 흐름을 기록한다. 과거 운영 시스템의 동작, 업무 의도 또는 승인된 정책을 뜻하지 않는다. 저장소 분석 시점: 2026-09-23.
+> 이 문서는 현재 저장소 구현에서 관찰한 동작 흐름을 기록한다. 과거 운영 시스템의 동작, 업무 의도 또는 승인된 정책을 뜻하지 않는다. 저장소 분석 시점: 2026-09-25.
 
 ## 확인된 기능 흐름
 
@@ -16,9 +16,10 @@
 | --- | --- | --- | --- |
 | 메뉴 관리 | `/system/menuList` 화면에서 Controller가 Service를 호출하고 Mapper/XML로 조회·등록·수정·삭제를 연결한다. | `SystemController`, `SystemServiceImpl`, `SystemMapper`, `System_SQL.xml` | 화면 호출 상세, 인증/권한, 메뉴 정책, 오류 계약 |
 | 파일 처리 | 공통 FileController가 업로드·목록·다운로드·삭제 및 TUS 경로를 제공하고 파일 Service/Mapper 및 파일 저장 경로 설정을 사용한다. | `FileController`, `FileServiceImpl`, `File_SQL.xml`, `application.properties` | 화면별 호출 관계, 파일 접근 권한, 보존·삭제 정책, 외부 연계 |
-| DB 초기화 | 애플리케이션 설정이 SQL 초기화를 항상 수행하고 `sampledb.sql`, `system.sql`을 지정한다. 스크립트에는 테이블 삭제 후 재생성이 있다. | `application.properties`, `src/main/resources/db/*.sql` | 환경별 설정 차이, 실행 승인 및 데이터 보존 절차 |
-| 예약 DB 작업 | Quartz 설정에 10분 Trigger가 있고 `DBJob`에 `/db/data.sql` 덤프 코드가 있다. | `QuartzConfig`, `DBJob` | 실제 운영 활성화, 덤프 데이터 접근, 저장/삭제/복구 정책 |
-| eGovFrame Sample | 샘플 Controller, Service, Mapper/XML, SAMPLE 테이블의 CRUD 및 목록 코드가 있다. | `egovframework.example.sample.*`, `EgovSample_Sample_SQL.xml`, `sampledb.sql` | 실제 업무 사용 여부 |
+| DB 초기화/마이그레이션 | Spring SQL 초기화는 꺼져 있다. 애플리케이션 시작 시 `SCHEMA_MIGRATION`에 없는 `db/V숫자__설명.sql`만 숫자 순서로 실행한다. | `application.properties`, `EgovConfigDatasource`, `src/main/resources/db/V*.sql` | 운영 DB 제품·버전과 백업/복구 절차 |
+| 레거시 초기화 SQL | `sampledb.sql`, `system.sql`은 저장소에 남아 있으나 기본 설정에서는 실행되지 않는다. 수동 실행 시 기존 테이블을 삭제할 수 있다. | `application.properties`, `src/main/resources/db/sampledb.sql`, `system.sql` | 별도 수동 사용 여부 미확인 |
+| 예약 DB 작업 | Quartz 설정이 `DBJob`을 10분마다 실행하도록 Trigger를 선언하고, Job은 HSQLDB `SCRIPT` 명령에 `/db/data.sql` 경로를 전달한다. 이 절대 경로가 저장소의 `src/main/resources/db/data.sql`을 뜻한다고 보장되지 않는다. | `QuartzConfig`, `DBJob`, `src/main/resources/db/data.sql` | 실제 서버 파일 권한·출력 위치, 백업 보관/복구 정책 |
+| eGovFrame 샘플 | Controller, Service, Mapper/XML, 샘플 CRUD 및 페이지 처리 코드가 있다. V5 마이그레이션이 `SAMPLE`, `IDS`와 기본 레코드를 준비한다. | `egovframework.example.sample.*`, `EgovSample_Sample_SQL.xml`, `db/V5__create_sample_tables.sql` | 실제 업무 사용 여부 |
 
 ## 현행 분석 보완 양식
 

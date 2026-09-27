@@ -11,6 +11,11 @@ public interface FileMapper {
 public List<EgovMap> getFileList(EgovMap egovMap);
 	
 	/**
+	 * 업로드 타입별 파일 목록 조회
+	 */
+	public List<EgovMap> selectAtchFileListByType(String type);
+
+	/**
 	 * 파일 상세 정보 조회
 	 * @param pEgovMap 
 	 * @return 	: 파일 상세 정보

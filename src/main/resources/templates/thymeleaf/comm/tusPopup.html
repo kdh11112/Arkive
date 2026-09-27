@@ -7,25 +7,27 @@
 </head>
 <body>
 <div id="drag-drop-area"></div>
-<input type="hidden" id="atchFileGrpid" name="atchFileGrpid" value="" />
+<input type="hidden" id="atchFileGrpid" name="atchFileGrpid" value="" />        
 
 <script src="https://releases.transloadit.com/uppy/v4.13.3/uppy.min.js"></script>
 <script src="https://releases.transloadit.com/uppy/locales/v3.3.1/ko_KR.min.js"></script>
 <script type="module">
-let atchFileGrpid = opener && opener.document.getElementById("atchFileGrpid") ? opener.document.getElementById("atchFileGrpid").value : "";
+let atchFileGrpid = opener && opener.document.getElementById("atchFileGrpid") ? 
+opener.document.getElementById("atchFileGrpid").value : "";
 
-const uppy = new Uppy.Uppy({
-    locale: Uppy.locales.ko_KR,
+const UppyLib = window.Uppy;
+const uppy = new (UppyLib.Uppy || UppyLib.Core || UppyLib)({
+    locale: UppyLib.locales.ko_KR,
     debug: true,
 });
 
-uppy.use(Uppy.Dashboard, {
+uppy.use(UppyLib.Dashboard, {
     inline: true,
     target: '#drag-drop-area',
     showProgressDetails: true,
 });
 
-uppy.use(Uppy.Tus, {
+uppy.use(UppyLib.Tus, {
     endpoint: '/system/tus',
     chunkSize: 52428800,
     resume: true,
@@ -35,21 +37,33 @@ uppy.use(Uppy.Tus, {
         if (atchFileGrpidValue) {
             req.setHeader('atchFileGrpid', atchFileGrpidValue);
         }
-        req.setHeader('cnt', uppy.getFiles().length);
     }
 });
 
-uppy.on('complete', (result) => {
+uppy.on('complete', async (result) => {
     console.log(result);
-    const name = result.successful.map(file => {
-        return file.name;
-    });
+    const successfulFiles = result.successful;
+    const names = [];
+    for (const file of successfulFiles) {
+        names.push(file.name);
+        const uploadUrl = file.uploadURL;
+        const fileId = uploadUrl ? uploadUrl.split('/').pop() : file.id;
+        try {
+            await fetch('/system/tusComplete.json', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ fileId: fileId, fileName: file.name })
+            });
+        } catch (e) {
+            console.error('Failed to record TUS file metadata', e);
+        }
+    }
 
     if (opener && typeof opener.callBackFileUpload === 'function') {
-        opener.callBackFileUpload(JSON.stringify(name));
+        opener.callBackFileUpload(JSON.stringify(names));
         window.close();
     } else {
-        console.error('부모 창의 callBackFileUpload 함수를 찾을 수 없습니다.');
+        console.error('부모 창의 callBackFileUpload 함수를 찾을 수 없습니다.'); 
     }
 });
 </script>

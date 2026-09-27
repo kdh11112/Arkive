@@ -19,10 +19,13 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -73,16 +76,34 @@ public class FileController extends FormBasedFileUtil{
 	public static String FILE_TEMP_PATH 	= "";
 	public static String FILE_REAL_PATH 	= "";
 	
-//	@Value("${Globals.FILE_TEMP_PATH:${java.io.tmpdir}/arkive/temp/}")
-//    private String FILE_TEMP_PATH;
-//
-//    @Value("${Globals.FILE_REAL_PATH:${user.home}/arkive/uploads/}")
-//    private String FILE_REAL_PATH;
-	
 	@Resource(name = "fileService")
 	private FileService fileService;
-	
+
 	private CommUtil cmmUtil = new CommUtil();
+
+	private static final java.util.concurrent.ConcurrentHashMap<String, Long> tusUploadLengths = new java.util.concurrent.ConcurrentHashMap<>();
+	private static final java.util.concurrent.ConcurrentHashMap<String, String> tusFileNames = new java.util.concurrent.ConcurrentHashMap<>();
+
+	private String getWritableTempPath() {
+		String tempPath = EgovProperties.getProperty("Globals.FILE_TEMP_PATH");
+		if (!StringUtils.hasText(tempPath) || "99".equals(tempPath.trim())) {
+			tempPath = System.getProperty("java.io.tmpdir") + File.separator + "arkive" + File.separator + "temp";
+		}
+		File dir = new File(tempPath);
+		try {
+			if (!dir.exists()) {
+				dir.mkdirs();
+			}
+			if (!dir.isDirectory() || !dir.canWrite()) {
+				throw new IOException("Not writable");
+			}
+		} catch (Exception e) {
+			tempPath = System.getProperty("java.io.tmpdir") + File.separator + "arkive" + File.separator + "temp";
+			dir = new File(tempPath);
+			dir.mkdirs();
+		}
+		return tempPath;
+	}
 	
 	/**
 	 * 파일업로드 페이지로 이동
@@ -117,47 +138,116 @@ public class FileController extends FormBasedFileUtil{
 	
 	/**
 	 * temp 폴더에 파일 업로드
-	 * @param	MultipartHttpServletRequest
-	 * @return : 
-	 * @throws
+	 * @param	HttpServletRequest
+	 * @param	ModelMap
+	 * @return : jsonView
 	*/
-	@RequestMapping(value = "file/tempFileUpload.json")
-	public String setTempFileUpload(MultipartHttpServletRequest request, ModelMap model)  {
+	@RequestMapping(value = {"/system/file/tempFileUpload.json", "/file/tempFileUpload.json", "file/tempFileUpload.json"})
+	public String setTempFileUpload(HttpServletRequest request, ModelMap model)  {
+	        try {
+	                List<MultipartFile> fileList = new ArrayList<>();
+	                if (request instanceof MultipartHttpServletRequest) {
+	                        MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
+	                        List<MultipartFile> files = multipartRequest.getFiles("files");
+	                        if (files != null && !files.isEmpty()) {
+	                                fileList.addAll(files);
+	                        } else if (multipartRequest.getMultiFileMap() != null) {
+	                                for (List<MultipartFile> mfList : multipartRequest.getMultiFileMap().values()) {
+	                                        if (mfList != null) {
+	                                                fileList.addAll(mfList);
+	                                        }
+	                                }
+	                        }
+	                }
+	                if (fileList.isEmpty()) {
+	                        model.put("tempFileList", Collections.emptyList());
+	                        model.put("success", false);
+	                        model.put("message", "업로드할 파일이 없습니다.");
+	                        model.put("root", FILE_REAL_PATH);
+	                        return "jsonView";
+	                }
+	                String groupId = request.getParameter("atchFileGrpid");
+	                if (!StringUtils.hasText(groupId) || "undefined".equalsIgnoreCase(groupId) || "null".equalsIgnoreCase(groupId)) {
+	                        groupId = "MP_" + UUID.randomUUID().toString();
+	                } else if (!groupId.startsWith("MP_")) {
+	                        groupId = "MP_" + groupId;
+	                }
+	                List<?> uploadedFiles = fileService.setUploadFiles(fileList, groupId, "SYSTEM");
+	                model.put("tempFileList", uploadedFiles);
+	                model.put("success", true);
+	        } catch(Exception e) {
+	                logger.error("setTempFileUpload failed", e);
+	                model.put("tempFileList", Collections.emptyList());
+	                model.put("success", false);
+	                model.put("message", "파일 저장에 실패했습니다: " + e.getMessage());
+	        }
+	        model.put("root", FILE_REAL_PATH);
+
+	        return "jsonView";
+	}
+
+	@GetMapping("/system/file/{fileId}/download")
+	public ResponseEntity<byte[]> downloadUploadedFile(@PathVariable("fileId") String fileId) {
 		try {
-			HttpSession session = request.getSession();
-			
-			List<MultipartFile> fileList 	= request.getFiles("files");
-			String lsExistFileId 			= cmmUtil.convertHtml(request, "existFileId");
-			List<?> loTempFileList 			= uploadTempFiles(fileList, lsExistFileId, "");
-			model.put("tempFileList", loTempFileList);
-			
-		} catch(SqlSessionException | IOException e) {
-			logger.debug("setTempFileUpload :: SqlSessionException | IOException");
+			EgovMap fileInfo = fileService.getFileInfo(fileId);
+			if (fileInfo == null) {
+				return ResponseEntity.notFound().build();
+			}
+
+			File savedFile = new File(String.valueOf(fileInfo.get("filePath"))).getCanonicalFile();
+			File uploadRoot = new File(FILE_REAL_PATH).getCanonicalFile();
+			if (!savedFile.toPath().startsWith(uploadRoot.toPath()) || !savedFile.isFile()) {
+				return ResponseEntity.notFound().build();
+			}
+
+			String originalName = String.valueOf(fileInfo.get("orgnlFileNm"));
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+			headers.setContentDispositionFormData("attachment", originalName);
+			headers.setContentLength(savedFile.length());
+			return new ResponseEntity<>(Files.readAllBytes(savedFile.toPath()), headers, HttpStatus.OK);
+		} catch (IOException e) {
+			logger.error("downloadUploadedFile failed for fileId {}", fileId, e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		}
-		
-		return "jsonView";
 	}
 	
 	/**
 	 * temp 폴더에 파일 업로드
-	 * @param	MultipartHttpServletRequest
-	 * @return : 
-	 * @throws
+	 * @param	HttpServletRequest
+	 * @param	ModelMap
+	 * @return : jsonView
 	*/
-	@RequestMapping(value = "file/reportImgFileUpload.json")
-	public String setReportImgFileUpload(MultipartHttpServletRequest request, ModelMap model)  {
+	@RequestMapping(value = {"/system/file/reportImgFileUpload.json", "/file/reportImgFileUpload.json", "file/reportImgFileUpload.json"})
+	public String setReportImgFileUpload(HttpServletRequest request, ModelMap model)  {
 		try {
 			HttpSession session = request.getSession();
 			//LoginVO loginVo = (LoginVO)session.getAttribute("USER");
 			
-			List<MultipartFile> fileList 	= request.getFiles("files");
+			List<MultipartFile> fileList = new ArrayList<>();
+			if (request instanceof MultipartHttpServletRequest) {
+				MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
+				List<MultipartFile> files = multipartRequest.getFiles("files");
+				if (files != null && !files.isEmpty()) {
+					fileList.addAll(files);
+				} else if (multipartRequest.getMultiFileMap() != null) {
+					for (List<MultipartFile> mfList : multipartRequest.getMultiFileMap().values()) {
+						if (mfList != null) {
+							fileList.addAll(mfList);
+						}
+					}
+				}
+			}
 
 			List<?> loTempFileList 			= uploadRealFiles(fileList,"" /*loginVo.getUserId()*/);
 			
 			model.put("tempFileList", loTempFileList);
-			
-		} catch(SqlSessionException | IOException e) {
-			logger.debug("setReportImgFileUpload :: SqlSessionException | IOException");
+			model.put("success", true);
+		} catch(Exception e) {
+			logger.error("setReportImgFileUpload failed", e);
+			model.put("tempFileList", Collections.emptyList());
+			model.put("success", false);
+			model.put("message", "이미지 파일 저장에 실패했습니다: " + e.getMessage());
 		}
 		
 		return "jsonView";
@@ -179,6 +269,10 @@ public class FileController extends FormBasedFileUtil{
 		}
 		if (FILE_TEMP_PATH == null || FILE_TEMP_PATH.trim().isEmpty() || "99".equals(FILE_TEMP_PATH.trim())) {
 			throw new IOException("Globals.FILE_TEMP_PATH is not configured or globals.properties could not be loaded");
+		}
+		File tempDir = new File(FILE_TEMP_PATH.trim());
+		if ((!tempDir.exists() && !tempDir.mkdirs()) || !tempDir.isDirectory() || !tempDir.canWrite()) {
+			throw new IOException("Upload directory is not writable: " + tempDir.getAbsolutePath());
 		}
 		for (MultipartFile mf : fileList) {
 			if (mf == null || mf.isEmpty()) {
@@ -835,24 +929,127 @@ public class FileController extends FormBasedFileUtil{
 
 	// --- UploadController에서 이전된 TUS 및 업로드 뷰/API 엔드포인트 ---
 	
+	@RequestMapping(value = {"/system/file/otherFileUpload.json", "/file/otherFileUpload.json", "file/otherFileUpload.json"})
+	public String setOtherFileUpload(HttpServletRequest request, ModelMap model)  {
+	        try {
+	                List<MultipartFile> fileList = new ArrayList<>();
+	                if (request instanceof MultipartHttpServletRequest) {
+	                        MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
+	                        List<MultipartFile> files = multipartRequest.getFiles("files");
+	                        if (files != null && !files.isEmpty()) {
+	                                fileList.addAll(files);
+	                        } else if (multipartRequest.getMultiFileMap() != null) {
+	                                for (List<MultipartFile> mfList : multipartRequest.getMultiFileMap().values()) {
+	                                        if (mfList != null) {
+	                                                fileList.addAll(mfList);
+	                                        }
+	                                }
+	                        }
+	                }
+	                if (fileList.isEmpty()) {
+	                        model.put("tempFileList", Collections.emptyList());
+	                        model.put("success", false);
+	                        model.put("message", "업로드할 파일이 없습니다.");
+	                        model.put("root", FILE_REAL_PATH);
+	                        return "jsonView";
+	                }
+	                String groupId = request.getParameter("atchFileGrpid");
+	                if (!StringUtils.hasText(groupId) || "undefined".equalsIgnoreCase(groupId) || "null".equalsIgnoreCase(groupId)) {
+	                        groupId = "OTHER_" + UUID.randomUUID().toString();
+	                } else if (!groupId.startsWith("OTHER_")) {
+	                        groupId = "OTHER_" + groupId;
+	                }
+	                List<?> uploadedFiles = fileService.setUploadFiles(fileList, groupId, "SYSTEM");
+	                model.put("tempFileList", uploadedFiles);
+	                model.put("success", true);
+	        } catch(Exception e) {
+	                logger.error("setOtherFileUpload failed", e);
+	                model.put("tempFileList", Collections.emptyList());
+	                model.put("success", false);
+	                model.put("message", "파일 저장에 실패했습니다: " + e.getMessage());
+	        }
+	        model.put("root", FILE_REAL_PATH);
+
+	        return "jsonView";
+	}
+
+	@RequestMapping(value = "/system/tusComplete.json")
+	public String tusComplete(@RequestParam Map<String, Object> map, ModelMap model) {
+	        try {
+	                String fileId = (String) map.get("fileId");
+	                String fileName = (String) map.get("fileName");
+	                if (!StringUtils.hasText(fileName) && tusFileNames.containsKey(fileId)) {
+	                        fileName = tusFileNames.get(fileId);
+	                }
+	                if (!StringUtils.hasText(fileId)) {
+	                        model.put("success", false);
+	                        model.put("message", "fileId is required");
+	                        return "jsonView";
+	                }
+	                String tempPath = EgovProperties.getProperty("Globals.FILE_TEMP_PATH");
+	                if (tempPath == null || tempPath.trim().isEmpty()) {
+	                        tempPath = System.getProperty("java.io.tmpdir");
+	                }
+	                File file = new File(tempPath, fileId);
+	                if (!file.exists()) {
+	                        model.put("success", false);
+	                        model.put("message", "TUS file not found on disk");
+	                        return "jsonView";
+	                }
+
+	                String ext = "";
+	                int idx = fileName != null ? fileName.lastIndexOf('.') : -1;
+	                if (idx > 0) {
+	                        ext = fileName.substring(idx + 1);
+	                }
+
+	                EgovMap paramMap = new EgovMap();
+	                paramMap.put("fileId", fileId);
+	                paramMap.put("atchFileGrpid", "TUS_DEFAULT");
+	                paramMap.put("orgnlFileNm", fileName != null ? fileName : fileId);
+	                paramMap.put("physFileNm", fileId);
+	                paramMap.put("filePath", file.getAbsolutePath());
+	                paramMap.put("fileSz", file.length());
+	                paramMap.put("fileExt", ext);
+	                paramMap.put("userId", "SYSTEM");
+
+	                EgovMap existing = fileService.getFileInfo(fileId);
+	                if (existing == null) {
+	                        fileService.saveTusFileInfo(paramMap);
+	                }
+	                model.put("success", true);
+	        } catch (Exception e) {
+	                logger.error("tusComplete failed", e);
+	                model.put("success", false);
+	                model.put("message", e.getMessage());
+	        }
+	        return "jsonView";
+	}
+
 	@RequestMapping(name = "TUS 파일업로드", value = "/system/tusUpload")
 	public String tusUpload(HttpServletRequest request, ModelMap model) throws Exception {
-		return "comm/tusUpload";
+	        List<EgovMap> fileList = fileService.selectAtchFileListByType("TUS");
+	        model.put("fileList", fileList);
+	        return "comm/tusUpload";
 	}
-	
-	@RequestMapping(name = "TUS 팝업", value = "/system/tusPopup")
+
+	@RequestMapping(name = "TUS 팝업", value = "/system/tusPopup")      
 	public String tusPopup(HttpServletRequest request, ModelMap model) throws Exception {
-		return "comm/tusPopup";
+	        return "comm/tusPopup";
 	}
-	
+
 	@RequestMapping(name = "멀파트 업로드", value = "/system/multipartUpload")
 	public String multipartUpload(HttpServletRequest request, ModelMap model) throws Exception {
-		return "comm/multipartUpload";
+	        List<EgovMap> fileList = fileService.selectAtchFileListByType("MULTIPART");
+	        model.put("fileList", fileList);
+	        return "comm/multipartUpload";
 	}
-	
+
 	@RequestMapping(name = "기타 업로드", value = "/system/otherUpload")
 	public String otherUpload(HttpServletRequest request, ModelMap model) throws Exception {
-		return "comm/otherUpload";
+	        List<EgovMap> fileList = fileService.selectAtchFileListByType("OTHER");
+	        model.put("fileList", fileList);
+	        return "comm/otherUpload";
 	}
 	
 	@RequestMapping(value = "/system/tus/**", method = RequestMethod.OPTIONS)
@@ -872,10 +1069,28 @@ public class FileController extends FormBasedFileUtil{
 	public ResponseEntity<?> tusPost(HttpServletRequest request, HttpServletResponse response) {
 		try {
 			String fileId = CommUtil.getFileId();
-			String tempPath = EgovProperties.getProperty("Globals.FILE_TEMP_PATH");
-			if (tempPath == null || tempPath.trim().isEmpty()) {
-				tempPath = System.getProperty("java.io.tmpdir");
+			String uploadLengthStr = request.getHeader("Upload-Length");
+			long uploadLength = uploadLengthStr != null ? Long.parseLong(uploadLengthStr) : 0;
+			tusUploadLengths.put(fileId, uploadLength);
+
+			String metadata = request.getHeader("Upload-Metadata");
+			if (metadata != null) {
+				String[] parts = metadata.split(",");
+				for (String part : parts) {
+					String[] kv = part.trim().split(" ");
+					if (kv.length == 2 && "filename".equals(kv[0])) {
+						try {
+							byte[] decodedBytes = java.util.Base64.getDecoder().decode(kv[1]);
+							String decodedName = new String(decodedBytes, StandardCharsets.UTF_8);
+							tusFileNames.put(fileId, decodedName);
+						} catch (Exception e) {
+							logger.debug("Failed to decode filename metadata", e);
+						}
+					}
+				}
 			}
+
+			String tempPath = getWritableTempPath();
 			File dir = new File(tempPath);
 			if (!dir.exists()) {
 				dir.mkdirs();
@@ -900,17 +1115,15 @@ public class FileController extends FormBasedFileUtil{
 	@RequestMapping(value = "/system/tus/{fileId}", method = RequestMethod.HEAD)
 	public ResponseEntity<?> tusHead(@PathVariable("fileId") String fileId, HttpServletRequest request) {
 		try {
-			String tempPath = EgovProperties.getProperty("Globals.FILE_TEMP_PATH");
-			if (tempPath == null || tempPath.trim().isEmpty()) {
-				tempPath = System.getProperty("java.io.tmpdir");
-			}
+			String tempPath = getWritableTempPath();
 			File file = new File(tempPath, fileId);
 			long offset = file.exists() ? file.length() : 0;
+			long length = tusUploadLengths.getOrDefault(fileId, offset);
 
 			HttpHeaders headers = new HttpHeaders();
 			headers.add("Tus-Resumable", "1.0.0");
 			headers.add("Upload-Offset", String.valueOf(offset));
-			headers.add("Upload-Length", String.valueOf(offset));
+			headers.add("Upload-Length", String.valueOf(length));
 			headers.add("Access-Control-Allow-Origin", "*");
 			return new ResponseEntity<>(headers, HttpStatus.OK);
 		} catch (Exception e) {
@@ -925,10 +1138,7 @@ public class FileController extends FormBasedFileUtil{
 			String uploadOffsetStr = request.getHeader("Upload-Offset");
 			long requestOffset = uploadOffsetStr != null ? Long.parseLong(uploadOffsetStr) : 0;
 
-			String tempPath = EgovProperties.getProperty("Globals.FILE_TEMP_PATH");
-			if (tempPath == null || tempPath.trim().isEmpty()) {
-				tempPath = System.getProperty("java.io.tmpdir");
-			}
+			String tempPath = getWritableTempPath();
 			File file = new File(tempPath, fileId);
 			long currentOffset = file.exists() ? file.length() : 0;
 
@@ -964,10 +1174,7 @@ public class FileController extends FormBasedFileUtil{
 	@RequestMapping(value = "/system/tus/{fileId}", method = RequestMethod.DELETE)
 	public ResponseEntity<?> tusDelete(@PathVariable("fileId") String fileId, HttpServletRequest request) {
 		try {
-			String tempPath = EgovProperties.getProperty("Globals.FILE_TEMP_PATH");
-			if (tempPath == null || tempPath.trim().isEmpty()) {
-				tempPath = System.getProperty("java.io.tmpdir");
-			}
+			String tempPath = getWritableTempPath();
 			File file = new File(tempPath, fileId);
 			if (file.exists()) {
 				file.delete();

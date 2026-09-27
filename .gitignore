@@ -5,6 +5,9 @@
 target/
 *.class
 
+# Local HSQLDB files (including transient lock and log files)
+/data/
+
 ### Eclipse ###
 .metadata
 bin/

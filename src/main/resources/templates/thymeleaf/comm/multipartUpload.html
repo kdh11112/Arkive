@@ -4,13 +4,13 @@
       layout:decorate="~{layout/layout}">
 <head>
     <meta charset="utf-8">
-    <title>멀파트 업로드</title>
+    <title>멀티파트 업로드</title>
 </head>
 <body>
 
 <div layout:fragment="content" class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">멀파트 업로드</h1>
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">     
+        <h1 class="h3 mb-0 text-gray-800">멀티파트 업로드</h1>
     </div>
 
     <div class="row">
@@ -20,16 +20,113 @@
                     <h6 class="m-0 font-weight-bold text-primary">일반 멀파트 파일 업로드</h6>
                 </div>
                 <div class="card-body">
-                    <form action="/file/tempFileUpload.json" method="post" enctype="multipart/form-data">
+                    <form id="multipartUploadForm" enctype="multipart/form-data">
                         <div class="form-group">
-                            <input type="file" name="files" class="form-control-file mb-3" multiple>
-                            <button type="submit" class="btn btn-primary btn-sm">멀파트 업로드 전송</button>
+                            <input type="file" name="files" class="form-control-file mb-3" multiple required>
+                            <button id="multipartUploadButton" type="button" class="btn btn-primary btn-sm">멀파트 업로드 전송</button>
                         </div>
                     </form>
+                    <div id="multipartUploadResult" class="mt-3" role="status" aria-live="polite"></div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- 멀티파트 업로드 파일 목록 -->
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">멀티파트 업로드 파일 목록</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>파일명</th>
+                                    <th>크기 (Bytes)</th>
+                                    <th>업로드일시</th>
+                                    <th>다운로드</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:if="${fileList == null or fileList.isEmpty()}">
+                                    <td colspan="5" class="text-center">업로드된 파일이 없습니다.</td>
+                                </tr>
+                                <tr th:each="file, iterStat : ${fileList}">
+                                    <td th:text="${iterStat.count}">1</td>
+                                    <td th:text="${file.orgnlFileNm}">filename.ext</td>
+                                    <td th:text="${file.fileSz}">0</td>
+                                    <td th:text="${file.regDt}">2026-09-26</td>
+                                    <td>
+                                        <a th:href="@{/system/file/{id}/download(id=${file.fileId})}" class="btn btn-sm btn-primary" target="_blank">다운로드</a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('multipartUploadForm');
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            document.getElementById('multipartUploadButton').click();
+        });
+
+        document.getElementById('multipartUploadButton').addEventListener('click', async function () {
+            const fileInput = form.querySelector('input[name="files"]');        
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('업로드할 파일을 선택해 주세요.');
+                return;
+            }
+
+            const button = document.getElementById('multipartUploadButton');    
+            const result = document.getElementById('multipartUploadResult');    
+            button.disabled = true;
+            result.className = 'mt-3 text-info';
+            result.textContent = '업로드 중입니다...';
+
+            try {
+                const response = await fetch('/system/file/tempFileUpload.json', {     
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                let payload;
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    payload = await response.json();
+                } else {
+                    const text = await response.text();
+                    throw new Error('서버 응답 오류 (HTTP ' + response.status + '): JSON 응답이 아닙니다.');
+                }
+
+                if (!response.ok || payload.success === false) {
+                    throw new Error(payload.message || '서버가 파일을 저장하지 못했습니다.');
+                }
+
+                const uploadedFiles = payload.tempFileList || [];
+                if (uploadedFiles.length === 0) {
+                    throw new Error(payload.message || '저장된 파일이 없습니다. 파일을 선택한 뒤 다시 시도해 주세요.');
+                }
+
+                alert(uploadedFiles.length + '개 파일이 성공적으로 업로드되었습니다.');
+                location.reload();
+            } catch (error) {
+                result.className = 'mt-3 text-danger';
+                result.textContent = error.message;
+            } finally {
+                button.disabled = false;
+            }
+        });
+    </script>
 </div>
 
 </body>

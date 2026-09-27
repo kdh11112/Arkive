@@ -24,6 +24,15 @@ public interface FileService {
 	public List<EgovMap> setUploadFiles(List<MultipartFile> files, String atchFileGrpid, String userId) throws IOException;
 
 	/**
+	 * 업로드 타입별 파일 목록 조회
+	 * @param type 업로드 타입 (MULTIPART, TUS, OTHER)
+	 * @return 파일 정보 Map 목록
+	 */
+	public List<EgovMap> selectAtchFileListByType(String type);
+
+	public void saveTusFileInfo(EgovMap paramMap);
+
+	/**
 	 * 단일 파일 정보 조회 (Select)
 	 * @param fileId 파일 고유 ID
 	 * @return 파일 정보 Map

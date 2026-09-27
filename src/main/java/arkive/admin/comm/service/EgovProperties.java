@@ -79,11 +79,15 @@ public class EgovProperties{
 				try (java.io.InputStream classpathInput = input) {
 					props.load(classpathInput);
 				}
-			} else if(GLOBALS_PROPERTIES_FILE != null && !GLOBALS_PROPERTIES_FILE.equals("")) {
+			} else if(GLOBALS_PROPERTIES_FILE != null && !GLOBALS_PROPERTIES_FILE.equals("")
+					&& new File(GLOBALS_PROPERTIES_FILE.replace("/", File.separator)).isFile()) {
 				fis = new FileInputStream(GLOBALS_PROPERTIES_FILE.replace("/", File.separator));
 				props.load(new java.io.BufferedInputStream(fis));
 			}
 			value = props.getProperty(keyName);
+			if (value == null) {
+				value = EgovProperties.class.getClassLoader().getResourceAsStream("application.properties") == null ? null : loadSpringApplicationProperty(keyName);
+			}
 			if(value != null) {
 				value = value.trim();
 			}
@@ -100,6 +104,14 @@ public class EgovProperties{
 			
 		}
 		return value;
+	}
+
+	private static String loadSpringApplicationProperty(String keyName) throws IOException {
+		Properties props = new Properties();
+		try (java.io.InputStream input = EgovProperties.class.getClassLoader().getResourceAsStream("application.properties")) {
+			props.load(input);
+		}
+		return props.getProperty(keyName);
 	}
 	
 	

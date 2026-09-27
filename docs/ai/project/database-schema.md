@@ -12,26 +12,34 @@
 
 ## 확인된 연결·초기화 설정
 
-- `application.properties`는 `Globals.DbType=hsql_server`를 설정한다. `EgovConfigDatasource.java`는 이 값에서 메모리 HSQLDB 서버를 시작한다.
-- SQL 초기화는 `spring.sql.init.mode=always`이고 `sampledb.sql`, `system.sql`을 읽도록 설정되어 있다.
-- 두 스크립트는 테이블 삭제 후 재생성하는 구문을 포함한다. 해당 설정으로 실행할 때 데이터 초기화 위험이 있으므로 대상 환경을 확인한다.
+- `application.properties`는 `Globals.DbType=hsql_server`를 설정한다. `EgovConfigDatasource.java`는 이 값에서 `./data/ArkiveDB` 파일 HSQLDB 서버를 시작한다.
+- 기본 설정은 `spring.sql.init.mode=never`이며 모든 스키마 SQL을 `db/V숫자__설명.sql`로 관리한다. 빈 DB와 기존 DB 모두 미적용 버전만 시작기가 적용한다.
+- 시작기는 `SCHEMA_MIGRATION` 이력 테이블을 사용해 `db/V숫자__설명.sql` 중 아직 적용되지 않은 파일만 숫자 버전 순서로 트랜잭션 실행하고 기록한다.
+- `db/system.sql`과 `db/sampledb.sql`은 이전 초기화 방식의 파일로 저장소에 남아 있지만, SQL 초기화가 비활성화되어 있고 마이그레이션 로더도 `V숫자__설명.sql`만 읽으므로 자동 실행되지 않는다. 두 파일에는 `DROP TABLE` 구문이 있어 직접 실행하면 데이터가 삭제될 수 있다.
+- 기존 메모리 DB 데이터는 파일 DB로 자동 이관되지 않는다. 데이터가 필요하면 종료 전에 별도 백업/이관이 필요하다.
+- HSQLDB 런타임 파일은 프로젝트 `data/` 아래에 만들어지며 `.lck`는 실행 중 잠금 파일이다. 현재 `.gitignore`에서 `data/`를 제외해 DB 파일은 Git에 올리지 않는다.
 - 운영 DB 제품/버전과 운영 스키마: 미확인.
 
 ## 초기화 스크립트의 테이블
 
 | 테이블 | 스크립트 | 확인된 용도/구조 | 주의 |
 | --- | --- | --- | --- |
-| `menu` | `db/system.sql` | 메뉴 ID, 이름, 경로, 상위 메뉴, 순서, 사용 여부 등 | 초기 메뉴 데이터 포함. 컬럼의 업무 의미와 계층 규칙은 업무 담당 확인 필요 |
-| `menu_author` | `db/system.sql` | `menu`와 동일한 형태의 컬럼 정의가 스크립트에 있음 | 실제 권한 관계로 쓰이는지 미확인 |
-| `user` | `db/system.sql` | 스크립트상 메뉴와 유사한 컬럼 정의 | 실제 사용자 테이블인지, 의도된 구조인지 미확인 |
-| `ATCH_FILE` | `db/system.sql` | 파일 ID, 그룹 ID, 파일명, 경로, 크기, 확장자, 사용 여부, 등록 정보 | 인덱스와 PK 정의 확인. 실제 운영 보존 규칙 미확인 |
-| `SAMPLE` | `db/sampledb.sql` | eGovFrame 예제 데이터 | 샘플 기능 전용 여부를 운영 사용처로 확인 |
-| `IDS` | `db/sampledb.sql` | 예제 ID 생성기 테이블 | 환경별 사용 여부 확인 |
+| `menu` | `db/V2__create_system_tables.sql` | 메뉴 ID, 이름, 경로, 상위 메뉴, 순서, 사용 여부 등 | 기본 메뉴 포함. 기존 메뉴 ID는 보존 |
+| `menu_author` | `db/V2__create_system_tables.sql` | `menu`와 동일한 형태의 컬럼 정의가 스크립트에 있음 | 실제 권한 관계로 쓰이는지 미확인 |
+| `user` | `db/V2__create_system_tables.sql` | 스크립트상 메뉴와 유사한 컬럼 정의 | 실제 사용자 테이블인지, 의도된 구조인지 미확인 |
+| `ATCH_FILE` | `db/V1__create_upload_table.sql` | 파일 ID, 그룹 ID, 원본/물리 파일명, 경로, 크기, 확장자, 사용 여부, 등록 정보 | 마이그레이션 이력으로 1회 적용; 실제 운영 보존 및 백업 규칙 미확인 |
+| `SAMPLE` | `db/V5__create_sample_tables.sql` | eGovFrame CRUD 대상; 현재 마이그레이션이 기본 레코드 6건을 넣음 | V4에서 과거 테이블을 정리한 뒤 V5에서 다시 생성 |
+| `IDS` | `db/V5__create_sample_tables.sql` | eGovFrame 샘플 ID 생성기 테이블 | `SAMPLE`의 다음 ID를 7로 시작하도록 초기화 |
+
+`db/data.sql`은 `DBJob`이 `SCRIPT` 출력 대상으로 지정한 파일명과 같아 보이지만, Job 코드의 `/db/data.sql`은 절대 경로다. 실행 환경에서 생성되는 실제 파일과 classpath의 이 리소스 파일이 동일하다고 보장되지 않는다.
 
 ## 스키마 변경 기록
 
 | 변경 ID/일자 | 객체 | 변경 이유 | DDL/마이그레이션 경로 | 영향 기능/Mapper | 검증·복구 근거 |
 | --- | --- | --- | --- | --- | --- |
-|  |  |  |  |  |  |
+| 2026-09-25 | `ATCH_FILE` | 업로드 스키마를 버전 마이그레이션으로 관리 | `db/V1__create_upload_table.sql` | 멀파트 업로드, `FileMapper` | 임시 HSQLDB에서 마이그레이션 실행 확인; 운영 DB 적용 절차 미확인 |
+| 2026-09-25 | 버전형 스키마 전체 | V1 업로드, V2 시스템 메뉴, V4 과거 샘플 정리, V5 샘플 스키마 복구 | `SCHEMA_MIGRATION`, `db/V*.sql` | 업로드, 메뉴, eGovFrame 샘플 | 임시 HSQLDB에서 이력 4건·재실행 생략 확인; 전체 앱 빌드는 Nice SDK 누락 |
+
+V3는 이전 구성에서 이미 배포됐을 수 있으므로 번호를 재사용하지 않는다. V4는 샘플 제거 변경에서 기존 `SAMPLE`, `IDS` 테이블을 정리하며, V5에서 샘플 기능에 필요한 테이블과 기본 레코드를 다시 준비한다. 이후 신규 SQL은 V6부터 `db/` 바로 아래에 추가한다.
 
 컬럼 의미, 제약조건 및 실제 운영 데이터는 SQL 파일만으로 추정하지 않는다. 변경은 [sql-standard.md](../common/sql-standard.md) 및 [migration.md](migration.md)를 따른다.

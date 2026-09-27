@@ -10,9 +10,22 @@
 
 ## 현재 확인된 상태
 
-- 저장소에서 전용 버전 관리 마이그레이션 도구나 migration 디렉터리는 확인되지 않았다. 모든 배포 환경에 없다고 단정할 수는 없으며 별도 배포 저장소/운영 절차 확인이 필요하다.
-- `application.properties`는 SQL 초기화를 항상 실행하고 `db/sampledb.sql`, `db/system.sql`을 지정한다.
-- 두 SQL 스크립트는 `DROP TABLE` 후 재생성하는 초기화 구문을 포함한다. 이는 데이터 보존형 운영 마이그레이션과 다르며 실행 환경을 확인하지 않은 채 적용하면 안 된다.
+- 기본 DB는 `./data/ArkiveDB` 파일 HSQLDB이며 서버 재시작 뒤에도 파일의 스키마와 데이터를 재사용한다.
+- 애플리케이션 시작 시 `SCHEMA_MIGRATION` 테이블을 준비하고, `db/V숫자__설명.sql`에서 적용되지 않은 버전만 숫자 순으로 실행한 뒤 버전과 파일명을 기록한다.
+- `db/data.sql`은 시작 마이그레이션이 아니다. `DBJob`은 HSQLDB `SCRIPT` 명령에 `/db/data.sql` 절대 경로를 전달하므로, 실행 환경에서 실제로 쓰이는 경로와 저장소 classpath의 `src/main/resources/db/data.sql`은 같다고 보장되지 않는다.
+- 모든 스키마 생성과 초기 데이터 SQL은 `db/` 바로 아래의 버전 파일로 관리한다. 별도 기준 SQL이나 수동 실행 단계는 없다.
+- V1은 `ATCH_FILE`, V2는 시스템 메뉴 테이블과 기본 메뉴를 준비한다. V3는 과거 구성에서 사용했을 수 있어 재사용하지 않으며, V4는 과거 샘플 테이블을 정리하고 V5는 복원된 샘플 기능의 테이블과 기본 데이터를 준비한다. 신규 변경은 V6부터 추가한다.
+- `db/system.sql`, `db/sampledb.sql`은 레거시 초기화 스크립트로 남아 있지만 기본 설정에서 실행되지 않는다. 새 변경에는 사용하지 않는다. 두 파일을 직접 실행하면 `DROP TABLE`로 데이터가 삭제될 수 있다.
+- `./data/ArkiveDB`는 로컬 HSQLDB의 실제 저장 경로다. 런타임 DB 파일은 `.gitignore`로 Git 추적에서 제외하고, `.lck` 파일은 DB 실행 중 잠금 용도로 사용한다.
 - 운영 배포, DDL 승인, 백업 및 롤백 담당자·절차: 미확인.
 
-구체적인 실행 방식, 승인 조건과 보관 기준은 운영 담당자가 확인해 이 문서에 추가한다. 현재 설정에는 데이터 보존형 마이그레이션 도구가 확인되지 않았으므로, 공통 수행 절차 [migration-standard.md](../common/migration-standard.md) 및 SQL 원칙 [sql-standard.md](../common/sql-standard.md)를 함께 따른다.
+## 개발자 사용법
+
+1. `src/main/resources/db/`에 `V6__add_file_description.sql`처럼 다음 버전 SQL 파일을 추가한다.
+2. 파일은 이미 적용한 뒤에는 수정하지 않는다. 수정이 필요하면 더 높은 버전의 새 SQL을 추가한다.
+3. 프로젝트를 시작하면 미적용 버전만 실행된다. 적용 결과는 `SCHEMA_MIGRATION`의 `VERSION`, `SCRIPT_NAME`, `APPLIED_AT`에서 확인한다.
+4. SQL 구문 실패 시 해당 버전은 기록되지 않으며 시작이 실패한다. 원인을 수정한 뒤 SQL을 검증하고 재시작한다.
+
+운영 적용 전에는 대상 DB 제품과 DDL 트랜잭션 동작을 확인한다. 이 간단한 실행기는 오류 시 롤백을 시도하지만 DB별 DDL 자동 커밋 동작까지 보장하지 않는다.
+
+구체적인 운영 승인 조건과 보관 기준은 운영 담당자가 확인해 이 문서에 추가한다. 공통 수행 절차 [migration-standard.md](../common/migration-standard.md) 및 SQL 원칙 [sql-standard.md](../common/sql-standard.md)를 함께 따른다.

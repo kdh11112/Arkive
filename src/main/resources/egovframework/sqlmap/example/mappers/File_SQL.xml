@@ -72,6 +72,35 @@
         SET USE_YN = 'N'
         WHERE FILE_ID = #{fileId}
     </update>
+
+    <!-- 업로드 타입별 파일 목록 조회 -->
+    <select id="selectAtchFileListByType" parameterType="string" resultType="egovMap">
+        SELECT
+            FILE_ID,
+            ATCH_FILE_GRPID,
+            ORGNL_FILE_NM,
+            PHYS_FILE_NM,
+            FILE_PATH,
+            FILE_SZ,
+            FILE_EXT,
+            USE_YN,
+            REG_DT,
+            RGTR_ID
+        FROM ATCH_FILE
+        WHERE USE_YN = 'Y'
+        <choose>
+            <when test="_parameter == 'MULTIPART'">
+                AND (ATCH_FILE_GRPID LIKE 'MP_%' OR (ATCH_FILE_GRPID NOT LIKE 'TUS_%' AND ATCH_FILE_GRPID NOT LIKE 'OTHER_%'))
+            </when>
+            <when test="_parameter == 'TUS'">
+                AND ATCH_FILE_GRPID LIKE 'TUS_%'
+            </when>
+            <when test="_parameter == 'OTHER'">
+                AND ATCH_FILE_GRPID LIKE 'OTHER_%'
+            </when>
+        </choose>
+        ORDER BY REG_DT DESC
+    </select>
     
     	<!-- 파일정보 조회 -->
 	<select id="selectFileInfo" resultType="egovMap">

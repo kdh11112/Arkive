@@ -450,7 +450,7 @@ public class FileServiceImpl extends EgovAbstractServiceImpl implements FileServ
 	}
 
 	@Override
-	public List<EgovMap> setUploadFiles(List<MultipartFile> files, String atchFileGrpid, String userId) throws IOException {
+	public List<EgovMap> setUploadFiles(List<MultipartFile> files, String atchFileGrpid, String userId) throws IOException {	
 		List<EgovMap> uploadedList = new ArrayList<>();
 
 		if (files == null || files.isEmpty()) {
@@ -458,44 +458,83 @@ public class FileServiceImpl extends EgovAbstractServiceImpl implements FileServ
 		}
 
 		String groupNo = atchFileGrpid;
-		if (!StringUtils.hasText(groupNo) || "undefined".equalsIgnoreCase(groupNo) || "null".equalsIgnoreCase(groupNo)) {
+		if (!StringUtils.hasText(groupNo) || "undefined".equalsIgnoreCase(groupNo) || "null".equalsIgnoreCase(groupNo)) {	
 			groupNo = UUID.randomUUID().toString();
 		}
 
-		String dateDir = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM"));
-		File saveDir = new File(getBasePath(), dateDir);
-		if (!saveDir.exists()) {
-			saveDir.mkdirs();
+		String tempPath = FILE_TEMP_PATH;
+		if (!StringUtils.hasText(tempPath) || "99".equals(tempPath.trim())) {
+		        tempPath = System.getProperty("java.io.tmpdir") + File.separator + "arkive" + File.separator + "temp";
+		}
+		File saveDir = new File(tempPath);
+		try {
+		        if (!saveDir.exists()) {
+		                saveDir.mkdirs();
+		        }
+		        if (!saveDir.isDirectory() || !saveDir.canWrite()) {
+		                throw new IOException("Not writable");
+		        }
+		} catch (Exception e) {
+		        tempPath = System.getProperty("java.io.tmpdir") + File.separator + "arkive" + File.separator + "temp";
+		        saveDir = new File(tempPath);
+		        saveDir.mkdirs();
 		}
 
-		for (MultipartFile file : files) {
-			if (file.isEmpty()) {
-				continue;
+		try {
+			for (MultipartFile file : files) {
+				if (file == null || file.isEmpty()) {
+					continue;
+				}
+
+				String orgnlFileNm = FilenameUtils.getName(file.getOriginalFilename());
+				String ext = FilenameUtils.getExtension(orgnlFileNm);
+				String fileId = CommUtil.getFileId();
+				String physFileNm = fileId; // temp 폴더에 타임스탬프 형식 파일명으로 저장
+
+				File destFile = new File(saveDir, physFileNm);
+				file.transferTo(destFile);
+
+				EgovMap paramMap = new EgovMap();
+				paramMap.put("fileId", fileId);
+				paramMap.put("atchFileGrpid", groupNo);
+				paramMap.put("orgnlFileNm", orgnlFileNm);
+				paramMap.put("physFileNm", physFileNm);
+				paramMap.put("filePath", destFile.getAbsolutePath());
+				paramMap.put("fileSz", file.getSize());
+				paramMap.put("fileExt", ext);
+				paramMap.put("userId", StringUtils.hasText(userId) ? userId : "SYSTEM");
+
+				try {
+					fileMapper.setInsertAtchFile(paramMap);
+				} catch (RuntimeException e) {
+					if (destFile.exists() && !destFile.delete()) {
+						logger.warn("Could not remove file after metadata insert failed: {}", destFile.getAbsolutePath());
+					}
+					throw e;
+				}
+				uploadedList.add(paramMap);
 			}
-
-			String orgnlFileNm = file.getOriginalFilename();
-			String ext = FilenameUtils.getExtension(orgnlFileNm);
-			String fileId = UUID.randomUUID().toString();
-			String physFileNm = fileId + (StringUtils.hasText(ext) ? "." + ext : "");
-
-			File destFile = new File(saveDir, physFileNm);
-			file.transferTo(destFile);
-
-			EgovMap paramMap = new EgovMap();
-			paramMap.put("fileId", fileId);
-			paramMap.put("atchFileGrpid", groupNo);
-			paramMap.put("orgnlFileNm", orgnlFileNm);
-			paramMap.put("physFileNm", physFileNm);
-			paramMap.put("filePath", destFile.getAbsolutePath());
-			paramMap.put("fileSz", file.getSize());
-			paramMap.put("fileExt", ext);
-			paramMap.put("userId", StringUtils.hasText(userId) ? userId : "SYSTEM");
-
-			fileMapper.setInsertAtchFile(paramMap);
-			uploadedList.add(paramMap);
+		} catch (IOException | RuntimeException e) {
+			for (EgovMap uploaded : uploadedList) {
+				File savedFile = new File(String.valueOf(uploaded.get("filePath")));
+				if (savedFile.exists() && !savedFile.delete()) {
+					logger.warn("Could not roll back uploaded file: {}", savedFile.getAbsolutePath());
+				}
+			}
+			throw e;
 		}
 
 		return uploadedList;
+	}
+
+	@Override
+	public List<EgovMap> selectAtchFileListByType(String type) {
+	        return fileMapper.selectAtchFileListByType(type);
+	}
+
+	@Override
+	public void saveTusFileInfo(EgovMap paramMap) {
+	        fileMapper.setInsertAtchFile(paramMap);
 	}
 
 	@Override
