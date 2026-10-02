@@ -35,4 +35,21 @@ public class QuartzConfig {
             .withSchedule(CronScheduleBuilder.cronSchedule("0 0/10 * * * ?")) // 10분마다 실행
             .build();
     }
+
+    @Bean
+    public JobDetail tempCleanupJobDetail() {
+        return JobBuilder.newJob(TempFileCleanupJob.class)
+            .withIdentity("TempCleanupJob")
+            .storeDurably()
+            .build();
+    }
+
+    @Bean
+    public Trigger tempCleanupTrigger() {
+        return TriggerBuilder.newTrigger()
+            .forJob(tempCleanupJobDetail())
+            .withIdentity("TempCleanupTrigger")
+            .withSchedule(CronScheduleBuilder.cronSchedule("0 0 3 * * ?")) // 매일 03시 실행
+            .build();
+    }
 }

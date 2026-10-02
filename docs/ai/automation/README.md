@@ -1,5 +1,7 @@
 # 3차 AI 자동화 현황
 
+> 이식 구분: 선택. 이식용 아카이브에 필수가 아니다. 방법은 `common/verification-standard.md`를 복붙하고, 실행 도구는 대상 프로젝트에서 필요할 때 만든다.
+
 이 폴더는 자동 검증·변경 통제 도구의 실제 구현과 프로젝트별 설정을 추적한다. 현재 공통 방법은 [verification-standard.md](../common/verification-standard.md), 테스트 방법은 [test-standard.md](../common/test-standard.md)에 정의되어 있다. 아래 방법 문서가 있다는 사실은 실행 가능한 도구가 구현되었다는 뜻이 아니다.
 
 ## 구현 상태

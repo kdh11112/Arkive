@@ -23,7 +23,6 @@
 		
 		<typeAlias alias="map" type="java.util.Map"/>
 		<!-- 아직 없음 추가해야함
-		<typeAlias alias="FileUploadVO" type="Arkive.com.comm.service.FileUploadVO"/>
 		<typeAlias alias="LoginVO" type="Arkive.com.login.service.LoginVO"/> 
 		-->
 		

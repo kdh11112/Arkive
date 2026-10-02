@@ -1,4 +1,6 @@
-# Arkive 프로젝트 개요
+# 프로젝트 개요 (가이드형 템플릿)
+
+> 이식 구분: 가이드형 템플릿. 이 파일을 새 프로젝트에 복사한 뒤 양식만 채운다. 아래 Arkive 예시는 참고용이다.
 
 <!--
 문서 상태: 부분 미완성
@@ -9,8 +11,32 @@
 -->
 
 > 확인일: 2026-09-25. 아래 내용은 저장소 코드와 설정에서 확인한 현황이다. 운영 환경 및 업무 목적은 별도 근거가 확인될 때 갱신한다.
+> Arkive는 다른 프로젝트에 기능 이식을 편하게 만들기 위해 만든 아카이브/레퍼런스 프로젝트다.
+> 타 전자정부프레임워크·Spring·Spring Boot 프로젝트로 복붙 이식을 전제로 하며, 프로젝트명·패키지·테이블명·파일 위치·DB 제품(Oracle/PostgreSQL 등)은 이식 대상에 맞게 최소한으로 바꾸는 것을 허용한다.
 
-## 확인된 기술 및 실행 구성
+## 작성 가이드 (새 프로젝트에서 이렇게 채우기)
+
+1. `pom.xml`에서 빌드·Java버전·프레임워크를 확인해 양식 1~4행에 적는다.
+2. `application.properties`·`EgovConfigDatasource.java`에서 포트·DB종류·DB경로를 확인해 5~6행에 적는다.
+3. 마이그레이션 방식(`db/` 규칙)은 7행에 적는다. 운영DB는 추측하지 말고 미확인으로 둔다.
+4. 비밀값(SMS키·JWT·private.key 등)은 절대 복사하지 않는다.
+
+## 양식 (복사해서 채우기)
+
+| 구분 | 내용 | 근거 (파일·담당자·확인일) |
+| --- | --- | --- |
+| 빌드 | 예: Maven, artifact `group:artifact:version` | `pom.xml` |
+| Java / 프레임워크 | 예: Java 17, eGovFrame Boot 5.0.0 | `pom.xml` |
+| 웹 화면 | 예: Thymeleaf, 템플릿 경로 | `pom.xml`, `application.properties` |
+| 데이터 접근 | 예: MyBatis, Mapper XML 경로 | `EgovConfigMapper.java`, `sqlmap/` |
+| 기본 포트 | 예: 8080 | `application.properties` |
+| 현재 설정 DB | 예: `Globals.DbType=OOO`, 경로·포트 | `application.properties`, `EgovConfigDatasource.java` |
+| SQL 마이그레이션 | 예: 시작 시 미적용 버전만 적용 | `EgovConfigDatasource`, `db/` |
+| 운영 배포 / 실서비스 DB | 미확인 (추측 금지) | 운영 설정 근거 미확인 |
+
+## 작성 예시 (Arkive) — 아래는 참고용, 새 프로젝트에서는 지우고 다시 채운다.
+
+## 확인된 기술 및 실행 구성 (Arkive 예시)
 
 | 구분 | 확인된 내용 | 근거 |
 | --- | --- | --- |

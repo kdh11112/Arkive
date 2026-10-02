@@ -1,4 +1,23 @@
-# Arkive 아키텍처 현황
+# 아키텍처 (가이드형 템플릿)
+
+> 이식 구분: 가이드형 템플릿. 새 프로젝트에 복사한 뒤 양식만 채운다. 아래 Arkive 예시는 참고용이다.
+
+## 작성 가이드 (새 프로젝트에서 이렇게 채우기)
+
+1. 진입 클래스(BootApplication), 패키지 경계(업무·공통·설정)를 적는다.
+2. 대표 1개 기능의 `Controller → Service → Mapper → XML` 흐름을 추적해 적는다.
+3. 화면 경로(Thymeleaf/JSP), Mapper XML 경로, 설정 클래스 위치를 적는다.
+4. 예약작업·외부연계가 있으면 주기·경로·소유자와 함께 적는다. 없으면 미확인으로 둔다.
+
+## 양식 (복사해서 채우기)
+
+| 항목 | 내용 | 근거 (파일·확인일) |
+| --- | --- | --- |
+| 진입 클래스 | 예: `com.example.BootApplication` | 소스 경로 |
+| 패키지 경계 | 예: 업무 `biz.*`, 공통 `com.*` | 소스 경로 |
+| 대표 호출 흐름 | 예: `XController → XService → XMapper → X_SQL.xml` | 각 파일 경로 |
+| 화면·Mapper 위치 | 예: `templates/...`, `sqlmap/.../mappers/` | 경로 |
+| 예약·외부연계 | 예: 10분 Trigger, 외부 API명 | 설정·명세 |
 
 <!--
 문서 상태: 부분 미완성
@@ -10,7 +29,9 @@
 
 > 저장소 코드에서 확인한 구현 구조다. 목표 아키텍처나 전체 운영 구성을 의미하지 않는다.
 
-## 애플리케이션 구성
+## 작성 예시 (Arkive) — 아래는 참고용
+
+## 애플리케이션 구성 (Arkive 예시)
 
 - 진입 클래스: `egovframework.example.EgovBootApplication`
 - Spring 기반 MVC 및 Thymeleaf 템플릿 렌더링을 사용한다.
@@ -35,5 +56,10 @@
 - 외부 시스템 연계별 호출 흐름, 소유자, 타임아웃 및 오류 처리 계약
 - 프로파일별 구성과 운영 배포 토폴로지
 - 전체 모듈 경계 및 기능 소유 조직
+
+## 타 프로젝트로 이식할 때 복사 범위
+
+- 기능 단위 복사: 화면(Thymeleaf+JS) → Controller → Service/Impl → Mapper 인터페이스 → Mapper XML → `db/versions` SQL → `application.properties`·Globals 키 → `pom.xml` 의존성 순서로 가져간다.
+- 프로젝트명·패키지(`arkive.*`)·테이블명·파일 경로·DB 문법은 대상 프로젝트에 맞게 최소한만 바꾼다.
 
 수정 전 실제 관련 호출 흐름과 설정을 검색한다. 이 요약만으로 보안 적용이나 기능 소유권을 단정하지 않는다.

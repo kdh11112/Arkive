@@ -8,48 +8,11 @@ import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 @EgovMapper("fileMapper")
 public interface FileMapper {
 
-public List<EgovMap> getFileList(EgovMap egovMap);
-	
 	/**
 	 * 업로드 타입별 파일 목록 조회
 	 */
 	public List<EgovMap> selectAtchFileListByType(String type);
 
-	/**
-	 * 파일 상세 정보 조회
-	 * @param pEgovMap 
-	 * @return 	: 파일 상세 정보
-	 * @throws
-	*/
-	public EgovMap selectFileInfo(EgovMap param);
-	
-	public EgovMap selectFileGroupInfo(EgovMap param);
-
-	public List<EgovMap> selectFileZipInfo(EgovMap egovMap);
-
-	public void insertAtchFile(EgovMap egovMap);
-
-	public EgovMap selectVdoFileInfo(EgovMap egovMap);
-
-	/**
-	 * 파일을 ZIP폴더에 처리한다.
-	 *
-	 * @param request
-	 * @return 파일리스트
-	 * @
-	 */
-	public EgovMap selectActPlnFileInfo(EgovMap egovMap);
-	
-	public void deleteAtchFile(EgovMap egovMap);
-
-	public int getDeleteFileId(String fileId);
-	
-	public int getDeleteFileGroupId(String fileId);
-	
-	public String getOriginalFileName(String fileId);
-	
-	public int setUpdateOthbcAt(EgovMap param);
-	
 	/**
 	 * 첨부파일 등록 (Insert)
 	 */
@@ -66,7 +29,7 @@ public List<EgovMap> getFileList(EgovMap egovMap);
 	public List<EgovMap> getFileInfoList(String atchFileGrpid);
 
 	/**
-	 * 파일 삭제 (Update / Soft Delete)
+	 * 파일 삭제 (Delete / Hard Delete)
 	 */
 	public void setDeleteAtchFile(String fileId);
 

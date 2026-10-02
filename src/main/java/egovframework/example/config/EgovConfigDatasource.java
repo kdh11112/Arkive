@@ -134,7 +134,7 @@ public class EgovConfigDatasource implements ApplicationRunner {
         // V숫자__설명.sql 파일을 숫자 순으로 찾아 개발 실행과 패키징된 실행 모두에서 읽습니다.
         java.util.List<MigrationScript> scripts = new java.util.ArrayList<>();
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(getClass().getClassLoader());
-        for (Resource resource : resolver.getResources("classpath*:db/V*__*.sql")) {
+        for (Resource resource : resolver.getResources("classpath*:db/versions/V*__*.sql")) {
             String filename = resource.getFilename();
             if (filename != null && filename.matches("V[0-9]+__.+\\.sql")) {
                 scripts.add(new MigrationScript(filename, () -> {

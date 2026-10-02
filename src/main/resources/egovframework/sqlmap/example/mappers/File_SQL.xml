@@ -12,7 +12,6 @@
             FILE_PATH,
             FILE_SZ,
             FILE_EXT,
-            USE_YN,
             REG_DT,
             RGTR_ID
         ) VALUES (
@@ -23,7 +22,6 @@
             #{filePath},
             #{fileSz},
             #{fileExt},
-            'Y',
             CURRENT_TIMESTAMP,
             #{userId}
         )
@@ -39,12 +37,10 @@
             FILE_PATH,
             FILE_SZ,
             FILE_EXT,
-            USE_YN,
             REG_DT,
             RGTR_ID
         FROM ATCH_FILE
         WHERE FILE_ID = #{fileId}
-          AND USE_YN = 'Y'
     </select>
 
     <!-- 파일 그룹 목록 조회 (Select) -->
@@ -57,21 +53,18 @@
             FILE_PATH,
             FILE_SZ,
             FILE_EXT,
-            USE_YN,
             REG_DT,
             RGTR_ID
         FROM ATCH_FILE
         WHERE ATCH_FILE_GRPID = #{atchFileGrpid}
-          AND USE_YN = 'Y'
         ORDER BY REG_DT ASC
     </select>
 
-    <!-- 파일 삭제 (Update / Soft Delete) -->
-    <update id="setDeleteAtchFile" parameterType="string">
-        UPDATE ATCH_FILE
-        SET USE_YN = 'N'
+    <!-- 파일 삭제 (Delete / Hard Delete). 물리 파일과 함께 DB 행도 제거한다. -->
+    <delete id="setDeleteAtchFile" parameterType="string">
+        DELETE FROM ATCH_FILE
         WHERE FILE_ID = #{fileId}
-    </update>
+    </delete>
 
     <!-- 업로드 타입별 파일 목록 조회 -->
     <select id="selectAtchFileListByType" parameterType="string" resultType="egovMap">
@@ -83,153 +76,22 @@
             FILE_PATH,
             FILE_SZ,
             FILE_EXT,
-            USE_YN,
             REG_DT,
             RGTR_ID
         FROM ATCH_FILE
-        WHERE USE_YN = 'Y'
+        WHERE 1 = 1
         <choose>
             <when test="_parameter == 'MULTIPART'">
-                AND (ATCH_FILE_GRPID LIKE 'MP_%' OR (ATCH_FILE_GRPID NOT LIKE 'TUS_%' AND ATCH_FILE_GRPID NOT LIKE 'OTHER_%'))
+                AND (ATCH_FILE_GRPID LIKE 'MP_%' OR (ATCH_FILE_GRPID NOT LIKE 'TUS_%' AND ATCH_FILE_GRPID NOT LIKE 'DROPZONE_%'))
             </when>
             <when test="_parameter == 'TUS'">
                 AND ATCH_FILE_GRPID LIKE 'TUS_%'
             </when>
-            <when test="_parameter == 'OTHER'">
-                AND ATCH_FILE_GRPID LIKE 'OTHER_%'
+            <when test="_parameter == 'DROPZONE'">
+                AND ATCH_FILE_GRPID LIKE 'DROPZONE_%'
             </when>
         </choose>
         ORDER BY REG_DT DESC
     </select>
-    
-    	<!-- 파일정보 조회 -->
-	<select id="selectFileInfo" resultType="egovMap">
-		SELECT	FILE_GROUP_ID,
-				CONCAT(FILE_ID, '.', FILE_KND) AS FILE_ID,
-				FILE_NM,
-				FILE_MG,
-				FILE_KND,
-				FILE_COURS
-		FROM "GTEMS".TS_ATCHMNFL
-		WHERE 1=1
-		AND FILE_ID = #{ fileId }
-    </select>
-
-	<!-- 파일 단건 조회(게시판) -->
-	<select id="selectFileGroupInfo" resultType="egovMap">
-		SELECT
-			FILE_GROUP_ID
-			, CONCAT(FILE_ID, '.', FILE_KND) AS FILE_ID
-			, FILE_NM
-			, FILE_MG
-			, FILE_KND
-			, FILE_COURS
-		FROM TS_ATCHMNFL
-		WHERE 1=1
-		AND FILE_GROUP_ID = #{ fileId }
-    </select>
-	
-	<!-- 파일리스트 조회 -->
-	<select id="getFileList" resultType="egovMap">
-		SELECT	FILE_GROUP_ID,
-				FILE_ID,
-				FILE_NM,
-				FILE_MG,
-				FILE_KND,
-				FILE_COURS,
-				file_ordr
-		FROM "GTEMS".TS_ATCHMNFL
-		WHERE 1=1
-		AND FILE_GROUP_ID = #{ groupId }
-		<if test="jdgmn != null and jdgmn != ''">
-			AND OTHBC_AT = 'Y'
-		</if>
-		ORDER BY file_ordr asc
-    </select>
-    
-    <insert id="insertAtchFile">		
-		INSERT INTO "GTEMS".TS_ATCHMNFL
-		(
-			FILE_GROUP_ID
-			, FILE_ID
-			, FILE_NM
-			, FILE_ORDR
-			, FILE_COURS
-			, FILE_MG
-			, FILE_KND
-			, REGIST_DT
-			, REGISTER
-			, OTHBC_AT
-		)
-		VALUES
-		(
-			#{ fileGroupId }
-			, #{ fileId }
-			, #{ fileNm }
-			, #{ fileOrdr }::NUMERIC
-			, #{ fileCours }
-			, #{ fileMg }::NUMERIC
-			, #{ fileKnd }
-			, NOW()
-			, #{ userId }
-			, #{ othbcAt }
-		)
-	</insert>
-	
-	<delete id="deleteAtchFile">
-		DELETE 	
-		FROM "GTEMS".TS_ATCHMNFL
-		WHERE 1=1
-		AND FILE_GROUP_ID = #{ fileGroupId }
-	</delete>
-	
-	<delete id="getDeleteFileId">
-		DELETE 	
-		FROM "GTEMS".TS_ATCHMNFL
-		WHERE 1=1
-		AND FILE_ID = #{ fileId }
-	</delete>
-	
-	<delete id="getDeleteFileGroupId">
-		DELETE 	
-		FROM "GTEMS".TS_ATCHMNFL
-		WHERE 1=1
-		AND FILE_GROUP_ID = #{ groupId }
-	</delete>
-	
-	<!-- ? -->
-	<select id="selectFileZipInfo" resultType="egovMap">
-		SELECT
-			FILE_GROUP_ID
-			, FILE_ID	AS fileNm 
-			, FILE_NM   	AS fileId
-			, FILE_ORDR
-			, FILE_COURS  AS flpth
-			, FILE_MG
-			, file_knd
-			, 'R' AS CRUD
-			, DATE_FORMAT(REGIST_DT, '%Y-%m-%d') AS REGIST_DT
-  	  FROM	"GTEMS".TS_ATCHMNFL
-  	  WHERE FILE_GROUP_ID = #{ fileId }
-    </select>
-    
-    <!-- 파일 이름 조회 -->
-    <select id="getOriginalFileName" parameterType="string" resultType="string">
-		SELECT
-			FILE_NM
-		FROM TS_ATCHMNFL
-		WHERE 1=1
-		AND FILE_ID = #{ fileId }
-	</select>
-
-	<!-- 공개여부 수정 -->
-    <update id="setUpdateOthbcAt">
-		UPDATE TS_ATCHMNFL
-		SET
-			OTHBC_AT  = #{ othbcAt }
-			, UPDT_DT = NOW()
-			, UPDUSR = #{ userId }
-		WHERE FILE_ID = #{ fileId }
-	</update>
 
 </mapper>

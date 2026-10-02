@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8">
+    <title>파일 업로드</title>
+    <link th:href="@{/vendor/dropzone/dropzone.min.css}" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 18px;
+            font-family: sans-serif;
+        }
+        .popup-title {
+            margin: 0 0 12px;
+            padding-bottom: 10px;
+            font-size: 20px;
+            font-weight: 600;
+            color: #000;
+            border-bottom: 2px solid #222;
+        }
+        #my-dropzone {
+            min-height: 150px;
+            padding: 18px;
+            background: #fff;
+        }
+        .dz-preview {
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .progress-container {
+            display: none;
+            position: relative;
+            width: 100%;
+            height: 24px;
+            margin: 8px 0;
+        }
+        .dz-progressBar {
+            width: 100%;
+            height: 100%;
+        }
+        .progress-percentage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .popup-buttons {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+        }
+        .popup-buttons button {
+            min-width: 96px;
+            height: 35px;
+            margin: 0 4px;
+            padding: 0 20px;
+            font-size: 15px;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .popup-buttons button:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+        #upload {
+            background-color: #0e3db1;
+        }
+        #upload:hover:not(:disabled) {
+            background-color: #072a81;
+        }
+        #save {
+            background-color: #ff5733;
+        }
+        #save:hover:not(:disabled) {
+            background-color: #e74c3c;
+        }
+        #allClear {
+            background-color: #a6a6a6;
+        }
+        #allClear:hover:not(:disabled) {
+            background-color: #959595;
+        }
+        .capacity-notice {
+            margin-top: 18px;
+            color: red;
+        }
+        .pop_cont {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.4);
+            z-index: 5000;
+        }
+        .pop_content {
+            padding: 8px 0 16px;
+            color: #d00;
+            font-size: 15px;
+        }
+        .popup_ins {
+            position: relative;
+            min-width: 320px;
+            max-width: 90%;
+            padding: 24px 28px 20px;
+            background-color: #fff;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .sp_close {
+            display: inline-block;
+            min-width: 96px;
+            height: 35px;
+            line-height: 35px;
+            padding: 0 20px;
+            font-size: 15px;
+            color: #fff;
+            background-color: #0e3db1;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+        .sp_close:hover {
+            background-color: #072a81;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="popup-title">파일 업로드</h1>
+
+    <input type="hidden" id="maxFilesNum" th:value="${maxFilesNum}">
+    <input type="hidden" id="maxFileSizeMb" th:value="${maxFileSizeMb}">
+    <input type="hidden" id="uploadExtensions" th:value="${uploadExtensions}">
+    <form id="uploadForm" method="post" enctype="multipart/form-data">
+        <input id="type" type="hidden" th:value="${type}">
+        <input id="existFileId" name="existFileId" type="hidden" th:value="${existFileId}">
+    </form>
+
+    <div id="content" class="dz-content">
+        <div class="progress-container">
+            <progress class="dz-progressBar" max="100" value="0"></progress>
+            <span class="progress-percentage">0%</span>
+        </div>
+        <div id="my-dropzone" class="dropzone">
+            <div class="dz-message">여기에 파일을 드래그 해주세요.</div>
+        </div>
+        <div id="preview-template" class="dz-preview dz-file-preview" style="display: none;">
+            <div class="dz-details">
+                <div class="dz-image"><img data-dz-thumbnail alt=""></div>
+                <div class="dz-filename"><span data-dz-name></span></div>
+                <div class="dz-size" data-dz-size></div>
+                <div style="text-align: center;">
+                    <button type="button" name="clear" style="height: 25px;" data-dz-remove>취소</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="capacity-notice" th:text="'※ 첨부파일 업로드 용량은 ' + ${maxFileSizeMb} + 'MB 이하 입니다.'">※ 첨부파일 업로드 용량은 50MB 이하 입니다.</div>
+
+    <div class="popup-buttons">
+        <button type="button" id="upload">파일 찾기</button>
+        <button type="button" id="save" disabled="disabled">확인</button>
+        <button type="button" id="allClear" disabled="disabled">전체 취소</button>
+    </div>
+
+    <div class="pop_cont">
+        <div class="popup_ins">
+            <div class="pop_content">
+                <span th:text="'※ 첨부파일 업로드 용량은 ' + ${maxFileSizeMb} + 'MB 이하 입니다.'">※ 첨부파일 업로드 용량은 50MB 이하 입니다.</span>
+            </div>
+            <a href="#" class="sp_close">닫기</a>
+        </div>
+    </div>
+
+    <script th:src="@{/vendor/jquery/jquery.min.js}"></script>
+    <script th:src="@{/vendor/dropzone/dropzone.min.js}"></script>
+    <script>
+        Dropzone.autoDiscover = false;
+
+        var parsedMaxFilesNum = parseInt($('#maxFilesNum').val(), 10);
+        var maxFilesNum = isNaN(parsedMaxFilesNum) ? 20 : parsedMaxFilesNum;
+        // 사이즈 상한은 서버 모델(Globals.fileUpload.*) 기준이다
+        var parsedMaxFilesize = parseFloat($('#maxFileSizeMb').val());
+        var maxFilesize = isNaN(parsedMaxFilesize) ? 50 : parsedMaxFilesize;
+        var vnFileLength = 0;
+        var myDropzone = null;
+
+        // 서버 화이트리스트(Globals.fileUpload.Extensions)를 기본 허용 확장자로 쓴다
+        var acceptedType = $('#uploadExtensions').val()
+            || ".gif,.jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.hwp,.hwpx,.txt";
+
+        if ($('#type').val() == 'excel') {
+            acceptedType = ".xlsx,.xls";
+        }
+
+        if ($('#type').val() == 'img') {
+            acceptedType = ".jpeg,.jpg,.png,.JPEG,.JPG,.PNG";
+        }
+
+        // 사이즈 제한은 위 maxFilesize(서버 모델값)를 쓴다
+
+        $(".sp_close").on("click", function(e) {
+            e.preventDefault();
+            $(".pop_cont").hide();
+        });
+
+        // 오버레이 바깥 클릭과 ESC로도 용량 안내를 닫는다
+        $(".pop_cont").on("click", function(e) {
+            if (e.target === this) {
+                $(this).hide();
+            }
+        });
+        $(document).on("keydown", function(e) {
+            if (e.key === "Escape") {
+                $(".pop_cont").hide();
+            }
+        });
+
+        // 부모창 목록에 temp 파일 정보를 전달한다.
+        $("#save").on('click', function() {
+            if (!myDropzone || myDropzone.getQueuedFiles().length === 0) {
+                alert('업로드할 파일을 선택해 주세요.');
+                return;
+            }
+
+            var form = $('#uploadForm')[0];
+            var formData = new FormData(form);
+            myDropzone.getQueuedFiles().forEach(function(queuedFile) {
+                formData.append('files', queuedFile);
+            });
+
+            var globalProgressBar = document.querySelector(".dz-progressBar");
+            var globalPercent = document.querySelector(".progress-percentage");
+
+            $.ajax({
+                type: "POST",
+                url: "/system/file/tempFileUpload.json",
+                data: formData,
+                enctype: 'multipart/form-data',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                cache: false,
+                xhr: function() {
+                    var xhr = $.ajaxSettings.xhr();
+                    if (xhr.upload) {
+                        xhr.upload.onprogress = function(e) {
+                            if (e.lengthComputable) {
+                                $(".progress-container").show();
+                                var percentComplete = parseInt((e.loaded / e.total) * 100, 10);
+                                globalPercent.textContent = percentComplete + "%";
+                                globalProgressBar.value = percentComplete;
+                            }
+                        };
+                    }
+                    return xhr;
+                },
+                success: function(data) {
+                    var uploadedFiles = (data && data.tempFileList) || [];
+                    var callbackFiles = uploadedFiles.map(function(uploadedFile) {
+                        return {
+                            fileId: uploadedFile.fileId,
+                            fileName: uploadedFile.orgnlFileNm,
+                            fileSize: uploadedFile.fileSz
+                        };
+                    });
+
+                    if (!data || data.success === false || callbackFiles.length === 0) {
+                        alert((data && data.message) || "파일업로드에 실패하였습니다.\n관리자에게 문의하세요.");
+                        return;
+                    }
+
+                    if (opener && typeof opener.callBackFileUpload === 'function') {
+                        opener.callBackFileUpload(JSON.stringify(callbackFiles));
+                        window.close();
+                    } else {
+                        alert('부모 창의 callBackFileUpload 함수를 찾을 수 없습니다.');
+                    }
+                },
+                error: function(err) {
+                    if (err.status === 0) {
+                        alert('연결할 수 없습니다.\n네트워크를 확인해 주세요');
+                    } else {
+                        alert("파일업로드에 실패하였습니다.\n관리자에게 문의하세요.");
+                    }
+                }
+            });
+        });
+
+        if (typeof Dropzone === 'undefined') {
+            $(".dz-message").text('Dropzone 라이브러리를 불러오지 못했습니다. 네트워크 연결을 확인하세요.');
+            $("#upload").prop("disabled", true);
+        } else {
+            myDropzone = new Dropzone("#my-dropzone", {
+                url: "/system/file/tempFileUpload.json",
+                autoProcessQueue: false,
+                paramName: "files",
+                uploadMultiple: true,
+                method: "post",
+                maxFilesize: maxFilesize,
+                maxFiles: maxFilesNum,
+                acceptedFiles: acceptedType,
+                previewTemplate: $('#preview-template').html(),
+                thumbnailWidth: 100,
+                thumbnailHeight: 100,
+                clickable: "#upload",
+                accept: function(file, done) {
+                    if (myDropzone.files.length > maxFilesNum) {
+                        alert("파일 개수를 초과했습니다. 다시 선택해 주세요.");
+                        myDropzone.removeAllFiles(true);
+                        done("파일 개수를 초과했습니다.");
+                        return;
+                    }
+                    if (formatBytes(file.size) > myDropzone.options.maxFilesize) {
+                        $('.pop_cont').css('display', 'flex');
+                        myDropzone.removeAllFiles(true);
+                        vnFileLength = 0;
+                        done("파일 용량을 초과했습니다.");
+                        return;
+                    }
+                    done();
+                },
+                maxfilesexceeded: function(file) {
+                    alert("파일 개수를 초과했습니다. 다시 선택해 주세요.");
+                    myDropzone.removeAllFiles(true);
+                },
+                init: function() {
+                    var allClearButton = document.querySelector("#allClear");
+
+                    allClearButton.addEventListener("click", function() {
+                        if (confirm("정말 전체 항목을 삭제하겠습니까?")) {
+                            myDropzone.removeAllFiles(true);
+                        }
+                    });
+
+                    // 파일 추가되면 저장, 전체 취소 버튼 활성화
+                    this.on("addedfile", function(file) {
+                        vnFileLength++;
+                        // maxFilesNum은 고정값이다. 초과해도 0으로 바꾸지 않는다.
+                        // 0으로 바꾸면 이후 모든 추가가 초과로 판단돼 확인 버튼이 영원히 안 열린다.
+                        if (vnFileLength > maxFilesNum) {
+                            myDropzone.removeAllFiles(true);
+                            vnFileLength = 0;
+                            alert("파일 개수를 초과했습니다. 다시 선택해 주세요.");
+                            return;
+                        }
+
+                        if (formatBytes(file.size) > myDropzone.options.maxFilesize) {
+                            $('.pop_cont').css('display', 'flex');
+                            myDropzone.removeAllFiles(true);
+                            vnFileLength = 0;
+                            return;
+                        }
+
+                        activateBtn();
+                    });
+
+                    // 파일 취소하면
+                    this.on("removedfile", function(file) {
+                        vnFileLength = Math.max(0, vnFileLength - 1);
+                        activateBtn();
+                    });
+                },
+                error: function(file, response) {
+                    myDropzone.removeAllFiles(true);
+                }
+            });
+        }
+
+        // byte to mb
+        function formatBytes(fileSize) {
+            var fixed = 2;
+            fileSize = fileSize / (1024 * 1024);
+            return fileSize.toFixed(fixed);
+        }
+
+        // 버튼 활성화, 비활성화
+        // addedfile 시점에는 아직 ADDED 상태라 getQueuedFiles()는 항상 0이다.
+        // GTEMS와 동일하게 getAddedFiles()로 판단한다.
+        function activateBtn() {
+            if (!myDropzone || myDropzone.getAddedFiles().length === 0) {
+                $("#save").attr("disabled", true);
+                $("#allClear").attr("disabled", true);
+                return;
+            }
+            $("#save").removeAttr("disabled");
+            $("#allClear").removeAttr("disabled");
+        }
+
+        $("#upload").on("click", function(event) {
+            if (!myDropzone) {
+                return;
+            }
+            if (myDropzone.getQueuedFiles().length >= maxFilesNum) {
+                event.preventDefault();
+                alert("최대 파일 개수 이상입니다. 먼저 파일을 취소해주세요.");
+                $(".dz-hidden-input").prop("disabled", true);
+                return;
+            }
+            $(".dz-hidden-input").prop("disabled", false);
+        });
+    </script>
+</body>
+</html>

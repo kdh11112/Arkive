@@ -4,40 +4,34 @@
       layout:decorate="~{layout/layout}">
 <head>
     <meta charset="utf-8">
-    <title>멀티파트 업로드</title>
+    <title>드롭존 업로드</title>
 </head>
 <body>
 
 <div layout:fragment="content" class="container-fluid">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">멀티파트 업로드</h1>
+        <h1 class="h3 mb-0 text-gray-800">드롭존 업로드</h1>
     </div>
 
-    <div class="row">
-        <div class="col-lg-12 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">일반 멀티파트 파일 업로드</h6>
+    <form id="detailForm" name="detailForm" method="post">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">파일 첨부 등록</h6>
+            </div>
+            <div class="card-body">
+                <div id="addFileList" class="text-primary font-weight-bold" style="margin-bottom: 10px;"></div>
+                <button type="button" class="btn btn-primary btn-sm mb-2" id="fileBtn" onclick="addDropzoneFile();">파일첨부</button>
+                <div class="small text-muted">파일을 선택하고 업로드를 마치면 temp 폴더에 바로 저장됩니다.</div>
+                <div class="mt-3">
+                    <button type="button" class="btn btn-success btn-sm" id="saveButton" onclick="saveDropzoneFiles();" disabled>드롭존 저장</button>
+                    <button type="button" class="btn btn-secondary btn-sm" id="allClearButton" onclick="clearDropzoneFiles();" disabled>전체 취소</button>
                 </div>
-                <div class="card-body">
-                    <form id="multipartUploadForm" enctype="multipart/form-data">
-                        <div class="form-group mb-2">
-                            <input type="file" id="multipartFileInput" name="files" class="form-control-file mb-2" multiple required>
-                            <input type="hidden" id="maxFileSizeMb" th:value="${maxFileSizeMb}">
-                            <div class="small text-muted">파일을 선택하고 열기를 누르면 temp 폴더에 바로 저장됩니다.</div>
-                            <div class="small text-danger" th:text="'※ 첨부파일 업로드 용량은 ' + ${maxFileSizeMb} + 'MB 이하 입니다.'">※ 첨부파일 업로드 용량은 50MB 이하 입니다.</div>
-                            <ul id="multipartStagedList" class="list-unstyled small mt-2 mb-0" aria-live="polite"></ul>
-                        </div>
-                    </form>
-                    <div>
-                        <button type="button" id="multipartSaveButton" class="btn btn-success btn-sm" disabled>저장</button>
-                        <button type="button" id="multipartClearButton" class="btn btn-secondary btn-sm" disabled>전체 취소</button>
-                    </div>
-                    <div id="multipartUploadResult" class="mt-3" role="status" aria-live="polite"></div>
-                </div>
+                <div id="dropzoneResult" class="mt-3" role="status" aria-live="polite"></div>
+                <input type="hidden" id="atchFileGrpid" name="atchFileGrpid" value="">
+                <input type="hidden" id="dropzoneFileData" name="dropzoneFileData" value="">
             </div>
         </div>
-    </div>
+    </form>
 
     <!-- Arkive 최종 경로에 저장된 파일 목록 -->
     <div class="row">
@@ -84,41 +78,58 @@
     </div>
 
     <script>
-        const fileInput = document.getElementById('multipartFileInput');
-        const saveButton = document.getElementById('multipartSaveButton');
-        const clearButton = document.getElementById('multipartClearButton');
-        const resultBox = document.getElementById('multipartUploadResult');
-        const stagedList = document.getElementById('multipartStagedList');
-        let isUploading = false;
+        const saveButton = document.getElementById('saveButton');
+        const allClearButton = document.getElementById('allClearButton');
+        const resultBox = document.getElementById('dropzoneResult');
+        const addFileList = document.getElementById('addFileList');
+        const fileDataInput = document.getElementById('dropzoneFileData');
 
-        // temp 폴더에 저장된 파일 (저장 전에는 DB에 등록되지 않는다)
+        // 팝업에서 temp 폴더로 올린 파일이다. 저장 전에는 DB에 등록되지 않는다.
         let stagedFiles = [];
+
+        function addDropzoneFile() {
+            window.open("/system/dropzonePopup", "dropzoneWindow", "top=100,left=300,width=600,height=620,status=no,menubar=no,toolbar=no,resizable=yes");
+        }
+
+        function callBackFileUpload(data) {
+            const uploadedFiles = JSON.parse(data);
+            uploadedFiles.forEach(function (uploadedFile) {
+                stagedFiles.push(uploadedFile);
+            });
+            renderStaged();
+            updateButtons();
+            resultBox.className = 'mt-3 text-success';
+            resultBox.textContent = stagedFiles.length + '개 파일을 temp 폴더에 저장했습니다. 저장을 눌러야 Arkive에 반영됩니다.';
+        }
 
         function updateButtons() {
             saveButton.disabled = stagedFiles.length === 0;
-            clearButton.disabled = stagedFiles.length === 0;
+            allClearButton.disabled = stagedFiles.length === 0;
         }
 
         function renderStaged() {
-            stagedList.innerHTML = '';
+            addFileList.innerHTML = '';
             stagedFiles.forEach(function (item, index) {
-                const row = document.createElement('li');
-                row.className = 'd-flex justify-content-between align-items-center mb-1';
+                const row = document.createElement('div');
+                row.className = 'file-item';
+                row.setAttribute('data-idx', index);
 
                 const name = document.createElement('span');
-                name.className = 'text-truncate me-2';
+                name.className = 'file-name';
                 name.textContent = item.fileName;
 
                 const button = document.createElement('button');
                 button.type = 'button';
-                button.className = 'btn btn-sm btn-link text-danger p-0';
-                button.textContent = '취소';
+                button.className = 'btn btn-danger btn-sm';
+                button.textContent = '삭제';
                 button.addEventListener('click', function () { removeStaged(index); });
 
                 row.appendChild(name);
+                row.appendChild(document.createTextNode(' '));
                 row.appendChild(button);
-                stagedList.appendChild(row);
+                addFileList.appendChild(row);
             });
+            fileDataInput.value = JSON.stringify(stagedFiles);
         }
 
         async function removeStaged(index) {
@@ -136,10 +147,17 @@
             stagedFiles.splice(index, 1);
             renderStaged();
             updateButtons();
+            if (stagedFiles.length === 0) {
+                resultBox.className = 'mt-3';
+                resultBox.textContent = '';
+            }
         }
 
-        clearButton.addEventListener('click', async function () {
-            if (!confirm('temp에 저장된 파일을 모두 삭제하시겠습니까?')) {
+        async function clearDropzoneFiles() {
+            if (stagedFiles.length === 0) {
+                return;
+            }
+            if (!confirm('선택한 파일을 모두 취소하시겠습니까?')) {
                 return;
             }
             for (const item of stagedFiles) {
@@ -152,97 +170,27 @@
                 }
             }
             stagedFiles = [];
-            fileInput.value = '';
             renderStaged();
             updateButtons();
-        });
-
-        // 파일 선택 대화상자에서 열기를 누르면 temp 폴더로 바로 전송한다. (DB 등록 없음)
-        fileInput.addEventListener('change', uploadSelectedFiles);
-
-        async function uploadSelectedFiles() {
-            const selectedFiles = Array.from(fileInput.files || []);
-            if (selectedFiles.length === 0 || isUploading) {
-                return;
-            }
-
-            // 용량 상한은 서버 모델(Globals.fileUpload.maxFileSize.mb) 기준이다
-            const maxFileSizeMb = parseFloat(document.getElementById('maxFileSizeMb').value) || 50;
-            const overSized = selectedFiles.filter(function (f) { return f.size > maxFileSizeMb * 1024 * 1024; });
-            if (overSized.length > 0) {
-                fileInput.value = '';
-                resultBox.className = 'mt-3 text-danger';
-                resultBox.textContent = '※ 첨부파일 업로드 용량은 ' + maxFileSizeMb + 'MB 이하 입니다. (' + overSized[0].name + ')';
-                return;
-            }
-
-            isUploading = true;
-            fileInput.disabled = true;
-            saveButton.disabled = true;
-            clearButton.disabled = true;
-            resultBox.className = 'mt-3 text-info';
-            resultBox.textContent = 'temp 폴더로 업로드 중입니다...';
-
-            try {
-                const uploadData = new FormData();
-                selectedFiles.forEach(function (selectedFile) {
-                    uploadData.append('files', selectedFile);
-                });
-                const response = await fetch('/system/file/tempFileUpload.json', {
-                    method: 'POST',
-                    body: uploadData,
-                    headers: { 'Accept': 'application/json' }
-                });
-
-                let payload;
-                const contentType = response.headers.get('content-type') || '';
-                if (contentType.includes('application/json')) {
-                    payload = await response.json();
-                } else {
-                    const text = await response.text();
-                    throw new Error('서버 응답 오류 (HTTP ' + response.status + '): ' + text);
-                }
-
-                if (!response.ok || payload.success === false) {
-                    throw new Error(payload.message || '서버가 파일을 저장하지 못했습니다.');
-                }
-
-                const uploaded = payload.tempFileList || [];
-                if (uploaded.length === 0) {
-                    throw new Error(payload.message || '업로드된 파일이 없습니다.');
-                }
-
-                stagedFiles = stagedFiles.concat(uploaded.map(function (f) {
-                    return { fileId: f.fileId, fileName: f.orgnlFileNm, fileSize: f.fileSz };
-                }));
-                fileInput.value = '';
-                resultBox.className = 'mt-3 text-success';
-                resultBox.textContent = uploaded.length + '개 파일을 temp 폴더에 저장했습니다. 저장을 눌러야 Arkive에 반영됩니다.';
-                renderStaged();
-            } catch (error) {
-                resultBox.className = 'mt-3 text-danger';
-                resultBox.textContent = error.message;
-            } finally {
-                isUploading = false;
-                fileInput.disabled = false;
-                updateButtons();
-            }
+            resultBox.className = 'mt-3';
+            resultBox.textContent = '';
         }
 
-        // temp -> Arkive 최종 경로 이동 + DB 등록
-        saveButton.addEventListener('click', async function () {
+        async function saveDropzoneFiles() {
             if (stagedFiles.length === 0) {
+                alert('저장할 파일이 없습니다.');
                 return;
             }
+
             saveButton.disabled = true;
             resultBox.className = 'mt-3 text-info';
             resultBox.textContent = 'Arkive에 저장 중입니다...';
 
             const params = new URLSearchParams();
-            params.append('files', JSON.stringify(stagedFiles.map(function (f) {
-                return { fileId: f.fileId, fileName: f.fileName };
+            params.append('files', JSON.stringify(stagedFiles.map(function (item) {
+                return { fileId: item.fileId, fileName: item.fileName };
             })));
-            params.append('fileType', 'MULTIPART');
+                params.append('fileType', 'DROPZONE');
 
             try {
                 const response = await fetch('/system/file/saveTempFiles.json', {
@@ -254,8 +202,8 @@
                     throw new Error(payload.message || '저장에 실패하였습니다.');
                 }
                 if (payload.count !== stagedFiles.length) {
-                    const savedIds = new Set((payload.files || []).map(function (f) { return f.fileId; }));
-                    stagedFiles = stagedFiles.filter(function (f) { return !savedIds.has(f.fileId); });
+                    const savedIds = new Set((payload.files || []).map(function (savedFile) { return savedFile.fileId; }));
+                    stagedFiles = stagedFiles.filter(function (item) { return !savedIds.has(item.fileId); });
                     resultBox.className = 'mt-3 text-warning';
                     resultBox.textContent = savedIds.size + '개 저장, ' + stagedFiles.length + '개는 temp에 남아 저장하지 못했습니다.';
                     renderStaged();
@@ -267,13 +215,13 @@
                 stagedFiles = [];
                 renderStaged();
                 updateButtons();
-                location.reload();
+                window.location.href = '/system/dropzoneUpload';
             } catch (error) {
                 resultBox.className = 'mt-3 text-danger';
                 resultBox.textContent = error.message;
                 updateButtons();
             }
-        });
+        }
 
         // 저장 목록에서 삭제 버튼을 누른 파일 한 건을 지운다
         async function deleteSavedFile(button) {

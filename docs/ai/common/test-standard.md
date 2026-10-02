@@ -1,5 +1,7 @@
 # 공통 테스트 및 검증 표준
 
+> 이식 구분: 복붙 가능. 타 프로젝트에 그대로 복사해서 사용한다.
+
 변경 범위와 위험도에 맞는 검증을 선택한다. 모든 변경에 모든 종류의 테스트를 강제하지 않으며, 수행하지 않은 검증을 통과했다고 표현하지 않는다. 프로젝트에 기존 테스트 도구와 실행 방식이 있으면 이를 우선한다.
 
 Baseline, Snapshot, Verifier와 Runtime 검증의 공통 절차는 [verification-standard.md](verification-standard.md)를 따른다. 기대 결과와 테스트 사례는 관련 프로젝트 정책, 계약 및 Acceptance Criteria에서 확인한다.

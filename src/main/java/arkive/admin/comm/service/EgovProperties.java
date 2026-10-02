@@ -1,9 +1,12 @@
 package arkive.admin.comm.service;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -13,108 +16,51 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class EgovProperties{
+/**
+ * application.properties를 단일 설정 소스로 사용하는 프로퍼티 유틸리티.
+ * <p>
+ * application.properties는 UTF-8, BOM 없음으로 저장한다.
+ * Properties.load(InputStream)은 ISO-8859-1로 해석하므로 반드시 UTF-8 Reader를 사용한다.
+ * egovProps/globals.properties 기반 조회는 더 이상 사용하지 않는다.
+ * </p>
+ */
+public class EgovProperties {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovProperties.class);
-	
-	//프로퍼티값 로드시 에러발생하면 반환되는 에러문자열 
-	public static final String ERR_CODE =" EXCEPTION OCCURRED";
-	public static final String ERR_CODE_FNFE =" EXCEPTION(FNFE) OCCURRED";
-	public static final String ERR_CODE_IOE =" EXCEPTION(IOE) OCCURRED";
-	
+
 	//파일구분자
-    static final char FILE_SEPARATOR     = File.separatorChar;
+	static final char FILE_SEPARATOR = File.separatorChar;
 
-	//프로퍼티 파일의 물리적 위치
-    /*public static final String GLOBALS_PROPERTIES_FILE 
-    = System.getProperty("user.home") + System.getProperty("file.separator") + "egovProps"
-    + System.getProperty("file.separator") + "globals.properties";*/
-    
-    //public static final String RELATIVE_PATH_PREFIX = EgovProperties.class.getResource("").getPath()
-    /***********************************************************
-     * 	<-- 2020.10.07 취약점 점검관련 수정
-    
-    public static final String RELATIVE_PATH_PREFIX = EgovProperties.class.getResource("").getPath().replaceAll("%20", " ")
-    + System.getProperty("file.separator") + ".." + System.getProperty("file.separator")
-    + ".." + System.getProperty("file.separator") + ".." + System.getProperty("file.separator")
-    + ".." + System.getProperty("file.separator");
-    
-    public static final String GLOBALS_PROPERTIES_FILE 
-    = RELATIVE_PATH_PREFIX + "egovProps" + System.getProperty("file.separator") + "globals.properties";
-    
-     ***********************************************************/
-    public static String RELATIVE_PATH_PREFIX = "";
-    public static String GLOBALS_PROPERTIES_FILE = "";
-    
-    public static String GET_PATH = EgovProperties.class.getResource("").getPath();
-     
-	/**
-	 * 인자로 주어진 문자열을 Key값으로 하는 프로퍼티 값을 반환한다(Globals.java 전용)
-	 * @param keyName String
-	 * @return String
-	 */
-	public static String getProperty(String keyName){
-		/***********************************************************
-	     * 	2020.10.07 취약점 점검관련 수정 -->
-	     ***********************************************************/
-		RELATIVE_PATH_PREFIX = "";
-		if(GET_PATH != null) {
-			RELATIVE_PATH_PREFIX = GET_PATH.replaceAll("%20", " ");
-		}
-		RELATIVE_PATH_PREFIX =  RELATIVE_PATH_PREFIX
-		+ System.getProperty("file.separator") + ".." + System.getProperty("file.separator")
-	    + ".." + System.getProperty("file.separator") + ".." + System.getProperty("file.separator")
-	    + ".." + System.getProperty("file.separator");
-		
-		if(RELATIVE_PATH_PREFIX !=  null && !RELATIVE_PATH_PREFIX.equals("")) {
-			GLOBALS_PROPERTIES_FILE =  RELATIVE_PATH_PREFIX + "egovProps" + System.getProperty("file.separator") + "globals.properties";
-		}
-		String value = ERR_CODE;
-		value="99";
-		debug(GLOBALS_PROPERTIES_FILE + " : " + keyName);
-		FileInputStream fis = null;
-		try{
-			Properties props = new Properties();
-			java.io.InputStream input = EgovProperties.class.getClassLoader().getResourceAsStream("egovProps/globals.properties");
-			if (input != null) {
-				try (java.io.InputStream classpathInput = input) {
-					props.load(classpathInput);
-				}
-			} else if(GLOBALS_PROPERTIES_FILE != null && !GLOBALS_PROPERTIES_FILE.equals("")
-					&& new File(GLOBALS_PROPERTIES_FILE.replace("/", File.separator)).isFile()) {
-				fis = new FileInputStream(GLOBALS_PROPERTIES_FILE.replace("/", File.separator));
-				props.load(new java.io.BufferedInputStream(fis));
-			}
-			value = props.getProperty(keyName);
-			if (value == null) {
-				value = EgovProperties.class.getClassLoader().getResourceAsStream("application.properties") == null ? null : loadSpringApplicationProperty(keyName);
-			}
-			if(value != null) {
-				value = value.trim();
-			}
-		}catch(FileNotFoundException fne){
-			debug("FileNotFoundException 에러");
-		}catch(IOException ioe){
-			debug("IOException 에러");
-		}finally{
-			try {
-				if (fis != null) fis.close();
-			} catch (IOException ex) {
-				debug("IOException 에러");
-			}
-			
-		}
-		return value;
-	}
+	private static final String APPLICATION_PROPERTIES = "application.properties";
 
-	private static String loadSpringApplicationProperty(String keyName) throws IOException {
+	private static final Properties PROPERTIES = loadApplicationProperties();
+
+	private static Properties loadApplicationProperties() {
 		Properties props = new Properties();
-		try (java.io.InputStream input = EgovProperties.class.getClassLoader().getResourceAsStream("application.properties")) {
-			props.load(input);
+		try (InputStream input = EgovProperties.class.getClassLoader().getResourceAsStream(APPLICATION_PROPERTIES)) {
+			if (input == null) {
+				LOGGER.warn("{} was not found on the classpath.", APPLICATION_PROPERTIES);
+			} else {
+				props.load(new InputStreamReader(input, StandardCharsets.UTF_8));
+			}
+		} catch (IOException ioe) {
+			LOGGER.error("Failed to load {}.", APPLICATION_PROPERTIES, ioe);
 		}
-		return props.getProperty(keyName);
+		return props;
 	}
-	
-	
+
+	/**
+	 * 인자로 주어진 문자열을 Key값으로 하는 프로퍼티 값을 반환한다.
+	 * @param keyName String
+	 * @return String 프로퍼티가 없으면 null
+	 */
+	public static String getProperty(String keyName) {
+		if (keyName == null) {
+			return null;
+		}
+		String value = PROPERTIES.getProperty(keyName);
+		return value != null ? value.trim() : null;
+	}
+
 	/**
 	 * 주어진 프로파일의 내용을 파싱하여 (key-value) 형태의 구조체 배열을 반환한다.
 	 * @param property String
@@ -124,20 +70,18 @@ public class EgovProperties{
 
 		// key - value 형태로 된 배열 결과
 		ArrayList keyList = new ArrayList();
-		
+
 		String src = property.replace('\\', FILE_SEPARATOR).replace('/', FILE_SEPARATOR);
 		FileInputStream fis = null;
 		try
-		{   
-			
+		{
 			File srcFile = new File(src);
 			if (srcFile.exists()) {
-				
-				java.util.Properties props = new java.util.Properties();
+
+				Properties props = new Properties();
 				fis  = new FileInputStream(src);
-				props.load(new java.io.BufferedInputStream(fis));
-				
-				int i = 0;
+				props.load(new BufferedInputStream(fis));
+
 				Enumeration plist = props.propertyNames();
 				if (plist != null) {
 					while (plist.hasMoreElements()) {
@@ -157,7 +101,7 @@ public class EgovProperties{
 				debug("IOException 에러");
 			}
 		}
-		
+
 		return keyList;
 	}
 
@@ -166,7 +110,7 @@ public class EgovProperties{
 	 * @param obj Object
 	 */
 	private static void debug(Object obj) {
-		if (obj instanceof java.lang.Exception) {
+		if (obj instanceof Exception) {
 			LOGGER.debug("IGNORED: " + ((Exception)obj).getMessage());
 		}
 	}

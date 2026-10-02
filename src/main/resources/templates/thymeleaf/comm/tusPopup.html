@@ -4,68 +4,137 @@
   <meta charset="utf-8">
   <title>Uppy TUS Upload</title>
   <link href="https://releases.transloadit.com/uppy/v4.13.3/uppy.min.css" rel="stylesheet"/>
+  <style>
+    body {
+      margin: 0;
+      padding: 18px;
+      font-family: sans-serif;
+    }
+    .capacity-notice {
+      margin-top: 12px;
+      color: red;
+    }
+    #drag-drop-area .uppy-Dashboard-inner {
+      height: 430px;
+    }
+    #drag-drop-area .uppy-Dashboard-AddFiles {
+      justify-content: center;
+    }
+    #drag-drop-area .uppy-Dashboard-AddFiles-list {
+      flex: none;
+    }
+  </style>
 </head>
 <body>
 <div id="drag-drop-area"></div>
+<div class="capacity-notice" th:text="'※ 첨부파일 업로드 용량은 ' + (${maxFileSizeMb} >= 1024 ? (${maxFileSizeMb} / 1024) + 'GB' : ${maxFileSizeMb} + 'MB') + ' 이하 입니다.'">※ 첨부파일 업로드 용량은 50MB 이하 입니다.</div>
 <input type="hidden" id="atchFileGrpid" name="atchFileGrpid" value="" />        
 
 <script src="https://releases.transloadit.com/uppy/v4.13.3/uppy.min.js"></script>
 <script src="https://releases.transloadit.com/uppy/locales/v3.3.1/ko_KR.min.js"></script>
-<script type="module">
-let atchFileGrpid = opener && opener.document.getElementById("atchFileGrpid") ? 
-opener.document.getElementById("atchFileGrpid").value : "";
+<script>
+var atchFileGrpid = (opener && opener.document.getElementById("atchFileGrpid"))
+    ? opener.document.getElementById("atchFileGrpid").value : "";
 
-const UppyLib = window.Uppy;
-const uppy = new (UppyLib.Uppy || UppyLib.Core || UppyLib)({
-    locale: UppyLib.locales.ko_KR,
-    debug: true,
-});
+var UppyLib = window.Uppy;
+var errorBox = document.getElementById("drag-drop-area");
 
-uppy.use(UppyLib.Dashboard, {
-    inline: true,
-    target: '#drag-drop-area',
-    showProgressDetails: true,
-});
+if (!UppyLib) {
+    errorBox.innerHTML = '<div class="alert alert-danger">Uppy 라이브러리를 불러오지 못했습니다. 네트워크 연결을 확인하세요.</div>';
+} else {
+    var UppyCore = UppyLib.Uppy || UppyLib.Core || UppyLib;
+    var koLocale = (UppyLib.locales && UppyLib.locales.ko_KR) ? UppyLib.locales.ko_KR : {};
 
-uppy.use(UppyLib.Tus, {
-    endpoint: '/system/tus',
-    chunkSize: 52428800,
-    resume: true,
-    overridePatchMethod: true,
-    onBeforeRequest: (req) => {
-        const atchFileGrpidValue = atchFileGrpid ? atchFileGrpid : '';
-        if (atchFileGrpidValue) {
-            req.setHeader('atchFileGrpid', atchFileGrpidValue);
+    var uppy = new UppyCore({
+        locale: koLocale,
+        debug: false
+    });
+
+    uppy.use(UppyLib.Dashboard, {
+        inline: true,
+        target: '#drag-drop-area',
+        // 팝업(600px) 안에 안내문까지 다 보이게 높이를 고정한다
+        height: 430,
+        showProgressDetails: true
+    });
+
+    uppy.use(UppyLib.Tus, {
+        endpoint: '/system/tus',
+        chunkSize: 52428800,
+        resume: true,
+        // 지문 재개는 유지한다. temp가 사라진 예전 URL은 서버가 404로 돌려주므로
+        // 새로 업로드를 만들게 되고, 남아 있는 temp는 offset부터 이어받는다.
+        onBeforeRequest: function(req) {
+            if (atchFileGrpid) {
+                req.setHeader('atchFileGrpid', atchFileGrpid);
+            }
         }
-    }
-});
+    });
 
-uppy.on('complete', async (result) => {
-    console.log(result);
-    const successfulFiles = result.successful;
-    const names = [];
-    for (const file of successfulFiles) {
-        names.push(file.name);
-        const uploadUrl = file.uploadURL;
-        const fileId = uploadUrl ? uploadUrl.split('/').pop() : file.id;
-        try {
-            await fetch('/system/tusComplete.json', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ fileId: fileId, fileName: file.name })
-            });
-        } catch (e) {
-            console.error('Failed to record TUS file metadata', e);
+    uppy.on('complete', async function(result) {
+        var successfulFiles = result.successful || [];
+        var failedFiles = result.failed || [];
+
+        console.log('[tusPopup] complete', {
+            successful: successfulFiles.map(function(f) { return { name: f.name, size: f.size, uploadURL: f.uploadURL }; }),
+            failed: failedFiles.map(function(f) { return f.name; })
+        });
+
+        if (failedFiles.length > 0) {
+            alert('업로드에 실패한 파일이 있습니다:\n' + failedFiles.map(function(f) { return f.name; }).join('\n'));
         }
-    }
 
-    if (opener && typeof opener.callBackFileUpload === 'function') {
-        opener.callBackFileUpload(JSON.stringify(names));
-        window.close();
-    } else {
-        console.error('부모 창의 callBackFileUpload 함수를 찾을 수 없습니다.'); 
-    }
-});
+        var fileList = [];
+        for (var i = 0; i < successfulFiles.length; i++) {
+            var file = successfulFiles[i];
+            var uploadUrl = file.uploadURL;
+            var fileId = uploadUrl ? uploadUrl.split('/').pop() : null;
+
+            if (!fileId) {
+                alert('temp 파일 ID를 확인할 수 없습니다: ' + file.name);
+                continue;
+            }
+
+            // 부모 목록에 올리기 전에 temp 파일이 끝까지 저장됐는지 서버에서 확인한다.
+            var headStatus = 0;
+            var offset = 0;
+            var length = 0;
+            try {
+                var head = await fetch('/system/tus/' + encodeURIComponent(fileId), { method: 'HEAD' });
+                headStatus = head.status;
+                offset = parseInt(head.headers.get('Upload-Offset') || '0', 10);
+                length = parseInt(head.headers.get('Upload-Length') || '0', 10);
+                if (!head.ok || offset !== length || offset !== file.size) {
+                    console.error('[tusPopup] temp verify failed', {
+                        name: file.name, size: file.size,
+                        fileId: fileId, uploadUrl: uploadUrl,
+                        headStatus: headStatus, offset: offset, length: length
+                    });
+                    alert('temp 저장이 끝나지 않은 파일이 있습니다: ' + file.name
+                        + ' (fileId=' + fileId + ', HEAD=' + headStatus
+                        + ', 서버 ' + offset + '/' + length + ' bytes, 선택 ' + file.size + ' bytes)');
+                    continue;
+                }
+            } catch (verifyError) {
+                alert('temp 저장 확인 중 오류가 발생했습니다: ' + file.name);
+                continue;
+            }
+
+            fileList.push({ fileId: fileId, fileName: file.name, fileSize: file.size });
+        }
+
+        if (fileList.length === 0) {
+            return;
+        }
+
+        if (opener && typeof opener.callBackFileUpload === 'function') {
+            opener.callBackFileUpload(JSON.stringify(fileList));
+            window.close();
+        } else {
+            console.error('부모 창의 callBackFileUpload 함수를 찾을 수 없습니다.');
+        }
+    });
+}
 </script>
 
 </body>

@@ -150,10 +150,9 @@ public class FileUtil {
 	        String newFileName = thumbSavePathName + srcFileName;
 	        
 	        Path thumbPath = Paths.get(thumbSavePathName);
-	        if(!Files.exists(thumbPath)) {
-	        	Files.createDirectory(thumbPath);
-	        	//FileUploadUtil.setFileAuth755(thumbSavePathName);
-	        }
+        	if(!Files.exists(thumbPath)) {
+        		Files.createDirectory(thumbPath);
+        	}
 	        
 	        // 원본 이미지를 읽어온다
             BufferedImage originalImage = ImageIO.read(originFileName);

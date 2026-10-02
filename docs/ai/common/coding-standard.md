@@ -1,5 +1,7 @@
 # 공통 코딩 표준
 
+> 이식 구분: 복붙 가능. 타 전자정부·Spring·Boot 프로젝트에 그대로 복사해서 사용한다.
+
 Java 웹 프로젝트에 적용할 공통 코딩 방법을 정리한다. Arkive에서 확인된 구조와 구현 사실은 [architecture.md](../project/architecture.md) 및 [project-overview.md](../project/project-overview.md)에 둔다. 프로젝트별 규칙은 근거가 확인된 경우에만 적용하며, 아래 일반 원칙만으로 업무 정책이나 계약을 추정하지 않는다.
 
 ## 기존 구조 우선
