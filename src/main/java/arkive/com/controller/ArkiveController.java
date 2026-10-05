@@ -1,11 +1,14 @@
 package arkive.com.controller;
 
 import org.egovframe.rte.fdl.property.EgovPropertyService;
+import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import arkive.admin.board.service.BoardService;
+import arkive.admin.comm.service.FileService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,69 +20,34 @@ public class ArkiveController {
 	/** EgovPropertyService */
 	@Resource(name = "propertiesService")
 	private EgovPropertyService propertiesService;
+
+	@Resource(name = "boardService")
+	private BoardService boardService;
+
+	@Resource(name = "fileService")
+	private FileService fileService;
 	
 	@RequestMapping("/")
 	public String dashboard(ModelMap model) throws Exception {
+		EgovMap ckParam = new EgovMap();
+		ckParam.put("boardType", "CK");
+		EgovMap toastParam = new EgovMap();
+		toastParam.put("boardType", "TOAST");
+		model.put("ckCount", boardService.selectBoardListTotCnt(ckParam));
+		model.put("toastCount", boardService.selectBoardListTotCnt(toastParam));
+		// MULTIPART 조회에 BOARD_ 그룹이 포함되므로 BOARD 분기는 더하지 않는다.
+		model.put("fileCount", fileService.selectAtchFileListByType("MULTIPART").size()
+				+ fileService.selectAtchFileListByType("TUS").size()
+				+ fileService.selectAtchFileListByType("DROPZONE").size());
+		// 최근 글 5건씩 (LIMIT/OFFSET 쿼리 재사용)
+		EgovMap recentParam = new EgovMap();
+		recentParam.put("searchKeyword", "");
+		recentParam.put("firstIndex", 0);
+		recentParam.put("recordCountPerPage", 5);
+		recentParam.put("boardType", "CK");
+		model.put("recentCk", boardService.selectBoardList(recentParam));
+		recentParam.put("boardType", "TOAST");
+		model.put("recentToast", boardService.selectBoardList(recentParam));
 		return "main/dashboard";
-	}
-	
-	@RequestMapping("/index")
-	public String index(ModelMap model) throws Exception {
-		return "bootstrap/index";
-	}
-
-	@RequestMapping("/buttons")
-	public String buttons(ModelMap model) throws Exception {
-		return "bootstrap/buttons";
-	}
-	
-	@RequestMapping("/cards")
-	public String cards(ModelMap model) throws Exception {
-		return "bootstrap/cards";
-	}
-	
-	@RequestMapping("/color")
-	public String color(ModelMap model) throws Exception {
-		return "bootstrap/utilities-color";
-	}
-	@RequestMapping("/border")
-	public String border(ModelMap model) throws Exception {
-		return "bootstrap/utilities-border";
-	}
-	@RequestMapping("/animation")
-	public String animation(ModelMap model) throws Exception {
-		return "bootstrap/utilities-animation";
-	}
-	@RequestMapping("/other")
-	public String other(ModelMap model) throws Exception {
-		return "bootstrap/utilities-other";
-	}
-	@RequestMapping("/login")
-	public String login(ModelMap model) throws Exception {
-		return "bootstrap/login";
-	}
-	@RequestMapping("/register")
-	public String register(ModelMap model) throws Exception {
-		return "bootstrap/register";
-	}
-	@RequestMapping("/password")
-	public String password(ModelMap model) throws Exception {
-		return "bootstrap/forgot-password";
-	}
-	@RequestMapping("/not")
-	public String not(ModelMap model) throws Exception {
-		return "bootstrap/404";
-	}
-	@RequestMapping("/blank")
-	public String blank(ModelMap model) throws Exception {
-		return "bootstrap/blank";
-	}
-	@RequestMapping("/charts")
-	public String charts(ModelMap model) throws Exception {
-		return "bootstrap/charts";
-	}
-	@RequestMapping("/tables")
-	public String tables(ModelMap model) throws Exception {
-		return "bootstrap/tables";
 	}
 }

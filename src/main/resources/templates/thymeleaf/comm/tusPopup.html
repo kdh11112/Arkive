@@ -3,7 +3,9 @@
 <head>
   <meta charset="utf-8">
   <title>Uppy TUS Upload</title>
-  <link href="https://releases.transloadit.com/uppy/v4.13.3/uppy.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" th:href="@{/css/component/output.css}">
+  <link rel="stylesheet" th:href="@{/css/krds-local.css}">
+  <link th:href="@{/vendor/uppy/uppy.min.css}" rel="stylesheet"/>
   <style>
     body {
       margin: 0;
@@ -30,8 +32,8 @@
 <div class="capacity-notice" th:text="'※ 첨부파일 업로드 용량은 ' + (${maxFileSizeMb} >= 1024 ? (${maxFileSizeMb} / 1024) + 'GB' : ${maxFileSizeMb} + 'MB') + ' 이하 입니다.'">※ 첨부파일 업로드 용량은 50MB 이하 입니다.</div>
 <input type="hidden" id="atchFileGrpid" name="atchFileGrpid" value="" />        
 
-<script src="https://releases.transloadit.com/uppy/v4.13.3/uppy.min.js"></script>
-<script src="https://releases.transloadit.com/uppy/locales/v3.3.1/ko_KR.min.js"></script>
+<script th:src="@{/vendor/uppy/uppy.min.js}"></script>
+<script th:src="@{/vendor/uppy/ko_KR.min.js}"></script>
 <script>
 var atchFileGrpid = (opener && opener.document.getElementById("atchFileGrpid"))
     ? opener.document.getElementById("atchFileGrpid").value : "";

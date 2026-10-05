@@ -8,53 +8,66 @@
 </head>
 <body>
 
-<div layout:fragment="content" class="container-fluid">
-<!-- test -->
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">메뉴 관리</h1>
-    </div>
+<div layout:fragment="content">
+    <h2 class="heading-large">메뉴 관리</h2>
 
-    <div class="row">
-        <!-- 상위메뉴 목록 -->
-        <div class="col-lg-4 mb-4">
-            <div class="card shadow mb-3">
-                <div class="card-header py-2 px-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary" style="font-size: 0.9rem;">상위메뉴 목록</h6>
-                    <div>
-                        <button type="button" class="btn btn-primary btn-sm px-1 py-0" style="font-size: 0.75rem;" onclick="fnOpenMenuModal('insert', 'upper')"><i class="fas fa-plus"></i> 추가</button>
-                        <button type="button" class="btn btn-success btn-sm px-1 py-0" style="font-size: 0.75rem;" onclick="fnOpenMenuModal('update', 'upper')"><i class="fas fa-edit"></i> 수정</button>
-                        <button type="button" class="btn btn-danger btn-sm px-1 py-0" style="font-size: 0.75rem;" onclick="fnDeleteMenu()"><i class="fas fa-trash"></i> 삭제</button>
+    <link rel="stylesheet" th:href="@{/vendor/jstree/style.min.css}">
+    <script th:src="@{/vendor/jstree/jstree.min.js}"></script>
+
+    <div class="conts-wrap">
+        <style>
+            /* 상위(트리)-하위(표) 좌우 배치. 좁은 화면에서는 세로로 쌓는다 */
+            .menu-cols { display: flex; gap: 24px; align-items: flex-start; }
+            .menu-cols > .menu-tree { flex: 0 0 28%; min-width: 0; }
+            .menu-cols > .menu-tree #jstree { width: 100%; }
+            .menu-cols > .menu-table { flex: 1 1 auto; min-width: 0; }
+            .menu-cols > .menu-table { flex: 1; min-width: 0; }
+            @media (max-width: 1023px) {
+                .menu-cols { flex-direction: column; }
+                .menu-cols > .menu-tree { flex: none; width: 100%; }
+            }
+        </style>
+        <div class="menu-cols">
+        <div class="menu-tree">
+        <div class="fieldset">
+            <div class="form-group">
+                <div class="form-tit"><span>상위메뉴 목록</span></div>
+                <div class="form-conts">
+                    <div class="btn-wrap">
+                        <button type="button" class="krds-btn small primary" onclick="fnOpenMenuModal('insert', 'upper')">추가</button>
+                        <button type="button" class="krds-btn small secondary" onclick="fnOpenMenuModal('update', 'upper')">수정</button>
+                        <button type="button" class="krds-btn small danger" onclick="fnDeleteMenu()">삭제</button>
                     </div>
+                    <div id="jstree" style="height: 400px; overflow: auto; border: 1px solid #d5d5d5; margin-top: 8px;"></div>
                 </div>
-                <div class="card-body" id="jstree" style="height: 588px; overflow: auto; border: 1px solid #d5d5d5;"></div>
             </div>
         </div>
+        </div>
 
-        <!-- 하위메뉴 목록 -->
-        <div class="col-lg-8 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">하위메뉴 목록</h6>
-                    <div>
-                        <button type="button" class="btn btn-primary btn-sm" onclick="fnOpenMenuModal('insert', 'lower')"><i class="fas fa-plus"></i> 하위메뉴 추가</button>
+        <div class="menu-table">
+        <div class="fieldset">
+            <div class="form-group">
+                <div class="form-tit"><span>하위메뉴 목록</span></div>
+                <div class="form-conts">
+                    <div class="btn-wrap" style="margin-bottom: 8px;">
+                        <button type="button" class="krds-btn small primary" onclick="fnOpenMenuModal('insert', 'lower')">하위메뉴 추가</button>
                     </div>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <div class="krds-table-wrap">
+                        <table class="tbl col data">
+                            <caption>하위메뉴 목록</caption>
                             <thead>
                                 <tr>
-                                    <th>메뉴ID</th>
-                                    <th>메뉴명</th>
-                                    <th>메뉴경로</th>
-                                    <th>순서</th>
-                                    <th>사용여부</th>
-                                    <th>관리</th>
+                                    <th scope="col">메뉴ID</th>
+                                    <th scope="col">메뉴명</th>
+                                    <th scope="col">메뉴경로</th>
+                                    <th scope="col">순서</th>
+                                    <th scope="col">사용여부</th>
+                                    <th scope="col">관리</th>
                                 </tr>
                             </thead>
                             <tbody id="menuLowTbody">
                                 <tr>
-                                    <td colspan="6" class="text-center">상위 메뉴를 선택하세요.</td>
+                                    <td colspan="6">상위 메뉴를 선택하세요.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -62,56 +75,65 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- 메뉴 등록/수정 모달 -->
-    <div class="modal fade" id="menuModal" tabindex="-1" role="dialog" aria-labelledby="menuModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <form id="menuForm">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="menuModalLabel">메뉴 등록</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="hidden" id="mode" name="mode">
-                        <input type="hidden" id="grad" name="grad" value="1">
-                        <input type="hidden" id="upMenuId" name="upMenuId" value="ME00000000">
-
-                        <div class="form-group">
-                            <label for="menuId">메뉴 ID <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="menuId" name="menuId" required placeholder="예: ME00000001">
-                        </div>
-                        <div class="form-group">
-                            <label for="menuNm">메뉴명 <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="menuNm" name="menuNm" required placeholder="메뉴명을 입력하세요">
-                        </div>
-                        <div class="form-group">
-                            <label for="menuCours">메뉴 경로 (URL)</label>
-                            <input type="text" class="form-control" id="menuCours" name="menuCours" placeholder="예: /system/menuList">
-                        </div>
-                        <div class="form-group">
-                            <label for="ordr">출력 순서</label>
-                            <input type="number" class="form-control" id="ordr" name="ordr" value="1" placeholder="1">
-                        </div>
-                        <div class="form-group">
-                            <label for="useYn">사용 여부</label>
-                            <select class="form-control" id="useYn" name="useYn">
-                                <option value="Y">Y</option>
-                                <option value="N">N</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">취소</button>
-                        <button type="button" class="btn btn-primary" onclick="fnSaveMenu()">저장</button>
-                    </div>
-                </form>
-            </div>
+        </div>
         </div>
     </div>
+
+    <!-- KRDS 모달. ui-script 의존 없이 직접 열고 닫는다 -->
+    <section id="menuModal" class="krds-modal fade" role="dialog" aria-labelledby="tit_menuModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="tit_menuModal" class="modal-title">메뉴 등록</h2>
+                </div>
+                <div class="modal-conts">
+                    <div class="conts-area">
+                        <form id="menuForm">
+                            <input type="hidden" id="mode" name="mode">
+                            <input type="hidden" id="grad" name="grad" value="1">
+                            <input type="hidden" id="upMenuId" name="upMenuId" value="ME00000000">
+                            <div class="fieldset input-form">
+                                <div class="form-group">
+                                    <div class="form-tit"><label for="menuId">메뉴 ID</label></div>
+                                    <div class="form-conts"><input type="text" class="krds-input" id="menuId" name="menuId" required placeholder="예: ME00000001"></div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="form-tit"><label for="menuNm">메뉴명</label></div>
+                                    <div class="form-conts"><input type="text" class="krds-input" id="menuNm" name="menuNm" required placeholder="메뉴명을 입력하세요"></div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="form-tit"><label for="menuCours">메뉴 경로 (URL)</label></div>
+                                    <div class="form-conts"><input type="text" class="krds-input" id="menuCours" name="menuCours" placeholder="예: /system/menuList"></div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="form-tit"><label for="ordr">출력 순서</label></div>
+                                    <div class="form-conts"><input type="number" class="krds-input" id="ordr" name="ordr" value="1"></div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="form-tit"><label for="useYn">사용 여부</label></div>
+                                    <div class="form-conts">
+                                        <select class="krds-form-select" id="useYn" name="useYn">
+                                            <option value="Y">Y</option>
+                                            <option value="N">N</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="modal-btn btn-wrap">
+                    <button type="button" class="krds-btn medium tertiary close-modal" onclick="closeMenuModal()">취소</button>
+                    <button type="button" class="krds-btn medium primary" onclick="fnSaveMenu()">저장</button>
+                </div>
+                <button type="button" class="krds-btn medium icon btn-close close-modal" onclick="closeMenuModal()">
+                    <span class="sr-only">닫기</span>
+                    <i class="svg-icon ico-popup-close"></i>
+                </button>
+            </div>
+        </div>
+        <div class="modal-back"></div>
+    </section>
 
 <script>
     var selectedNodeId = "ME00000000";
@@ -131,12 +153,12 @@
     					'data' : data.menuList
     				}
     			});
-    			
+
     			$('#jstree').bind('ready.jstree', function(e, data) {
     				$('#jstree').jstree("select_node", menuId);
     				$('#jstree').jstree("open_node", menuId);
     			});
-    			
+
     			$('#jstree').off('changed.jstree').on('changed.jstree', function (e, data) {
     				if(data.selected && data.selected.length > 0) {
     					var node = data.instance.get_node(data.selected[0]);
@@ -170,13 +192,13 @@
     					html += "<td>" + (item.ordr || '') + "</td>";
     					html += "<td>" + (item.useYn || '') + "</td>";
     					html += "<td>";
-    					html += "<button type='button' class='btn btn-warning btn-sm mr-1' onclick='fnEditLowerMenu(\"" + item.menuId + "\", \"" + item.menuNm + "\", \"" + (item.menuCours || '') + "\", " + (item.ordr || 1) + ", \"" + item.useYn + "\")'>수정</button>";
-    					html += "<button type='button' class='btn btn-danger btn-sm' onclick='fnDeleteLowerMenu(\"" + item.menuId + "\")'>삭제</button>";
+    					html += "<button type='button' class='krds-btn small secondary' onclick='fnEditLowerMenu(\"" + item.menuId + "\", \"" + item.menuNm + "\", \"" + (item.menuCours || '') + "\", " + (item.ordr || 1) + ", \"" + item.useYn + "\")'>수정</button> ";
+    					html += "<button type='button' class='krds-btn small danger' onclick='fnDeleteLowerMenu(\"" + item.menuId + "\")'>삭제</button>";
     					html += "</td>";
     					html += "</tr>";
     				});
     			} else {
-    				html += "<tr><td colspan='6' class='text-center'>하위 메뉴가 존재하지 않습니다.</td></tr>";
+    				html += "<tr><td colspan='6'>하위 메뉴가 존재하지 않습니다.</td></tr>";
     			}
     			$("#menuLowTbody").html(html);
     		},
@@ -186,6 +208,25 @@
     	});
     }
 
+    function openMenuModal() {
+        var m = document.getElementById('menuModal');
+        m.classList.add('shown');
+        m.querySelector('.modal-back').classList.add('in');
+        setTimeout(function() { m.classList.add('in'); }, 50);
+    }
+
+    function closeMenuModal() {
+        var m = document.getElementById('menuModal');
+        if (!m.classList.contains('shown')) return;
+        m.classList.remove('in');
+        m.querySelector('.modal-back').classList.remove('in');
+        setTimeout(function() { m.classList.remove('shown'); }, 150);
+    }
+    document.getElementById('menuModal').querySelector('.modal-back').addEventListener('click', closeMenuModal);
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeMenuModal();
+    });
+
     // 모달 오픈 (추가/수정, 상위/하위)
     function fnOpenMenuModal(type, target) {
         $("#menuForm")[0].reset();
@@ -194,7 +235,7 @@
         if (type === 'insert') {
             $("#mode").val("insert");
             if (target === 'upper') {
-                $("#menuModalLabel").text("상위메뉴 등록");
+                $("#tit_menuModal").text("상위메뉴 등록");
                 $("#grad").val(1);
                 $("#upMenuId").val("ME00000000");
             } else {
@@ -202,7 +243,7 @@
                     alert("상위 메뉴를 먼저 선택하세요.");
                     return;
                 }
-                $("#menuModalLabel").text("하위메뉴 등록 (상위: " + selectedNodeText + ")");
+                $("#tit_menuModal").text("하위메뉴 등록 (상위: " + selectedNodeText + ")");
                 $("#grad").val(Number(selectedNodeGrad) + 1);
                 $("#upMenuId").val(selectedNodeId);
             }
@@ -213,20 +254,20 @@
                 return;
             }
             $("#mode").val("update");
-            $("#menuModalLabel").text("상위메뉴 수정");
+            $("#tit_menuModal").text("상위메뉴 수정");
             $("#menuId").val(selectedNodeId).prop("readonly", true);
             $("#menuNm").val(selectedNodeText);
             $("#grad").val(selectedNodeGrad);
             $("#upMenuId").val("ME00000000");
         }
-        $("#menuModal").modal("show");
+        openMenuModal();
     }
 
     // 하위메뉴 수정 모달 오픈
     function fnEditLowerMenu(menuId, menuNm, menuCours, ordr, useYn) {
         $("#menuForm")[0].reset();
         $("#mode").val("update");
-        $("#menuModalLabel").text("하위메뉴 수정");
+        $("#tit_menuModal").text("하위메뉴 수정");
         $("#menuId").val(menuId).prop("readonly", true);
         $("#menuNm").val(menuNm);
         $("#menuCours").val(menuCours);
@@ -234,7 +275,7 @@
         $("#useYn").val(useYn);
         $("#grad").val(2);
         $("#upMenuId").val(selectedNodeId);
-        $("#menuModal").modal("show");
+        openMenuModal();
     }
 
     // 메뉴 저장 (등록/수정)
@@ -264,7 +305,7 @@
             dataType: "json",
             success: function(response) {
                 alert("저장되었습니다.");
-                $("#menuModal").modal("hide");
+                closeMenuModal();
                 getMenuList(selectedNodeId);
             },
             error: function(request, status, error) {
@@ -288,7 +329,7 @@
                 success: function(response) {
                     alert("삭제되었습니다.");
                     getMenuList("ME00000000");
-                    $("#menuLowTbody").html("<tr><td colspan='6' class='text-center'>상위 메뉴를 선택하세요.</td></tr>");
+                    $("#menuLowTbody").html("<tr><td colspan='6'>상위 메뉴를 선택하세요.</td></tr>");
                 },
                 error: function(request, status, error) {
                     alert("삭제 중 에러가 발생하였습니다.");

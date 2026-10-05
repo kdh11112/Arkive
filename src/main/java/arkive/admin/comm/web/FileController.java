@@ -46,11 +46,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import arkive.admin.comm.service.EgovProperties;
 import arkive.admin.comm.service.FileService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 
+/**
+ * 공통 파일 업로드·다운로드.
+ * temp 선저장 후 확정(saveTempFiles)하는 2단계가 원칙이다.
+ * 유형 접두사: MP_(멀티파트) TUS_ DROPZONE_ BOARD_(게시판).
+ */
+@Tag(name = "공통 파일", description = "temp 업로드·확정·다운로드·삭제, TUS 청크 업로드")
 @Controller
 public class FileController extends FormBasedFileUtil{
 
@@ -135,7 +144,8 @@ public class FileController extends FormBasedFileUtil{
 	 * @param	ModelMap
 	 * @return : jsonView
 	*/
-	@RequestMapping(value = {"/system/file/tempFileUpload.json", "/file/tempFileUpload.json", "file/tempFileUpload.json"})
+	@Operation(summary = "temp 선저장 (DB 등록·확정 없음, saveTempFiles에서 확정)")
+	@RequestMapping(value = {"/system/file/tempFileUpload.json", "/file/tempFileUpload.json", "file/tempFileUpload.json"}, method = RequestMethod.POST)
 	public String setTempFileUpload(HttpServletRequest request, ModelMap model)  {
 	        try {
 	                // "files" 파라미터 우선, 없으면 전송된 전체 멀티파트 파일을 모은다.
@@ -188,7 +198,8 @@ public class FileController extends FormBasedFileUtil{
 	 * 그룹 파일 zip 다운로드
 	 * downloadFileId를 그룹 ID로 보고 해당 그룹 전체를 zip으로 묶어 첨부 다운로드한다.
 	 */
-	@RequestMapping(value="file/downloadFile2.do")
+	@Operation(summary = "그룹 ZIP 다운로드 (downloadFileId=그룹ID)")
+	@RequestMapping(value="file/downloadFile2.do", method = RequestMethod.GET)
 	public void downloadFile2(HttpServletRequest request, HttpServletResponse response) throws Throwable {
 		
 		try {
@@ -267,7 +278,8 @@ public class FileController extends FormBasedFileUtil{
 	 * @param
 	 * @throws IOException
 	 */
-	@RequestMapping(value="file/downloadFile.do")
+	@Operation(summary = "단건 다운로드 (이미지·PDF는 인라인 표시)")
+	@RequestMapping(value="file/downloadFile.do", method = RequestMethod.GET)
 	public void downloadFile(HttpServletRequest request, HttpServletResponse response) throws Throwable {
 		
 		try {
@@ -355,7 +367,8 @@ public class FileController extends FormBasedFileUtil{
 	 * 최종 저장 파일 삭제. result 1이면 삭제됨, 0이면 대상 없음·ID 오류다.
 	 * @return result
 	 */
-	@RequestMapping(value = "/file/setFileDelete.json")
+	@Operation(summary = "확정 파일 삭제 (실물+DB행)")
+	@RequestMapping(value = "/file/setFileDelete.json", method = RequestMethod.POST)
 	public String setFileDelete(HttpServletRequest request, ModelMap model) throws DataAccessException, FileNotFoundException, IOException {
 		
 		String fileId = cmmUtil.convertHtml(request, "fileId");
@@ -372,7 +385,8 @@ public class FileController extends FormBasedFileUtil{
 	}
 
 	
-	@RequestMapping(name = "멀파트 업로드", value = "/system/multipartUpload")
+	@Operation(summary = "멀티파트 업로드 화면")
+	@RequestMapping(name = "멀파트 업로드", value = "/system/multipartUpload", method = RequestMethod.GET)
 	public String multipartUpload(HttpServletRequest request, ModelMap model) throws Exception {
 	        List<EgovMap> fileList = fileService.selectAtchFileListByType("MULTIPART");
 	        model.put("fileList", fileList);
@@ -381,14 +395,16 @@ public class FileController extends FormBasedFileUtil{
 	}
 
 	
-	@RequestMapping(name = "TUS 파일업로드", value = "/system/tusUpload")
+	@Operation(summary = "TUS 업로드 화면")
+	@RequestMapping(name = "TUS 파일업로드", value = "/system/tusUpload", method = RequestMethod.GET)
 	public String tusUpload(HttpServletRequest request, ModelMap model) throws Exception {
 	        List<EgovMap> fileList = fileService.selectAtchFileListByType("TUS");
 	        model.put("fileList", fileList);
 	        return "comm/tusUpload";
 	}
 
-	@RequestMapping(name = "TUS 팝업", value = "/system/tusPopup")      
+	@Operation(summary = "TUS 팝업 (업로더 UI)")
+	@RequestMapping(name = "TUS 팝업", value = "/system/tusPopup", method = RequestMethod.GET)      
 	public String tusPopup(HttpServletRequest request, ModelMap model) throws Exception {
 		model.put("maxFileSizeMb", parseMb(TUS_MAX_FILE_SIZE_MB, 50L));
 	        return "comm/tusPopup";
@@ -412,6 +428,7 @@ public class FileController extends FormBasedFileUtil{
 	 * 2)가 없으면 3)은 절대 안 나가고 브라우저 콘솔에 CORS 에러만 뜬다.
 	 * 서버 로그에는 아무것도 안 찍히므로(요청 자체가 안 옴) 알아두어야 한다.
 	 */
+	@Operation(summary = "TUS CORS 프리플라이트 (OPTIONS)")
 	@RequestMapping(value = "/system/tus/**", method = RequestMethod.OPTIONS)
 	public ResponseEntity<?> tusOptions(HttpServletRequest request, HttpServletResponse response) {
 		HttpHeaders headers = new HttpHeaders();
@@ -433,6 +450,7 @@ public class FileController extends FormBasedFileUtil{
 	 * 20자리 접수번호 발급 + 빈 temp 파일 생성 + TUS 길이 파일에 총 길이 기록 후,
 	 * 201과 함께 이후 청크 전송 주소(Location)를 돌려준다.
 	 */
+	@Operation(summary = "TUS 업로드 생성 (접수번호 발급, Location 반환)")
 	@RequestMapping(value = "/system/tus", method = RequestMethod.POST)
 	public ResponseEntity<?> tusPost(HttpServletRequest request, HttpServletResponse response) {
 		try {
@@ -472,6 +490,7 @@ public class FileController extends FormBasedFileUtil{
 	 * 받은 바이트(Upload-Offset)와 총 길이(Upload-Length)를 돌려주면
 	 * 클라이언트는 그 위치부터 이어서 보낸다. 모르는 URL은 404.
 	 */
+	@Operation(summary = "TUS 이어받기 상태 조회 (Upload-Offset 반환)")
 	@RequestMapping(value = "/system/tus/{fileId}", method = RequestMethod.HEAD)
 	public ResponseEntity<?> tusHead(@PathVariable("fileId") String fileId, HttpServletRequest request) {
 		// 접수번호 형식이 아니면 404
@@ -508,6 +527,7 @@ public class FileController extends FormBasedFileUtil{
 	 * TUS 청크 수신. 받은 본문을 temp 파일 끝에 이어붙인다.
 	 * 위치가 어긋나면 409로 서버 위치를 알리고, 다 받으면 TUS 길이 파일을 지운다.
 	 */
+	@Operation(summary = "TUS 청크 수신 (이어붙이기, 409=위치 어긋남)")
 	@RequestMapping(value = "/system/tus/{fileId}", method = RequestMethod.PATCH)
 	public ResponseEntity<?> tusPatch(@PathVariable("fileId") String fileId, HttpServletRequest request) {
 		// 접수번호 형식이 아니면 404
@@ -564,6 +584,7 @@ public class FileController extends FormBasedFileUtil{
 	 * TUS temp 삭제. 본 파일과 TUS 길이 파일을 함께 지운다.
 	 * temp 공용 삭제구라 멀티파트·드롭존 취소도 이걸 쓴다.
 	 */
+	@Operation(summary = "TUS temp 삭제 (멀티파트·드롭존 취소도 공용)")
 	@RequestMapping(value = "/system/tus/{fileId}", method = RequestMethod.DELETE)
 	public ResponseEntity<?> tusDelete(@PathVariable("fileId") String fileId, HttpServletRequest request) {
 		// 접수번호 형식이 아니면 404
@@ -594,7 +615,8 @@ public class FileController extends FormBasedFileUtil{
 	 * 멀티파트, TUS, 드롭존 업로드가 공통으로 사용하는 저장 API.
 	 * @param map files(JSON), atchFileGrpid, fileType(MULTIPART | TUS | DROPZONE)
 	 */
-	@RequestMapping(value = {"/system/file/saveTempFiles.json"})
+	@Operation(summary = "temp 확정 저장 (최종 이동+DB 등록, fileType으로 그룹 접두사 결정)")
+	@RequestMapping(value = {"/system/file/saveTempFiles.json"}, method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> saveTempFilesApi(@RequestParam Map<String, Object> map) {
 		Object fileType = map.get("fileType");
@@ -614,6 +636,9 @@ public class FileController extends FormBasedFileUtil{
 		}
 		if ("DROPZONE".equalsIgnoreCase(fileType)) {
 			return "DROPZONE_";
+		}
+		if ("BOARD".equalsIgnoreCase(fileType) || "BOARD_EDITOR".equalsIgnoreCase(fileType)) {
+			return "BOARD_";
 		}
 		return "MP_";
 	}
@@ -678,7 +703,8 @@ public class FileController extends FormBasedFileUtil{
 		return result;
 	}
 	
-	@RequestMapping(name = "드롭존 업로드", value = "/system/dropzoneUpload")
+	@Operation(summary = "드롭존 업로드 화면")
+	@RequestMapping(name = "드롭존 업로드", value = "/system/dropzoneUpload", method = RequestMethod.GET)
 	public String dropzoneUpload(HttpServletRequest request, ModelMap model) throws Exception {
 	        List<EgovMap> fileList = fileService.selectAtchFileListByType("DROPZONE");
 	        model.put("fileList", fileList);
@@ -686,7 +712,8 @@ public class FileController extends FormBasedFileUtil{
 	        return "comm/dropzoneUpload";
 	}
 
-	@RequestMapping(name = "드롭존 팝업", value = "/system/dropzonePopup")
+	@Operation(summary = "드롭존 팝업 (업로더 UI)")
+	@RequestMapping(name = "드롭존 팝업", value = "/system/dropzonePopup", method = RequestMethod.GET)
 	public String dropzonePopup(HttpServletRequest request, ModelMap model) throws Exception {
 	        String maxFilesNum = cmmUtil.convertHtml(request, "maxFilesNum");
 	        if (!StringUtils.hasText(maxFilesNum)) {

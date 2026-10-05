@@ -8,25 +8,26 @@
 </head>
 <body>
 
-<div layout:fragment="content" class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">     
-        <h1 class="h3 mb-0 text-gray-800">TUS 파일업로드 관리</h1>
-    </div>
+<div layout:fragment="content">
+    <h2 class="heading-large">TUS 파일업로드 관리</h2>
+    <script th:src="@{/vendor/tus/tus.min.js}"></script>
 
     <form id="detailForm" name="detailForm" method="post">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">파일 첨부 등록</h6>
-            </div>
-            <div class="card-body">
-                <div id="addFileList1" style="margin-bottom: 10px;" class="text-primary font-weight-bold"></div>
-                <button type="button" class="btn btn-primary btn-sm mb-2" id="fileBtn" onclick="addFile();">파일첨부</button>
-                <div class="small text-muted">파일을 선택하고 업로드를 마치면 temp 폴더에 바로 저장됩니다.</div>
-                <div class="mt-3">
-                    <button type="button" class="btn btn-success btn-sm" id="tusSaveBtn" onclick="save();" disabled>tus 저장</button>
-                    <button type="button" class="btn btn-secondary btn-sm" id="tusAllClearBtn" onclick="clearTusFiles();" disabled>전체 취소</button>
+        <div class="conts-wrap">
+            <div class="fieldset input-form">
+                <div class="form-group">
+                    <div class="form-tit"><span>파일 첨부 등록</span></div>
+                    <div class="form-conts">
+                        <div id="addFileList1" style="margin-bottom: 10px;"></div>
+                        <button type="button" class="krds-btn small primary" id="fileBtn" onclick="addFile();">파일첨부</button>
+                        <div>파일을 선택하고 업로드를 마치면 temp 폴더에 바로 저장됩니다.</div>
+                        <div class="btn-wrap" style="margin-top: 8px;">
+                            <button type="button" class="krds-btn small primary" id="tusSaveBtn" onclick="save();" disabled>tus 저장</button>
+                            <button type="button" class="krds-btn small secondary" id="tusAllClearBtn" onclick="clearTusFiles();" disabled>전체 취소</button>
+                        </div>
+                        <div id="tusUploadResult" style="margin-top: 12px;" role="status" aria-live="polite"></div>
+                    </div>
                 </div>
-                <div id="tusUploadResult" class="mt-3" role="status" aria-live="polite"></div>
             </div>
         </div>
 
@@ -37,29 +38,27 @@
         <input type="hidden" id="tusFileData" name="tusFileData" value=""/>
     </form>
 
-    <!-- TUS 업로드 파일 목록 -->
-    <div class="row mt-4">
-        <div class="col-lg-12 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">TUS 업로드 파일 목록</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered" width="100%" cellspacing="0">
+    <div class="conts-wrap">
+        <div class="fieldset">
+            <div class="form-group">
+                <div class="form-tit"><span>TUS 업로드 파일 목록</span></div>
+                <div class="form-conts">
+                    <div class="krds-table-wrap">
+                        <table class="tbl col data">
+                            <caption>TUS 업로드 파일 목록</caption>
                             <thead>
                                 <tr>
-                                    <th>No</th>
-                                    <th>파일명</th>
-                                    <th>크기 (Bytes)</th>
-                                    <th>업로드일시</th>
-                                    <th>다운로드</th>
-                                    <th>삭제</th>
+                                    <th scope="col">No</th>
+                                    <th scope="col">파일명</th>
+                                    <th scope="col">크기 (Bytes)</th>
+                                    <th scope="col">업로드일시</th>
+                                    <th scope="col">다운로드</th>
+                                    <th scope="col">삭제</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr th:if="${fileList == null or fileList.isEmpty()}">
-                                    <td colspan="6" class="text-center">업로드된 파일이 없습니다.</td>
+                                    <td colspan="6">업로드된 파일이 없습니다.</td>
                                 </tr>
                                 <tr th:each="file, iterStat : ${fileList}">
                                     <td th:text="${iterStat.count}">1</td>
@@ -67,10 +66,10 @@
                                     <td th:text="${file.fileSz}">0</td>
                                     <td th:text="${file.regDt}">2026-09-26</td>
                                     <td>
-                                        <a th:href="@{/file/downloadFile.do(downloadFileId=${file.fileId})}" class="btn btn-sm btn-primary" target="_blank">다운로드</a>
+                                        <a th:href="@{/file/downloadFile.do(downloadFileId=${file.fileId})}" class="krds-btn small secondary" target="_blank">다운로드</a>
                                     </td>
                                     <td>
-                                        <button type="button" class="btn btn-sm btn-danger" th:attr="data-saved-file-id=${file.fileId}">삭제</button>
+                                        <button type="button" class="krds-btn small danger" th:attr="data-saved-file-id=${file.fileId}">삭제</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -83,6 +82,13 @@
 
 <script type="text/javascript">
 var tusFiles = [];
+
+function setTusResult(kind, msg) {
+    var colors = { success: '#1a7f37', danger: '#d11f1f', info: '#0b5fc1', warning: '#b25e09' };
+    var box = document.getElementById("tusUploadResult");
+    box.style.color = colors[kind] || '';
+    box.textContent = msg;
+}
 
 function addFile(){
     window.open("/system/tusPopup", "newWindow", "top=300,left=1000,width=600,height=600,status=no,menubar=no,toolbar=no,resizable=no");
@@ -103,21 +109,18 @@ function renderFileList() {
     var html = "";
     tusFiles.forEach(function(item, idx){
         html += '<div class="file-item" data-idx="' + idx + '">' +
-                '<span class="file-name">' + item.fileName + '</span>' +
-                '<button type="button" class="btn btn-danger btn-sm" onclick="removeFile(' + idx + ')">삭제</button>' +
+                '<span class="file-name">' + item.fileName + '</span> ' +
+                '<button type="button" class="krds-btn small danger" onclick="removeFile(' + idx + ')">삭제</button>' +
                 '</div>';
     });
     document.getElementById("addFileList1").innerHTML = html;
     document.getElementById("tusFileData").value = JSON.stringify(tusFiles);
     document.getElementById("tusAllClearBtn").disabled = tusFiles.length === 0;
     document.getElementById("tusSaveBtn").disabled = tusFiles.length === 0;
-    var tusResultBox = document.getElementById("tusUploadResult");
     if (tusFiles.length === 0) {
-        tusResultBox.className = "mt-3";
-        tusResultBox.textContent = "";
+        setTusResult('', '');
     } else {
-        tusResultBox.className = "mt-3 text-success";
-        tusResultBox.textContent = tusFiles.length + "개 파일을 temp 폴더에 저장했습니다. 저장을 눌러야 Arkive에 반영됩니다.";
+        setTusResult('success', tusFiles.length + "개 파일을 temp 폴더에 저장했습니다. 저장을 눌러야 Arkive에 반영됩니다.");
     }
 }
 
@@ -212,7 +215,7 @@ function deleteSavedFile(button) {
             }
             if (tbody && !tbody.querySelector('tr')) {
                 var emptyRow = document.createElement('tr');
-                emptyRow.innerHTML = '<td colspan="6" class="text-center">업로드된 파일이 없습니다.</td>';
+                emptyRow.innerHTML = '<td colspan="6">업로드된 파일이 없습니다.</td>';
                 tbody.appendChild(emptyRow);
             }
             alert('저장 파일을 삭제했습니다.');

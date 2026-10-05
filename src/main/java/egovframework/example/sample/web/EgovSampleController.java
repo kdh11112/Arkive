@@ -66,7 +66,7 @@ public class EgovSampleController {
 
 	@GetMapping("/egov")
 	public String index(ModelMap model) throws Exception {
-		return "bootstrap/index";
+		return "redirect:/egovSampleList.do";
 	}
 
 	/**

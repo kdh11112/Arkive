@@ -82,13 +82,16 @@
         WHERE 1 = 1
         <choose>
             <when test="_parameter == 'MULTIPART'">
-                AND (ATCH_FILE_GRPID LIKE 'MP_%' OR (ATCH_FILE_GRPID NOT LIKE 'TUS_%' AND ATCH_FILE_GRPID NOT LIKE 'DROPZONE_%'))
+                AND (ATCH_FILE_GRPID LIKE 'MP_%' OR (ATCH_FILE_GRPID NOT LIKE 'TUS_%' AND ATCH_FILE_GRPID NOT LIKE 'DROPZONE_%' AND ATCH_FILE_GRPID NOT LIKE 'BOARD_%'))
             </when>
             <when test="_parameter == 'TUS'">
                 AND ATCH_FILE_GRPID LIKE 'TUS_%'
             </when>
             <when test="_parameter == 'DROPZONE'">
                 AND ATCH_FILE_GRPID LIKE 'DROPZONE_%'
+            </when>
+            <when test="_parameter == 'BOARD'">
+                AND ATCH_FILE_GRPID LIKE 'BOARD_%'
             </when>
         </choose>
         ORDER BY REG_DT DESC

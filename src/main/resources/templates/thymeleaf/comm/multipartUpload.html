@@ -8,60 +8,50 @@
 </head>
 <body>
 
-<div layout:fragment="content" class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">멀티파트 업로드</h1>
-    </div>
+<div layout:fragment="content">
+    <h2 class="heading-large">멀티파트 업로드</h2>
 
-    <div class="row">
-        <div class="col-lg-12 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">일반 멀티파트 파일 업로드</h6>
-                </div>
-                <div class="card-body">
+    <div class="conts-wrap">
+        <div class="fieldset input-form">
+            <div class="form-group">
+                <div class="form-tit"><span>일반 멀티파트 파일 업로드</span></div>
+                <div class="form-conts">
                     <form id="multipartUploadForm" enctype="multipart/form-data">
-                        <div class="form-group mb-2">
-                            <input type="file" id="multipartFileInput" name="files" class="form-control-file mb-2" multiple required>
-                            <input type="hidden" id="maxFileSizeMb" th:value="${maxFileSizeMb}">
-                            <div class="small text-muted">파일을 선택하고 열기를 누르면 temp 폴더에 바로 저장됩니다.</div>
-                            <div class="small text-danger" th:text="'※ 첨부파일 업로드 용량은 ' + ${maxFileSizeMb} + 'MB 이하 입니다.'">※ 첨부파일 업로드 용량은 50MB 이하 입니다.</div>
-                            <ul id="multipartStagedList" class="list-unstyled small mt-2 mb-0" aria-live="polite"></ul>
-                        </div>
+                        <input type="file" id="multipartFileInput" name="files" multiple required>
+                        <input type="hidden" id="maxFileSizeMb" th:value="${maxFileSizeMb}">
+                        <div>파일을 선택하고 열기를 누르면 temp 폴더에 바로 저장됩니다.</div>
+                        <div style="color: #d11f1f;" th:text="'※ 첨부파일 업로드 용량은 ' + ${maxFileSizeMb} + 'MB 이하 입니다.'">※ 첨부파일 업로드 용량은 50MB 이하 입니다.</div>
+                        <ul id="multipartStagedList" style="list-style: none; padding-left: 0; margin-top: 8px;" aria-live="polite"></ul>
                     </form>
-                    <div>
-                        <button type="button" id="multipartSaveButton" class="btn btn-success btn-sm" disabled>저장</button>
-                        <button type="button" id="multipartClearButton" class="btn btn-secondary btn-sm" disabled>전체 취소</button>
+                    <div class="btn-wrap" style="margin-top: 8px;">
+                        <button type="button" id="multipartSaveButton" class="krds-btn small primary" disabled>저장</button>
+                        <button type="button" id="multipartClearButton" class="krds-btn small secondary" disabled>전체 취소</button>
                     </div>
-                    <div id="multipartUploadResult" class="mt-3" role="status" aria-live="polite"></div>
+                    <div id="multipartUploadResult" style="margin-top: 12px;" role="status" aria-live="polite"></div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Arkive 최종 경로에 저장된 파일 목록 -->
-    <div class="row">
-        <div class="col-lg-12 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Arkive 저장 파일 목록</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered" width="100%" cellspacing="0">
+        <div class="fieldset">
+            <div class="form-group">
+                <div class="form-tit"><span>Arkive 저장 파일 목록</span></div>
+                <div class="form-conts">
+                    <div class="krds-table-wrap">
+                        <table class="tbl col data">
+                            <caption>Arkive 저장 파일 목록</caption>
                             <thead>
                                 <tr>
-                                    <th>No</th>
-                                    <th>파일명</th>
-                                    <th>크기 (Bytes)</th>
-                                    <th>업로드일시</th>
-                                    <th>다운로드</th>
-                                    <th>삭제</th>
+                                    <th scope="col">No</th>
+                                    <th scope="col">파일명</th>
+                                    <th scope="col">크기 (Bytes)</th>
+                                    <th scope="col">업로드일시</th>
+                                    <th scope="col">다운로드</th>
+                                    <th scope="col">삭제</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr th:if="${fileList == null or fileList.isEmpty()}">
-                                    <td colspan="6" class="text-center">저장된 파일이 없습니다.</td>
+                                    <td colspan="6">저장된 파일이 없습니다.</td>
                                 </tr>
                                 <tr th:each="file, iterStat : ${fileList}">
                                     <td th:text="${iterStat.count}">1</td>
@@ -69,10 +59,10 @@
                                     <td th:text="${file.fileSz}">0</td>
                                     <td th:text="${file.regDt}">2026-09-26</td>
                                     <td>
-                                        <a th:href="@{/file/downloadFile.do(downloadFileId=${file.fileId})}" class="btn btn-sm btn-primary" target="_blank">다운로드</a>
+                                        <a th:href="@{/file/downloadFile.do(downloadFileId=${file.fileId})}" class="krds-btn small secondary" target="_blank">다운로드</a>
                                     </td>
                                     <td>
-                                        <button type="button" class="btn btn-sm btn-danger" th:attr="data-saved-file-id=${file.fileId}">삭제</button>
+                                        <button type="button" class="krds-btn small danger" th:attr="data-saved-file-id=${file.fileId}">삭제</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -94,6 +84,12 @@
         // temp 폴더에 저장된 파일 (저장 전에는 DB에 등록되지 않는다)
         let stagedFiles = [];
 
+        function setResult(kind, msg) {
+            const colors = { success: '#1a7f37', danger: '#d11f1f', info: '#0b5fc1', warning: '#b25e09' };
+            resultBox.style.color = colors[kind] || '';
+            resultBox.textContent = msg;
+        }
+
         function updateButtons() {
             saveButton.disabled = stagedFiles.length === 0;
             clearButton.disabled = stagedFiles.length === 0;
@@ -103,15 +99,15 @@
             stagedList.innerHTML = '';
             stagedFiles.forEach(function (item, index) {
                 const row = document.createElement('li');
-                row.className = 'd-flex justify-content-between align-items-center mb-1';
+                row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;';
 
                 const name = document.createElement('span');
-                name.className = 'text-truncate me-2';
+                name.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px;';
                 name.textContent = item.fileName;
 
                 const button = document.createElement('button');
                 button.type = 'button';
-                button.className = 'btn btn-sm btn-link text-danger p-0';
+                button.className = 'krds-btn small danger';
                 button.textContent = '취소';
                 button.addEventListener('click', function () { removeStaged(index); });
 
@@ -171,8 +167,7 @@
             const overSized = selectedFiles.filter(function (f) { return f.size > maxFileSizeMb * 1024 * 1024; });
             if (overSized.length > 0) {
                 fileInput.value = '';
-                resultBox.className = 'mt-3 text-danger';
-                resultBox.textContent = '※ 첨부파일 업로드 용량은 ' + maxFileSizeMb + 'MB 이하 입니다. (' + overSized[0].name + ')';
+                setResult('danger', '※ 첨부파일 업로드 용량은 ' + maxFileSizeMb + 'MB 이하 입니다. (' + overSized[0].name + ')');
                 return;
             }
 
@@ -180,8 +175,7 @@
             fileInput.disabled = true;
             saveButton.disabled = true;
             clearButton.disabled = true;
-            resultBox.className = 'mt-3 text-info';
-            resultBox.textContent = 'temp 폴더로 업로드 중입니다...';
+            setResult('info', 'temp 폴더로 업로드 중입니다...');
 
             try {
                 const uploadData = new FormData();
@@ -216,12 +210,10 @@
                     return { fileId: f.fileId, fileName: f.orgnlFileNm, fileSize: f.fileSz };
                 }));
                 fileInput.value = '';
-                resultBox.className = 'mt-3 text-success';
-                resultBox.textContent = uploaded.length + '개 파일을 temp 폴더에 저장했습니다. 저장을 눌러야 Arkive에 반영됩니다.';
+                setResult('success', uploaded.length + '개 파일을 temp 폴더에 저장했습니다. 저장을 눌러야 Arkive에 반영됩니다.');
                 renderStaged();
             } catch (error) {
-                resultBox.className = 'mt-3 text-danger';
-                resultBox.textContent = error.message;
+                setResult('danger', error.message);
             } finally {
                 isUploading = false;
                 fileInput.disabled = false;
@@ -235,8 +227,7 @@
                 return;
             }
             saveButton.disabled = true;
-            resultBox.className = 'mt-3 text-info';
-            resultBox.textContent = 'Arkive에 저장 중입니다...';
+            setResult('info', 'Arkive에 저장 중입니다...');
 
             const params = new URLSearchParams();
             params.append('files', JSON.stringify(stagedFiles.map(function (f) {
@@ -256,21 +247,18 @@
                 if (payload.count !== stagedFiles.length) {
                     const savedIds = new Set((payload.files || []).map(function (f) { return f.fileId; }));
                     stagedFiles = stagedFiles.filter(function (f) { return !savedIds.has(f.fileId); });
-                    resultBox.className = 'mt-3 text-warning';
-                    resultBox.textContent = savedIds.size + '개 저장, ' + stagedFiles.length + '개는 temp에 남아 저장하지 못했습니다.';
+                    setResult('warning', savedIds.size + '개 저장, ' + stagedFiles.length + '개는 temp에 남아 저장하지 못했습니다.');
                     renderStaged();
                     updateButtons();
                     return;
                 }
-                resultBox.className = 'mt-3 text-success';
-                resultBox.textContent = payload.count + '개 파일을 Arkive에 저장했습니다.';
+                setResult('success', payload.count + '개 파일을 Arkive에 저장했습니다.');
                 stagedFiles = [];
                 renderStaged();
                 updateButtons();
                 location.reload();
             } catch (error) {
-                resultBox.className = 'mt-3 text-danger';
-                resultBox.textContent = error.message;
+                setResult('danger', error.message);
                 updateButtons();
             }
         });
@@ -307,14 +295,12 @@
                 }
                 if (tbody && !tbody.querySelector('tr')) {
                     const emptyRow = document.createElement('tr');
-                    emptyRow.innerHTML = '<td colspan="6" class="text-center">저장된 파일이 없습니다.</td>';
+                    emptyRow.innerHTML = '<td colspan="6">저장된 파일이 없습니다.</td>';
                     tbody.appendChild(emptyRow);
                 }
-                resultBox.className = 'mt-3 text-success';
-                resultBox.textContent = '저장 파일을 삭제했습니다.';
+                setResult('success', '저장 파일을 삭제했습니다.');
             } catch (error) {
-                resultBox.className = 'mt-3 text-danger';
-                resultBox.textContent = error.message;
+                setResult('danger', error.message);
                 button.disabled = false;
             }
         }
