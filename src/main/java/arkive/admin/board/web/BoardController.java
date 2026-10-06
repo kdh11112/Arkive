@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import arkive.admin.board.service.BoardService;
+import arkive.admin.board.service.BoardSseService;
 import arkive.admin.comm.service.FileService;
 import arkive.admin.comm.web.CommUtil;
 import arkive.admin.comm.web.HtmlSanitizer;

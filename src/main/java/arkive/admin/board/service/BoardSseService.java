@@ -1,4 +1,4 @@
-package arkive.admin.board.web;
+package arkive.admin.board.service;
 
 import java.io.IOException;
 import java.util.List;
