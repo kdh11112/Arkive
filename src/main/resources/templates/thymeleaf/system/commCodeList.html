@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>공통코드 관리</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+    <h2 class="heading-large">공통코드 관리</h2>
+
+    <div class="conts-wrap">
+        <style>
+            .code-cols { display: flex; gap: 24px; align-items: flex-start; }
+            .code-cols > .code-master { flex: 0 0 38%; min-width: 0; }
+            .code-cols > .code-detail { flex: 1; min-width: 0; }
+            @media (max-width: 1023px) {
+                .code-cols { flex-direction: column; }
+                .code-cols > .code-master { flex: none; width: 100%; }
+            }
+        </style>
+        <div class="code-cols">
+        <div class="code-master">
+        <div class="fieldset">
+            <div class="form-group">
+                <div class="form-tit"><span>마스터 목록</span></div>
+                <div class="form-conts">
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                        <input type="text" id="searchKeyword" class="krds-input" style="flex: 1;" placeholder="코드/코드명 검색">
+                        <button type="button" class="krds-btn small secondary" onclick="loadMaster();">검색</button>
+                        <button type="button" class="krds-btn small primary" onclick="fnOpenCodeModal('insertMaster')">추가</button>
+                    </div>
+                    <div class="krds-table-wrap">
+                        <table class="tbl col data">
+                            <caption>마스터 목록</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">마스터코드</th>
+                                    <th scope="col">코드명</th>
+                                    <th scope="col">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="masterTbody">
+                                <tr><td colspan="3">조회 중입니다.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <div class="code-detail">
+        <div class="fieldset">
+            <div class="form-group">
+                <div class="form-tit"><span id="detailTitle">상세 목록</span></div>
+                <div class="form-conts">
+                    <div class="btn-wrap" style="margin-bottom: 8px;">
+                        <button type="button" class="krds-btn small primary" onclick="fnOpenCodeModal('insertDetail')">상세 추가</button>
+                    </div>
+                    <div class="krds-table-wrap">
+                        <table class="tbl col data">
+                            <caption>상세 목록</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">상세코드</th>
+                                    <th scope="col">코드명</th>
+                                    <th scope="col">순서</th>
+                                    <th scope="col">사용여부</th>
+                                    <th scope="col">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detailTbody">
+                                <tr><td colspan="5">마스터를 선택하세요.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+        </div>
+    </div>
+
+    <!-- KRDS 모달. ui-script 의존 없이 직접 열고 닫는다 -->
+    <section id="codeModal" class="krds-modal fade" role="dialog" aria-labelledby="tit_codeModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="tit_codeModal" class="modal-title">코드 등록</h2>
+                </div>
+                <div class="modal-conts">
+                    <div class="conts-area">
+                        <form id="codeForm">
+                            <input type="hidden" id="mode" name="mode">
+                            <input type="hidden" id="isMaster" name="isMaster" value="false">
+                            <div class="fieldset input-form">
+                                <div class="form-group">
+                                    <div class="form-tit"><label for="mastrCode">마스터코드</label></div>
+                                    <div class="form-conts"><input type="text" class="krds-input" id="mastrCode" name="mastrCode" required></div>
+                                </div>
+                                <div class="form-group" id="detailCodeRow">
+                                    <div class="form-tit"><label for="detailCode">상세코드</label></div>
+                                    <div class="form-conts"><input type="text" class="krds-input" id="detailCode" name="detailCode" required></div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="form-tit"><label for="codeNm">코드명</label></div>
+                                    <div class="form-conts"><input type="text" class="krds-input" id="codeNm" name="codeNm" required></div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="form-tit"><label for="cdDc">설명</label></div>
+                                    <div class="form-conts"><input type="text" class="krds-input" id="cdDc" name="cdDc"></div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="form-tit"><label for="ordr">순서</label></div>
+                                    <div class="form-conts"><input type="number" class="krds-input" id="ordr" name="ordr" value="1" min="1"></div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="form-tit"><label for="useYn">사용 여부</label></div>
+                                    <div class="form-conts">
+                                        <select class="krds-form-select" id="useYn" name="useYn">
+                                            <option value="Y">Y</option>
+                                            <option value="N">N</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="form-tit"><label for="refrn1">참조1</label></div>
+                                    <div class="form-conts"><input type="text" class="krds-input" id="refrn1" name="refrn1"></div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="form-tit"><label for="refrn2">참조2</label></div>
+                                    <div class="form-conts"><input type="text" class="krds-input" id="refrn2" name="refrn2"></div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="modal-btn btn-wrap">
+                    <button type="button" class="krds-btn medium tertiary close-modal" onclick="closeCodeModal()">취소</button>
+                    <button type="button" class="krds-btn medium primary" onclick="fnSaveCode()">저장</button>
+                </div>
+                <button type="button" class="krds-btn medium icon btn-close close-modal" onclick="closeCodeModal()">
+                    <span class="sr-only">닫기</span>
+                    <i class="svg-icon ico-popup-close"></i>
+                </button>
+            </div>
+        </div>
+        <div class="modal-back"></div>
+    </section>
+
+<script>
+    var selectedMastrCode = '';
+
+    function escapeHtml(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function loadMaster() {
+        $.ajax({
+            type: 'post', url: '/system/getMasterList.json',
+            data: { searchKeyword: $('#searchKeyword').val() },
+            dataType: 'json',
+            success: function(data) {
+                var html = '';
+                if (data.resultList && data.resultList.length > 0) {
+                    $.each(data.resultList, function(i, item) {
+                        html += '<tr data-mastr="' + escapeHtml(item.mastrCode) + '">';
+                        html += '<td>' + escapeHtml(item.mastrCode) + '</td>';
+                        html += '<td>' + escapeHtml(item.codeNm) + '</td>';
+                        html += '<td>';
+                        html += "<button type='button' class='krds-btn small secondary' onclick='fnEditMaster(\"" + escapeHtml(item.mastrCode) + "\")'>수정</button> ";
+                        html += "<button type='button' class='krds-btn small danger' onclick='fnDeleteMaster(\"" + escapeHtml(item.mastrCode) + "\")'>삭제</button>";
+                        html += '</td></tr>';
+                    });
+                } else {
+                    html = "<tr><td colspan='3'>등록된 마스터가 없습니다.</td></tr>";
+                }
+                $('#masterTbody').html(html);
+                $('#masterTbody tr[data-mastr]').on('click', function(e) {
+                    if ($(e.target).is('button')) return;
+                    loadDetail($(this).data('mastr'));
+                });
+            },
+            error: function() { alert('에러가 발생하였습니다. 관리자에게 문의하세요.'); }
+        });
+    }
+
+    function loadDetail(mastrCode) {
+        selectedMastrCode = mastrCode;
+        $('#detailTitle').text('상세 목록 (' + mastrCode + ')');
+        $.ajax({
+            type: 'post', url: '/system/getDetailList.json',
+            data: { mastrCode: mastrCode },
+            dataType: 'json',
+            success: function(data) {
+                var html = '';
+                if (data.resultList && data.resultList.length > 0) {
+                    $.each(data.resultList, function(i, item) {
+                        html += '<tr>';
+                        html += '<td>' + escapeHtml(item.detailCode) + '</td>';
+                        html += '<td>' + escapeHtml(item.codeNm) + '</td>';
+                        html += '<td>' + (item.ordr == null ? '' : item.ordr) + '</td>';
+                        html += '<td>' + escapeHtml(item.useYn) + '</td>';
+                        html += '<td>';
+                        html += "<button type='button' class='krds-btn small secondary' onclick='fnEditDetail(\"" + escapeHtml(item.detailCode) + "\")'>수정</button> ";
+                        html += "<button type='button' class='krds-btn small danger' onclick='fnDeleteDetail(\"" + escapeHtml(item.detailCode) + "\")'>삭제</button>";
+                        html += '</td></tr>';
+                    });
+                } else {
+                    html = "<tr><td colspan='5'>상세 코드가 없습니다.</td></tr>";
+                }
+                $('#detailTbody').html(html);
+            },
+            error: function() { alert('에러가 발생하였습니다. 관리자에게 문의하세요.'); }
+        });
+    }
+
+    function openCodeModal() {
+        var m = document.getElementById('codeModal');
+        m.classList.add('shown');
+        m.querySelector('.modal-back').classList.add('in');
+        setTimeout(function() { m.classList.add('in'); }, 50);
+        var first = m.querySelector('#mastrCode');
+        if (first) setTimeout(function() { first.focus(); }, 200);
+    }
+    function closeCodeModal() {
+        var m = document.getElementById('codeModal');
+        if (!m.classList.contains('shown')) return;
+        m.classList.remove('in');
+        m.querySelector('.modal-back').classList.remove('in');
+        setTimeout(function() { m.classList.remove('shown'); }, 150);
+    }
+    document.getElementById('codeModal').querySelector('.modal-back').addEventListener('click', closeCodeModal);
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeCodeModal();
+    });
+
+    function fnOpenCodeModal(type) {
+        $('#codeForm')[0].reset();
+        $('#mastrCode').prop('readonly', false);
+        $('#detailCode').prop('readonly', false);
+        if (type === 'insertMaster') {
+            $('#mode').val('insert');
+            $('#isMaster').val('true');
+            $('#tit_codeModal').text('마스터 등록');
+            $('#mastrCode').val('').prop('readonly', false);
+            $('#detailCodeRow').hide();
+        } else if (type === 'insertDetail') {
+            if (!selectedMastrCode) { alert('마스터를 먼저 선택하세요.'); return; }
+            $('#mode').val('insert');
+            $('#isMaster').val('false');
+            $('#tit_codeModal').text('상세 등록 (' + selectedMastrCode + ')');
+            $('#mastrCode').val(selectedMastrCode).prop('readonly', true);
+            $('#detailCodeRow').show();
+        }
+        openCodeModal();
+    }
+
+    function fnEditMaster(mastrCode) {
+        fillCodeForm(mastrCode, mastrCode, '마스터 수정', true);
+    }
+
+    function fnEditDetail(detailCode) {
+        fillCodeForm(selectedMastrCode, detailCode, '상세 수정', false);
+    }
+
+    // 단건을 다시 읽어 모달을 채운다. 목록에는 코드명만 있어 상세 필드가 비기 때문이다.
+    function fillCodeForm(mastrCode, detailCode, title, isMaster) {
+        $.ajax({
+            type: 'post', url: '/system/getCodeInfo.json',
+            data: { mastrCode: mastrCode, detailCode: detailCode },
+            dataType: 'json',
+            success: function(data) {
+                if (!data || !data.result) {
+                    alert('코드 정보를 가져오지 못했습니다.');
+                    return;
+                }
+                var item = data.result;
+                $('#codeForm')[0].reset();
+                $('#mode').val('update');
+                $('#isMaster').val(isMaster ? 'true' : 'false');
+                $('#tit_codeModal').text(title);
+                $('#mastrCode').val(item.mastrCode).prop('readonly', true);
+                $('#detailCode').val(item.detailCode).prop('readonly', true);
+                $('#codeNm').val(item.codeNm);
+                $('#cdDc').val(item.cdDc);
+                $('#ordr').val(item.ordr == null ? 1 : item.ordr);
+                $('#useYn').val(item.useYn || 'Y');
+                $('#refrn1').val(item.refrn1);
+                $('#refrn2').val(item.refrn2);
+                if (isMaster) {
+                    $('#detailCodeRow').hide();
+                } else {
+                    $('#detailCodeRow').show();
+                }
+                openCodeModal();
+            },
+            error: function() { alert('에러가 발생하였습니다. 관리자에게 문의하세요.'); }
+        });
+    }
+
+    // 순서 입력은 숫자만. 마이너스·플러스·e·소수점 키와 붙여넣기 문자까지 차단한다.
+    $(document).on('keydown', '#ordr', function(e) {
+        if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E' || e.key === '.') {
+            e.preventDefault();
+        }
+    });
+    $(document).on('input', '#ordr', function() {
+        var v = String($(this).val() || '').replace(/[^0-9]/g, '');
+        if (v !== String($(this).val())) $(this).val(v);
+    });
+
+    function collectForm() {
+        // 순서는 1 이상만 허용한다. 마이너스·0 입력은 1로 올린다.
+        var ordr = parseInt($('#ordr').val(), 10);
+        if (isNaN(ordr) || ordr < 1) {
+            ordr = 1;
+            $('#ordr').val(1);
+        }
+        return {
+            mode: $('#mode').val(),
+            isMaster: $('#isMaster').val(),
+            mastrCode: $('#mastrCode').val(),
+            detailCode: $('#detailCode').val(),
+            codeNm: $('#codeNm').val(),
+            cdDc: $('#cdDc').val(),
+            ordr: ordr,
+            useYn: $('#useYn').val(),
+            refrn1: $('#refrn1').val(),
+            refrn2: $('#refrn2').val()
+        };
+    }
+
+    function fnSaveCode() {
+        var formData = collectForm();
+        if (!formData.mastrCode) { alert('마스터코드는 필수입니다.'); return; }
+        if (formData.isMaster !== 'true' && !formData.detailCode) { alert('상세코드는 필수입니다.'); return; }
+        if (!formData.codeNm) { alert('코드명은 필수입니다.'); return; }
+        var url = (formData.mode === 'insert') ? '/system/setInsertCode.json' : '/system/setUpdateCode.json';
+        $.ajax({
+            type: 'post', url: url, data: formData, dataType: 'json',
+            success: function(data) {
+                if (data && data.result === 'fail') {
+                    alert(data.message || '저장에 실패했습니다.');
+                    return;
+                }
+                alert('저장되었습니다.');
+                closeCodeModal();
+                loadMaster();
+                if (selectedMastrCode) loadDetail(selectedMastrCode);
+            },
+            error: function() {
+                alert('저장 중 에러가 발생하였습니다.');
+            }
+        });
+    }
+
+    function fnDeleteMaster(mastrCode) {
+        if (!confirm('마스터와 상세 전체를 삭제하시겠습니까?')) return;
+        $.ajax({
+            type: 'post', url: '/system/setDeleteCode.json',
+            data: { mastrCode: mastrCode, detailCode: '' },
+            dataType: 'json',
+            success: function() {
+                alert('삭제되었습니다.');
+                if (selectedMastrCode === mastrCode) {
+                    selectedMastrCode = '';
+                    $('#detailTitle').text('상세 목록');
+                    $('#detailTbody').html("<tr><td colspan='5'>마스터를 선택하세요.</td></tr>");
+                }
+                loadMaster();
+            },
+            error: function() { alert('삭제 중 에러가 발생하였습니다.'); }
+        });
+    }
+
+    function fnDeleteDetail(detailCode) {
+        if (!confirm('삭제하시겠습니까?')) return;
+        $.ajax({
+            type: 'post', url: '/system/setDeleteCode.json',
+            data: { mastrCode: selectedMastrCode, detailCode: detailCode },
+            dataType: 'json',
+            success: function() {
+                alert('삭제되었습니다.');
+                loadDetail(selectedMastrCode);
+            },
+            error: function() { alert('삭제 중 에러가 발생하였습니다.'); }
+        });
+    }
+
+    $(function() { loadMaster(); });
+</script>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.board.service.impl.BoardMapper">
+
+	<!-- 게시판 목록. boardType(CK/TOAST)으로 분리한다. 페이징은 LIMIT/OFFSET(HSQLDB) 기준이다. -->
+	<select id="selectBoardList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			BOARD_ID,
+			BOARD_TYPE,
+			TITLE,
+			ATCH_FILE_GRPID,
+			VIEW_CNT,
+			REGIST_DT,
+			REGISTER
+		FROM BOARD
+		WHERE BOARD_TYPE = #{boardType}
+		<if test="searchKeyword != null and searchKeyword != ''">
+			AND TITLE LIKE '%' || #{searchKeyword} || '%'
+		</if>
+		ORDER BY REGIST_DT DESC
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<!-- 토스트 전용 커서(키셋) 조회. BOARD_ID(시간순 문자열 PK)로 다음 묶음만 잘라 온다. -->
+	<!-- limit에는 호출자가 pageSize+1을 넣어 hasNext 판단용 여분을 포함한다. -->
+	<select id="selectBoardListByCursor" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			BOARD_ID,
+			BOARD_TYPE,
+			TITLE,
+			VIEW_CNT,
+			REGIST_DT,
+			REGISTER
+		FROM BOARD
+		WHERE BOARD_TYPE = #{boardType}
+		<if test="searchKeyword != null and searchKeyword != ''">
+			AND TITLE LIKE '%' || #{searchKeyword} || '%'
+		</if>
+		<if test="cursorId != null and cursorId != ''">
+			AND BOARD_ID &lt; #{cursorId}
+		</if>
+		ORDER BY BOARD_ID DESC
+		LIMIT #{limit}
+	</select>
+
+	<!-- 게시판 전체 건수 (오프셋 페이징용) -->
+	<select id="selectBoardListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM BOARD
+		WHERE BOARD_TYPE = #{boardType}
+		<if test="searchKeyword != null and searchKeyword != ''">
+			AND TITLE LIKE '%' || #{searchKeyword} || '%'
+		</if>
+	</select>
+
+	<!-- 이전글. 같은 게시판에서 현재 글보다 한 칸 아래(오래된 쪽)다. -->
+	<select id="selectPrevOne" parameterType="egovMap" resultType="egovMap">
+		SELECT BOARD_ID, TITLE
+		FROM BOARD
+		WHERE BOARD_TYPE = #{boardType}
+			AND (REGIST_DT &lt; #{registDt}
+				OR (REGIST_DT = #{registDt} AND BOARD_ID &lt; #{boardId}))
+		ORDER BY REGIST_DT DESC, BOARD_ID DESC
+		LIMIT 1
+	</select>
+
+	<!-- 다음글. 같은 게시판에서 현재 글보다 한 칸 위(최신 쪽)다. -->
+	<select id="selectNextOne" parameterType="egovMap" resultType="egovMap">
+		SELECT BOARD_ID, TITLE
+		FROM BOARD
+		WHERE BOARD_TYPE = #{boardType}
+			AND (REGIST_DT &gt; #{registDt}
+				OR (REGIST_DT = #{registDt} AND BOARD_ID &gt; #{boardId}))
+		ORDER BY REGIST_DT ASC, BOARD_ID ASC
+		LIMIT 1
+	</select>
+
+	<!-- 게시글 상세 -->
+	<select id="selectBoardDetail" parameterType="string" resultType="egovMap">
+		SELECT
+			BOARD_ID,
+			BOARD_TYPE,
+			TITLE,
+			CONTENT,
+			ATCH_FILE_GRPID,
+			VIEW_CNT,
+			REGIST_DT,
+			REGISTER
+		FROM BOARD
+		WHERE BOARD_ID = #{boardId}
+	</select>
+
+	<!-- 게시글 등록 -->
+	<insert id="insertBoard" parameterType="egovMap">
+		INSERT INTO BOARD (
+			BOARD_ID,
+			BOARD_TYPE,
+			TITLE,
+			CONTENT,
+			ATCH_FILE_GRPID,
+			VIEW_CNT,
+			REGIST_DT,
+			REGISTER
+		) VALUES (
+			#{boardId},
+			#{boardType},
+			#{title},
+			#{content},
+			#{atchFileGrpid},
+			0,
+			CURRENT_TIMESTAMP,
+			#{register}
+		)
+	</insert>
+
+	<!-- 게시글 수정 -->
+	<update id="updateBoard" parameterType="egovMap">
+		UPDATE BOARD
+		SET
+			TITLE = #{title},
+			CONTENT = #{content},
+			ATCH_FILE_GRPID = #{atchFileGrpid},
+			UPDT_DT = CURRENT_TIMESTAMP,
+			UPDUSR = #{updusr}
+		WHERE BOARD_ID = #{boardId}
+	</update>
+
+	<!-- 게시글 삭제 -->
+	<delete id="deleteBoard" parameterType="string">
+		DELETE FROM BOARD
+		WHERE BOARD_ID = #{boardId}
+	</delete>
+
+	<!-- 조회수 증가 -->
+	<update id="updateViewCnt" parameterType="string">
+		UPDATE BOARD
+		SET VIEW_CNT = COALESCE(VIEW_CNT, 0) + 1
+		WHERE BOARD_ID = #{boardId}
+	</update>
+
+</mapper>

@@ -1,0 +1,93 @@
+/* Arkive KRDS local tweaks. KRDS v1.1.0 stock(output.css) 다음에 로드한다.
+   벤더 원본을 직접 고치지 않고 이 파일에 덮어쓴다. (KRDS 가이드 권장 방식)
+   표기: [기본] = Kit v1.1.0 원본 상태, [추가]/[변경] = 이 파일에서 덮어쓴 것. */
+
+/* [추가] Pretendard GOV woff 폴백.
+   [기본] 공식 1.1.0 output.css에는 폰트 선언이 없어 시스템 폰트로 떨어진다. */
+@font-face {
+  font-family: Pretendard GOV;
+  font-weight: normal;
+  src: url(../fonts/PretendardGOV-Regular.subset.woff);
+}
+
+@font-face {
+  font-family: Pretendard GOV;
+  font-weight: 500;
+  src: url(../fonts/PretendardGOV-Medium.subset.woff);
+}
+
+@font-face {
+  font-family: Pretendard GOV;
+  font-weight: 700;
+  src: url(../fonts/PretendardGOV-Bold.subset.woff);
+}
+
+/* [추가] 등록 폼 제목 너비. [기본] .form-tit 너비 지정 없음. */
+.form-group .form-tit {
+  width: 100%;
+}
+
+/* [추가] 목록 페이지네이션: 좁은 화면에서 뒷번호 숨김. [기본] 숨김 처리 없음. */
+@media (max-width: 1023px) {
+  .krds-pagination .page-links .page-link:nth-child(6), .krds-pagination .page-links .page-link:nth-child(7), .krds-pagination .page-links .page-link:nth-child(8) {
+    display: none;
+  }
+}
+
+/* [추가] 링크 버튼 hover 밑줄색. [기본] 지정 없음. */
+.krds-btn.link.basic:hover, .krds-btn.link.basic:active, .krds-btn.link.basic:focus {
+  text-decoration-color: inherit;
+}
+
+/* [추가] 짧은 페이지에서도 푸터를 화면 하단에 붙인다. [기본] #wrap flex 지정 없음. */
+#wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+#container {
+  flex: 1;
+}
+
+/* [추가] 테이블 행 클릭 하이라이트 (arkive-common.js와 한 쌍). [기본] 행 선택 규격 없음. */
+.krds-table-wrap .tbl tbody tr.selected > td {
+  background-color: #e8f0fe;
+}
+
+/* [변경] 작은 화면 대응: 좌우 여백을 없애고 전폭으로 쓴다.
+   [기본] .inner { max-width: var(--krds-contents-wrap-size); padding 좌우: var(--krds-contents-padding-x); } */
+#wrap .inner {
+  max-width: none;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* [추가] 측면 내비 + 본문 2열 레이아웃. [기본] Kit에 컨테이너 규격 없음. */
+#container > .inner.sub {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+#container > .inner.sub nav.krds-side-navigation {
+  flex: 0 0 260px;
+}
+#container > .inner.sub > :last-child {
+  flex: 1;
+  min-width: 0;
+}
+/* [추가] 표가 화면 밖으로 밀려나지 않게 래퍼 안에서 가로 스크롤한다. [기본] overflow 지정 없음. */
+.krds-table-wrap {
+  overflow-x: auto;
+}
+.krds-table-wrap > table {
+  min-width: 720px;
+}
+@media (max-width: 1023px) {
+  #container > .inner.sub {
+    flex-direction: column;
+  }
+  #container > .inner.sub nav.krds-side-navigation {
+    flex: none;
+    width: 100%;
+  }
+}

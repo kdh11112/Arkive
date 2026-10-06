@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>CK에디터 글쓰기</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <style>
+        /* 에디터 편집 영역 위아래 확대 */
+        .ck-editor__editable { min-height: 500px; }
+    </style>
+    <h2 class="heading-large">CK에디터 글쓰기</h2>
+    <div class="conts-wrap">
+        <div class="fieldset input-form">
+            <input type="hidden" id="boardId" th:value="${detail != null ? detail['boardId'] : ''}">
+            <div class="form-group">
+                <div class="form-tit"><label for="title">제목</label></div>
+                <div class="form-conts"><input type="text" id="title" class="krds-input" th:value="${detail != null ? detail['title'] : ''}"></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="editor">내용 (HWP에서 복사 후 Ctrl+V, 이미지는 에디터에 바로 붙여넣기)</label></div>
+                <div class="form-conts">
+                    <div style="margin-bottom: 4px;"><span id="charCount">0 / 4000자</span></div>
+                    <textarea id="editor" th:text="${detail != null ? detail['content'] : ''}"></textarea>
+                </div>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+            <div>
+                <a th:href="@{/board/ckeditorList}" class="krds-btn medium secondary">목록</a>
+            </div>
+            <div>
+                <button type="button" class="krds-btn medium primary" onclick="fnSaveBoard()">저장</button>
+            </div>
+        </div>
+    </div>
+<link rel="stylesheet" th:href="@{/vendor/ckeditor5/ckeditor.css}">
+<script th:src="@{/vendor/ckeditor5/ckeditor.js}"></script>
+<script th:src="@{/vendor/ckeditor5/translations/ko.js}"></script>
+<script>
+    var ckEditor = null;
+    // npm ckeditor5@41.4.2 풀 번들(window.ckeditor5)을 로컬로 벤더링했다. 플러그인·툴바 이름은 번들에서 실측 검증됨.
+    ckeditor5.ClassicEditor.create(document.querySelector('#editor'), {
+        language: 'ko',
+        plugins: [
+            ckeditor5.Essentials, ckeditor5.CKFinderUploadAdapter, ckeditor5.Autoformat,
+            ckeditor5.Bold, ckeditor5.Italic, ckeditor5.BlockQuote, ckeditor5.Heading,
+            ckeditor5.Image, ckeditor5.ImageCaption, ckeditor5.ImageStyle, ckeditor5.ImageToolbar, ckeditor5.ImageUpload,
+            ckeditor5.Indent, ckeditor5.Link, ckeditor5.List, ckeditor5.MediaEmbed,
+            ckeditor5.Paragraph, ckeditor5.PasteFromOffice, ckeditor5.Table, ckeditor5.TableToolbar,
+            ckeditor5.TextTransformation, ckeditor5.FontSize, ckeditor5.FontColor, ckeditor5.FontBackgroundColor
+        ],
+        toolbar: {
+            items: [
+                'undo', 'redo', '|',
+                'heading', '|',
+                'fontSize', 'fontColor', 'fontBackgroundColor', '|',
+                'bold', 'italic', 'link', 'uploadImage', 'insertTable', '|',
+                'blockQuote', 'mediaEmbed', '|',
+                'bulletedList', 'numberedList', 'outdent', 'indent'
+            ]
+        },
+        image: {
+            toolbar: ['imageStyle:block', 'toggleImageCaption', 'imageTextAlternative', '|', 'linkImage']
+        },
+        ckfinder: { uploadUrl: '/board/editorImageUpload.json' },
+        // 저장 HTML에 미리보기(iframe)를 함께 넣어 상세(에디터 없음)에서도 재생되게 한다.
+        // 끄면 <oembed>만 저장돼 상세에서 안 보인다.
+        mediaEmbed: { previewsInData: true },
+        table: { contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells'] }
+    }).then(function(editor) {
+        ckEditor = editor;
+        editor.model.document.on('change:data', updateCharCount);
+        restoreDraft();
+        updateCharCount();
+    }).catch(function(e) { console.error(e); });
+
+    // 글자수 제한·임시저장 (제목 제외 본문 순수 텍스트 기준)
+    var BOARD_MAX_CHARS = 4000;
+    var DRAFT_KEY = 'boardDraft_CK_' + ($('#boardId').val() || 'new');
+    function plainText(html) {
+        var d = document.createElement('div');
+        d.innerHTML = html || '';
+        return (d.textContent || '').replace(/\s+/g, ' ').trim();
+    }
+    function updateCharCount() {
+        var n = plainText(ckEditor ? ckEditor.getData() : '').length;
+        $('#charCount').text(n + ' / ' + BOARD_MAX_CHARS + '자');
+        return n;
+    }
+    function saveDraft() {
+        try {
+            localStorage.setItem(DRAFT_KEY, JSON.stringify({
+                title: $('#title').val(),
+                content: ckEditor ? ckEditor.getData() : '',
+                savedAt: Date.now()
+            }));
+        } catch (e) { /* 저장소 full 등 무시 */ }
+    }
+    function restoreDraft() {
+        try {
+            var d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+            if (!d || (!d.title && !plainText(d.content))) return;
+            if (d.title === $('#title').val() && plainText(d.content) === plainText(ckEditor.getData())) return;
+            if (confirm('작성 중 임시저장본이 있습니다. 불러올까요? (' + new Date(d.savedAt).toLocaleString() + ')')) {
+                $('#title').val(d.title || '');
+                ckEditor.setData(d.content || '');
+            }
+        } catch (e) { /* 파손된 초안 무시 */ }
+    }
+    setInterval(saveDraft, 10000);
+
+    function fnSaveBoard() {
+        var title = ($('#title').val() || '').trim();
+        if (title === '') {
+            alert('제목을 입력하세요.');
+            $('#title').focus();
+            return;
+        }
+        var boardId = $('#boardId').val();
+        var isUpdate = boardId !== '';
+        var chars = updateCharCount();
+        if (chars > BOARD_MAX_CHARS) {
+            alert('본문이 ' + BOARD_MAX_CHARS + '자를 초과했습니다. (현재 ' + chars + '자)');
+            return;
+        }
+        $.ajax({
+            type: 'post',
+            url: isUpdate ? '/board/updateBoard.json' : '/board/insertBoard.json',
+            data: { boardId: boardId, boardType: 'CK', title: title, content: ckEditor ? ckEditor.getData() : '', atchFileGrpid: '' },
+            success: function(res) {
+                if (res.success) { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} location.href = '/board/ckeditorList'; }
+                else { alert(res.message || '저장에 실패했습니다.'); }
+            },
+            error: function() { alert('저장 중 오류가 발생했습니다.'); }
+        });
+    }
+</script>
+</div>
+</body>
+</html>

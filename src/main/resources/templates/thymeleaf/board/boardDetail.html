@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>게시글 상세</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <style>
+        /* HWP 복붙 대응: 큰 이미지·표가 영역을 깨고 넘치지 않게 강제 */
+        .board-content img { max-width: 100% !important; height: auto !important; }
+        .board-content iframe { max-width: 100%; }
+        .board-content figure.table { overflow-x: auto; max-width: 100%; }
+        .board-content table { max-width: 100%; }
+        .board-content * { overflow-wrap: anywhere; }
+    </style>
+    <h2 class="heading-large" th:text="${detail != null ? detail['title'] : '게시글'}">게시글</h2>
+    <div class="conts-wrap">
+        <div class="krds-table-wrap" th:if="${detail != null}">
+            <table class="tbl row data">
+                <caption>게시글 정보</caption>
+                <colgroup>
+                    <col style="width: 15%;">
+                    <col>
+                    <col style="width: 15%;">
+                    <col>
+                </colgroup>
+                <tbody>
+                <tr>
+                    <th scope="row">구분</th>
+                    <td th:text="${detail['boardType'] == 'CK' ? 'CK에디터' : '토스트'}"></td>
+                    <th scope="row">조회수</th>
+                    <td th:text="${detail['viewCnt']}"></td>
+                </tr>
+                <tr>
+                    <th scope="row">등록일</th>
+                    <td colspan="3" th:text="${detail['registDt'] != null ? #dates.format(detail['registDt'], 'yyyy-MM-dd HH:mm') : ''}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- 에디터 HTML 그대로 표시. 운영 전 서버 sanitize 필요 -->
+        <div class="board-content" style="min-height: 200px; padding: 16px 0;" th:if="${detail != null}" th:utext="${detail['content']}"></div>
+        <hr>
+        <div class="krds-table-wrap">
+            <table class="tbl row data">
+                <caption>이전글/다음글</caption>
+                <colgroup>
+                    <col style="width: 15%;">
+                    <col>
+                </colgroup>
+                <tbody>
+                <tr>
+                    <th scope="row">다음글</th>
+                    <td>
+                        <a th:if="${next != null}" th:href="@{/board/detail(boardId=${next['boardId']})}" th:text="${next['title']}"></a>
+                        <span th:if="${next == null}">다음글이 없습니다.</span>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">이전글</th>
+                    <td>
+                        <a th:if="${prev != null}" th:href="@{/board/detail(boardId=${prev['boardId']})}" th:text="${prev['title']}"></a>
+                        <span th:if="${prev == null}">이전글이 없습니다.</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <hr>
+        <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+            <div>
+                <a th:if="${detail != null and detail['boardType'] == 'CK'}" th:href="@{/board/ckeditorList}" class="krds-btn medium secondary">목록</a>
+                <a th:if="${detail != null and detail['boardType'] == 'TOAST'}" th:href="@{/board/toastList}" class="krds-btn medium secondary">목록</a>
+            </div>
+            <div>
+                <a th:if="${detail != null and detail['boardType'] == 'CK'}" th:href="@{/board/ckeditorWrite(boardId=${detail['boardId']})}" class="krds-btn medium secondary">수정</a>
+                <a th:if="${detail != null and detail['boardType'] == 'TOAST'}" th:href="@{/board/toastWrite(boardId=${detail['boardId']})}" class="krds-btn medium secondary">수정</a>
+                <button type="button" class="krds-btn medium danger" onclick="fnDelete()">삭제</button>
+            </div>
+        </div>
+    </div>
+<script th:inline="javascript">
+    // 기존 저장분에 남은 <oembed>를 유튜브 iframe으로 변환한다.
+    // 신규 저장분은 에디터 mediaEmbed.previewsInData로 iframe이 함께 저장된다.
+    (function() {
+        document.querySelectorAll('.board-content oembed[url]').forEach(function(el) {
+            var url = el.getAttribute('url') || '';
+            var m = url.match(/[?&]v=([^&#]+)/) || url.match(/youtu\.be\/([^?&#]+)/) || url.match(/youtube\.com\/embed\/([^?&#]+)/);
+            if (!m) return;
+            var f = document.createElement('iframe');
+            f.src = 'https://www.youtube.com/embed/' + m[1];
+            f.width = '100%';
+            f.height = '400';
+            f.setAttribute('frameborder', '0');
+            f.setAttribute('allowfullscreen', '');
+            el.replaceWith(f);
+        });
+    })();
+    function fnDelete() {
+        if (!confirm('삭제하시겠습니까?')) return;
+        var boardId = /*[[${detail != null ? detail['boardId'] : ''}]]*/ '';
+        $.post('/board/deleteBoard.json', { boardId: boardId }, function(res) {
+            if (res.success) {
+                var isCk = /*[[${detail != null and detail['boardType'] == 'CK'}]]*/ false;
+                location.href = isCk ? '/board/ckeditorList' : '/board/toastList';
+            } else { alert(res.message || '삭제에 실패했습니다.'); }
+        });
+    }
+</script>
+</div>
+</body>
+</html>

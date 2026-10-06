@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.system.service.impl.CommCodeMapper">
+
+	<!-- 마스터 목록. MASTR_CODE = DETAIL_CODE 인 행이 마스터다. -->
+	<select id="selectMasterList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			MASTR_CODE,
+			DETAIL_CODE,
+			CODE_NM,
+			ORDR,
+			USE_YN,
+			REGIST_DT,
+			REGISTER
+		FROM COMM_CODE
+		WHERE MASTR_CODE = DETAIL_CODE
+		<if test="searchKeyword != null and searchKeyword != ''">
+			AND (MASTR_CODE LIKE '%' || #{searchKeyword} || '%'
+				OR CODE_NM LIKE '%' || #{searchKeyword} || '%')
+		</if>
+		ORDER BY MASTR_CODE
+	</select>
+
+	<!-- 상세 목록 -->
+	<select id="selectDetailList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			MASTR_CODE,
+			DETAIL_CODE,
+			CODE_NM,
+			CD_DC,
+			ORDR,
+			USE_YN,
+			REFRN_1,
+			REFRN_2,
+			REFRN_3,
+			REFRN_4,
+			REGIST_DT,
+			REGISTER
+		FROM COMM_CODE
+		WHERE MASTR_CODE = #{mastrCode}
+			AND DETAIL_CODE != #{mastrCode}
+		ORDER BY ORDR, DETAIL_CODE
+	</select>
+
+	<!-- 런타임 공용 조회. 셀렉트박스 등에 쓴다. -->
+	<select id="selectCmmnCodeList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			DETAIL_CODE,
+			CODE_NM,
+			REFRN_1,
+			REFRN_2,
+			REFRN_3,
+			REFRN_4
+		FROM COMM_CODE
+		WHERE MASTR_CODE = #{mastrCode}
+			AND DETAIL_CODE != #{mastrCode}
+			AND USE_YN = 'Y'
+		ORDER BY ORDR, DETAIL_CODE
+	</select>
+
+	<!-- 단건 조회. 수정 모달 채우기용이다. -->
+	<select id="selectCodeInfo" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			MASTR_CODE,
+			DETAIL_CODE,
+			CODE_NM,
+			CD_DC,
+			ORDR,
+			USE_YN,
+			REFRN_1,
+			REFRN_2,
+			REFRN_3,
+			REFRN_4
+		FROM COMM_CODE
+		WHERE MASTR_CODE = #{mastrCode}
+			AND DETAIL_CODE = #{detailCode}
+	</select>
+
+	<!-- PK 중복 확인 -->
+	<select id="getChkCode" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM COMM_CODE
+		WHERE MASTR_CODE = #{mastrCode}
+			AND DETAIL_CODE = #{detailCode}
+	</select>
+
+	<!-- 등록 -->
+	<insert id="insertCode" parameterType="egovMap">
+		INSERT INTO COMM_CODE (
+			MASTR_CODE,
+			DETAIL_CODE,
+			CODE_NM,
+			CD_DC,
+			ORDR,
+			USE_YN,
+			REFRN_1,
+			REFRN_2,
+			REFRN_3,
+			REFRN_4,
+			REGIST_DT,
+			REGISTER
+		) VALUES (
+			#{mastrCode},
+			#{detailCode},
+			#{codeNm},
+			#{cdDc},
+			#{ordr},
+			#{useYn},
+			#{refrn1},
+			#{refrn2},
+			#{refrn3},
+			#{refrn4},
+			CURRENT_TIMESTAMP,
+			#{register}
+		)
+	</insert>
+
+	<!-- 수정 -->
+	<update id="updateCode" parameterType="egovMap">
+		UPDATE COMM_CODE
+		SET
+			CODE_NM = #{codeNm},
+			CD_DC = #{cdDc},
+			ORDR = #{ordr},
+			USE_YN = #{useYn},
+			REFRN_1 = #{refrn1},
+			REFRN_2 = #{refrn2},
+			REFRN_3 = #{refrn3},
+			REFRN_4 = #{refrn4},
+			UPDT_DT = CURRENT_TIMESTAMP,
+			UPDUSR = #{updusr}
+		WHERE MASTR_CODE = #{mastrCode}
+			AND DETAIL_CODE = #{detailCode}
+	</update>
+
+	<!-- 삭제. 마스터 삭제는 상세까지 함께 지운다. -->
+	<delete id="deleteCode" parameterType="egovMap">
+		DELETE FROM COMM_CODE
+		WHERE MASTR_CODE = #{mastrCode}
+		<if test="detailCode != null and detailCode != ''">
+			AND DETAIL_CODE = #{detailCode}
+		</if>
+	</delete>
+
+</mapper>
