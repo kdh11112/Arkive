@@ -58,6 +58,8 @@ import jakarta.servlet.http.HttpServletResponse;
  * 공통 파일 업로드·다운로드.
  * temp 선저장 후 확정(saveTempFiles)하는 2단계가 원칙이다.
  * 유형 접두사: MP_(멀티파트) TUS_ DROPZONE_ BOARD_(게시판).
+ * 근거: 대용량·청크 업로드(TUS/드롭존)와 일반 멀티파트를 같은 확정 규칙으로 묶는다.
+ * 미확정 temp는 TempFileCleanupJob이 정리한다.
  */
 @Tag(name = "공통 파일", description = "temp 업로드·확정·다운로드·삭제, TUS 청크 업로드")
 @Controller
@@ -140,13 +142,16 @@ public class FileController extends FormBasedFileUtil{
 	 * temp 폴더에 파일 업로드 (staging 전용. DB 등록·최종 이동 없음).
 	 * 멀티파트 메인(선택 즉시)·드롭존 팝업(확인 버튼)이 사용한다.
 	 * 확정은 /system/file/saveTempFiles.json이 담당한다.
+	 * 응답 키(tempFileList/success/message)는 기존 화면과 동일하게 유지한다.
+	 * 서버 실경로(root)는 응답에서 제외한다(호출처 미사용 + 경로 노출 방지).
 	 * @param	HttpServletRequest
-	 * @param	ModelMap
-	 * @return : jsonView
+	 * @return Map(tempFileList, success, message)
 	*/
 	@Operation(summary = "temp 선저장 (DB 등록·확정 없음, saveTempFiles에서 확정)")
 	@RequestMapping(value = {"/system/file/tempFileUpload.json", "/file/tempFileUpload.json", "file/tempFileUpload.json"}, method = RequestMethod.POST)
-	public String setTempFileUpload(HttpServletRequest request, ModelMap model)  {
+	@ResponseBody
+	public Map<String, Object> setTempFileUpload(HttpServletRequest request)  {
+		Map<String, Object> result = new HashMap<>();
 	        try {
 	                // "files" 파라미터 우선, 없으면 전송된 전체 멀티파트 파일을 모은다.
 	                List<MultipartFile> fileList = new ArrayList<>();
@@ -165,11 +170,10 @@ public class FileController extends FormBasedFileUtil{
 	                }
 	                // 받을 파일이 없으면 실패 응답으로 끝낸다.
 	                if (fileList.isEmpty()) {
-	                        model.put("tempFileList", Collections.emptyList());
-	                        model.put("success", false);
-	                        model.put("message", "업로드할 파일이 없습니다.");
-	                        model.put("root", fileService.getWritableRealPath());
-	                return "jsonView";
+	                        result.put("tempFileList", Collections.emptyList());
+	                        result.put("success", false);
+	                        result.put("message", "업로드할 파일이 없습니다.");
+	                return result;
 	                }
 	                // 그룹 ID 정규화. 목록 조회(SQL)가 MP_ 접두사로 멀티파트를 구분한다.
 	                String groupId = request.getParameter("atchFileGrpid");
@@ -180,18 +184,17 @@ public class FileController extends FormBasedFileUtil{
 	                }
 	                // temp 폴더에만 저장한다. DB 등록·최종 이동은 저장 API에서 한다.
 	                List<?> uploadedFiles = fileService.setUploadFiles(fileList, groupId, "SYSTEM");
-	                model.put("tempFileList", uploadedFiles);
-	                model.put("success", true);
+	                result.put("tempFileList", uploadedFiles);
+	                result.put("success", true);
 	        } catch(Exception e) {
 	                // 실패하면 빈 목록 + 에러 메시지로 응답한다.
 	                logger.error("setTempFileUpload failed", e);
-	                model.put("tempFileList", Collections.emptyList());
-	                model.put("success", false);
-	                model.put("message", "파일 저장에 실패했습니다: " + e.getMessage());
+	                result.put("tempFileList", Collections.emptyList());
+	                result.put("success", false);
+	                result.put("message", "파일 저장에 실패했습니다: " + e.getMessage());
 	        }
-	        model.put("root", fileService.getWritableRealPath());
 
-	        return "jsonView";
+	        return result;
 	}
 	
 	/**
@@ -369,19 +372,20 @@ public class FileController extends FormBasedFileUtil{
 	 */
 	@Operation(summary = "확정 파일 삭제 (실물+DB행)")
 	@RequestMapping(value = "/file/setFileDelete.json", method = RequestMethod.POST)
-	public String setFileDelete(HttpServletRequest request, ModelMap model) throws DataAccessException, FileNotFoundException, IOException {
+	@ResponseBody
+	public Map<String, Object> setFileDelete(HttpServletRequest request) throws DataAccessException, FileNotFoundException, IOException {
 		
 		String fileId = cmmUtil.convertHtml(request, "fileId");
 		
 		// ID 형식이 맞고 실제 삭제까지 되면 1이다
-		int result = 0;
+		int deleteResult = 0;
 		if (isValidTusFileId(fileId) && fileService.setDeleteFile(fileId)) {
-			result = 1;
+			deleteResult = 1;
 		}
 		
-		model.put("result", result);
-		
-		return "jsonView";
+		Map<String, Object> result = new HashMap<>();
+		result.put("result", deleteResult);
+		return result;
 	}
 
 	

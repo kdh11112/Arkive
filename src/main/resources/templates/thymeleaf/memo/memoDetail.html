@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>메모보고 상세보기</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">메모보고 상세보기</h2>
+    <div class="conts-wrap" th:if="${detail != null}">
+        <div class="fieldset input-form">
+            <div class="form-group">
+                <div class="form-tit">제목</div>
+                <div class="form-conts"><p th:text="${detail['title']}"></p></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit">보고자 → 대상자</div>
+                <div class="form-conts"><p th:text="${detail['reporter']} + ' → ' + ${detail['receiver']}"></p></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit">상태</div>
+                <div class="form-conts"><p th:text="${detail['status']}"></p></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit">내용</div>
+                <div class="form-conts"><p th:text="${detail['content']}" style="white-space: pre-wrap;"></p></div>
+            </div>
+            <div class="form-group" th:if="${detail['opinion'] != null and detail['opinion'] != ''}">
+                <div class="form-tit">의견</div>
+                <div class="form-conts"><p th:text="${detail['opinion']}" style="white-space: pre-wrap;"></p></div>
+            </div>
+        </div>
+        <!-- 보고 상태에서만 대상자 처리 버튼을 보여준다. 1단계 제약: 본인 확인 없이 표시. -->
+        <div th:if="${detail['status'] == '보고' or detail['status'] == '의견'}" style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px;">
+            <button type="button" class="krds-btn medium primary" onclick="fnConfirmMemo()">확인</button>
+        </div>
+        <div th:if="${detail['status'] == '보고' or detail['status'] == '확인'}" style="margin-top: 8px;">
+            <div class="form-conts"><textarea id="opinion" class="krds-input" rows="4" style="width: 100%;" placeholder="의견을 입력하세요"></textarea></div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+                <button type="button" class="krds-btn medium secondary" onclick="fnOpinionMemo()">의견남기기</button>
+            </div>
+        </div>
+        <div th:if="${detail['status'] == '보고'}" style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px;">
+            <a th:href="@{/memo/memoWrite}" data-post th:attr="data-name='reportId',data-value=${detail['reportId']}" class="krds-btn small secondary">수정</a>
+            <button type="button" class="krds-btn small danger" onclick="fnDeleteMemo()">삭제</button>
+        </div>
+    </div>
+    <div style="margin-top: 12px;">
+        <a th:href="@{/memo/memoList}" class="krds-btn medium secondary">목록</a>
+    </div>
+<script th:inline="javascript">
+    var memoReportId = /*[[${detail != null ? detail['reportId'] : ''}]]*/ '';
+    function fnConfirmMemo() {
+        if (!confirm('확인 처리하시겠습니까?')) { return; }
+        $.ajax({
+            type: 'post',
+            url: '/memo/confirmMemo.json',
+            data: { reportId: memoReportId },
+            success: function(res) {
+                if (res.success) { location.reload(); }
+                else { alert(res.message || '처리에 실패했습니다.'); }
+            },
+            error: function() { alert('처리 중 오류가 발생했습니다.'); }
+        });
+    }
+    function fnOpinionMemo() {
+        var opinion = ($('#opinion').val() || '').trim();
+        if (opinion === '') {
+            alert('의견을 입력하세요.');
+            $('#opinion').focus();
+            return;
+        }
+        $.ajax({
+            type: 'post',
+            url: '/memo/opinionMemo.json',
+            data: { reportId: memoReportId, opinion: $('#opinion').val() },
+            success: function(res) {
+                if (res.success) { location.reload(); }
+                else { alert(res.message || '처리에 실패했습니다.'); }
+            },
+            error: function() { alert('처리 중 오류가 발생했습니다.'); }
+        });
+    }
+    function fnDeleteMemo() {
+        if (!confirm('삭제하시겠습니까?')) { return; }
+        $.ajax({
+            type: 'post',
+            url: '/memo/deleteMemo.json',
+            data: { reportId: memoReportId },
+            success: function(res) {
+                if (res.success) { location.href = '/memo/memoList'; }
+                else { alert(res.message || '삭제에 실패했습니다.'); }
+            },
+            error: function() { alert('삭제 중 오류가 발생했습니다.'); }
+        });
+    }
+</script>
+</div>
+</body>
+</html>

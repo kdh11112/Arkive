@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>POLL 투표</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">POLL 투표</h2>
+    <div class="conts-wrap" th:if="${detail != null}">
+        <h3 th:text="${detail['title']}"></h3>
+        <p th:text="'투표기간: ' + ${detail['startYmd']} + ' ~ ' + ${detail['endYmd']}"></p>
+
+        <!-- 투표 전: 라디오 선택 -->
+        <div th:if="${!voted}">
+            <div th:each="item : ${itemList}" style="margin: 4px 0;">
+                <label>
+                    <input type="radio" name="itemId" th:value="${item['itemId']}">
+                    <span th:text="${item['itemNm']}"></span>
+                </label>
+            </div>
+            <div style="margin-top: 12px;">
+                <button type="button" id="voteBtn" class="krds-btn medium primary" onclick="fnVote()">투표하기</button>
+            </div>
+        </div>
+
+        <!-- 투표 후(또는 이미 투표): 결과 막대 -->
+        <div th:if="${voted}">
+            <p>이미 투표했습니다. 결과입니다.</p>
+            <div th:each="item : ${itemList}" style="margin: 4px 0;">
+                <span th:text="${item['itemNm']} + ' (' + ${item['voteCnt']} + '표)'"></span>
+                <div style="background: #eee; border-radius: 4px; height: 12px; width: 100%; max-width: 400px;">
+                    <div style="background: #2f7cf6; border-radius: 4px; height: 12px;" th:styleappend="'width:' + ${item['voteCnt']} + 'px; max-width: 100%;'"></div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px;">
+            <a th:href="@{/poll/pollWrite}" data-post th:attr="data-name='pollId',data-value=${detail['pollId']}" class="krds-btn small secondary">수정</a>
+            <a th:href="@{/poll/pollList}" class="krds-btn medium secondary">목록</a>
+        </div>
+    </div>
+<script th:inline="javascript">
+    var pollId = /*[[${detail != null ? detail['pollId'] : ''}]]*/ '';
+    function fnVote() {
+        var itemId = document.querySelector('input[name="itemId"]:checked');
+        if (!itemId) {
+            alert('보기를 선택하세요.');
+            return;
+        }
+        if (window._voteSaving) { return; }
+        window._voteSaving = true;
+        document.getElementById('voteBtn').disabled = true;
+        $.ajax({
+            type: 'post',
+            url: '/poll/votePoll.json',
+            data: { pollId: pollId, itemId: itemId.value },
+            complete: function() { window._voteSaving = false; },
+            success: function(res) {
+                if (res.success) { location.reload(); }
+                else { alert(res.message || '투표에 실패했습니다.'); document.getElementById('voteBtn').disabled = false; }
+            },
+            error: function() { alert('투표 중 오류가 발생했습니다.'); document.getElementById('voteBtn').disabled = false; }
+        });
+    }
+</script>
+</div>
+</body>
+</html>

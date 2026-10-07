@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.card.service.impl.CardMapper">
+
+	<!-- 공개 명함 목록. 이름·회사명·부서명 검색. 사용등록 여부는 CASE로 표시한다. -->
+	<select id="selectPublicCardList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			C.CARD_ID,
+			C.CARD_NM,
+			C.COMPANY_NM,
+			C.DEPT_NM,
+			C.POSITION_NM,
+			C.TEL_NO,
+			C.REGIST_DT,
+			CASE WHEN U.CARD_ID IS NULL THEN 'N' ELSE 'Y' END AS USED_YN
+		FROM BUSINESS_CARD C
+		LEFT JOIN CARD_USER U
+			ON C.CARD_ID = U.CARD_ID
+			AND U.USER_NM = #{userNm}
+		WHERE C.OPEN_YN = 'Y'
+		<if test="searchKeyword != null and searchKeyword != ''">
+			AND (C.CARD_NM LIKE '%' || #{searchKeyword} || '%'
+				OR C.COMPANY_NM LIKE '%' || #{searchKeyword} || '%'
+				OR C.DEPT_NM LIKE '%' || #{searchKeyword} || '%')
+		</if>
+		ORDER BY C.REGIST_DT DESC
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<!-- 공개 명함 전체 건수 -->
+	<select id="selectPublicCardListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM BUSINESS_CARD
+		WHERE OPEN_YN = 'Y'
+		<if test="searchKeyword != null and searchKeyword != ''">
+			AND (CARD_NM LIKE '%' || #{searchKeyword} || '%'
+				OR COMPANY_NM LIKE '%' || #{searchKeyword} || '%'
+				OR DEPT_NM LIKE '%' || #{searchKeyword} || '%')
+		</if>
+	</select>
+
+	<!-- 내 명함 목록. 직접 등록 + 사용등록 모두 포함한다. -->
+	<select id="selectMyCardList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			C.CARD_ID,
+			C.CARD_NM,
+			C.COMPANY_NM,
+			C.DEPT_NM,
+			C.POSITION_NM,
+			C.TEL_NO,
+			C.OPEN_YN,
+			C.REGIST_DT
+		FROM BUSINESS_CARD C
+		WHERE C.REGISTER = #{userNm}
+			OR EXISTS (SELECT 1 FROM CARD_USER U WHERE U.CARD_ID = C.CARD_ID AND U.USER_NM = #{userNm})
+		<if test="searchKeyword != null and searchKeyword != ''">
+			AND (C.CARD_NM LIKE '%' || #{searchKeyword} || '%'
+				OR C.COMPANY_NM LIKE '%' || #{searchKeyword} || '%'
+				OR C.DEPT_NM LIKE '%' || #{searchKeyword} || '%')
+		</if>
+		ORDER BY C.REGIST_DT DESC
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<!-- 내 명함 전체 건수 -->
+	<select id="selectMyCardListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM BUSINESS_CARD C
+		WHERE C.REGISTER = #{userNm}
+			OR EXISTS (SELECT 1 FROM CARD_USER U WHERE U.CARD_ID = C.CARD_ID AND U.USER_NM = #{userNm})
+		<if test="searchKeyword != null and searchKeyword != ''">
+			AND (C.CARD_NM LIKE '%' || #{searchKeyword} || '%'
+				OR C.COMPANY_NM LIKE '%' || #{searchKeyword} || '%'
+				OR C.DEPT_NM LIKE '%' || #{searchKeyword} || '%')
+		</if>
+	</select>
+
+	<!-- 명함 상세 -->
+	<select id="selectCardDetail" parameterType="string" resultType="egovMap">
+		SELECT
+			CARD_ID,
+			CARD_NM,
+			COMPANY_NM,
+			DEPT_NM,
+			POSITION_NM,
+			TEL_NO,
+			EMAIL,
+			OPEN_YN,
+			MEMO,
+			REGISTER,
+			REGIST_DT
+		FROM BUSINESS_CARD
+		WHERE CARD_ID = #{cardId}
+	</select>
+
+	<!-- 명함 등록 -->
+	<insert id="insertCard" parameterType="egovMap">
+		INSERT INTO BUSINESS_CARD (
+			CARD_ID,
+			CARD_NM,
+			COMPANY_NM,
+			DEPT_NM,
+			POSITION_NM,
+			TEL_NO,
+			EMAIL,
+			OPEN_YN,
+			MEMO,
+			REGIST_DT,
+			REGISTER
+		) VALUES (
+			#{cardId},
+			#{cardNm},
+			#{companyNm},
+			#{deptNm},
+			#{positionNm},
+			#{telNo},
+			#{email},
+			#{openYn},
+			#{memo},
+			CURRENT_TIMESTAMP,
+			#{register}
+		)
+	</insert>
+
+	<!-- 명함 수정. 본인 등록분만 수정한다. 0건이면 Service에서 예외. -->
+	<update id="updateCard" parameterType="egovMap">
+		UPDATE BUSINESS_CARD
+		SET
+			CARD_NM = #{cardNm},
+			COMPANY_NM = #{companyNm},
+			DEPT_NM = #{deptNm},
+			POSITION_NM = #{positionNm},
+			TEL_NO = #{telNo},
+			EMAIL = #{email},
+			OPEN_YN = #{openYn},
+			MEMO = #{memo},
+			UPDT_DT = CURRENT_TIMESTAMP,
+			UPDUSR = #{updusr}
+		WHERE CARD_ID = #{cardId}
+			AND REGISTER = #{register}
+	</update>
+
+	<!-- 명함 삭제. 사용등록은 CASCADE로 함께 삭제된다. -->
+	<delete id="deleteCard" parameterType="egovMap">
+		DELETE FROM BUSINESS_CARD
+		WHERE CARD_ID = #{cardId}
+			AND REGISTER = #{register}
+	</delete>
+
+	<!-- 사용등록. 중복 등록은 무시된다. -->
+	<update id="useCard" parameterType="egovMap">
+		MERGE INTO CARD_USER target
+		USING (VALUES (#{cardId}, #{userNm})) source(card_id, user_nm)
+		ON target.CARD_ID = source.card_id AND target.USER_NM = source.user_nm
+		WHEN NOT MATCHED THEN INSERT (CARD_ID, USER_NM, REGIST_DT) VALUES (source.card_id, source.user_nm, CURRENT_TIMESTAMP)
+	</update>
+
+	<!-- 사용등록 취소 -->
+	<delete id="cancelUseCard" parameterType="egovMap">
+		DELETE FROM CARD_USER
+		WHERE CARD_ID = #{cardId}
+			AND USER_NM = #{userNm}
+	</delete>
+
+</mapper>

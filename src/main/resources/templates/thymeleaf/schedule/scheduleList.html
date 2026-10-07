@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>일정관리</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">일정관리</h2>
+
+    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <div style="display: flex; gap: 4px;">
+            <button type="button" class="krds-btn small" th:classappend="${view == 'month' ? ' primary' : ' secondary'}" onclick="fnGoView('month')">월</button>
+            <button type="button" class="krds-btn small" th:classappend="${view == 'week' ? ' primary' : ' secondary'}" onclick="fnGoView('week')">주</button>
+            <button type="button" class="krds-btn small" th:classappend="${view == 'day' ? ' primary' : ' secondary'}" onclick="fnGoView('day')">일</button>
+        </div>
+        <button type="button" class="krds-btn medium primary" onclick="fnGoWrite()">등록</button>
+    </div>
+
+    <form id="listForm" method="post" th:action="@{/schedule/scheduleList}">
+        <input type="hidden" name="view" id="viewField" th:value="${view}">
+        <input type="hidden" id="date" name="date" th:value="${date}">
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <select name="scheduleType" class="krds-form-select" style="width: 150px;" onchange="document.getElementById('listForm').submit();">
+                <option value="">전체구분</option>
+                <option value="DEPT" th:selected="${scheduleType == 'DEPT'}">부서일정</option>
+                <option value="PERSONAL" th:selected="${scheduleType == 'PERSONAL'}">개인일정</option>
+                <option value="DAILY" th:selected="${scheduleType == 'DAILY'}">일지</option>
+                <option value="TODO" th:selected="${scheduleType == 'TODO'}">할일</option>
+            </select>
+            <input type="text" name="searchKeyword" class="krds-input" style="flex: 1;" placeholder="제목 검색" th:value="${searchKeyword}">
+            <button type="submit" class="krds-btn medium secondary">검색</button>
+        </div>
+    </form>
+
+    <!-- 월 달력 그리드 -->
+    <th:block th:if="${view == 'month'}">
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>월 일정</caption>
+            <thead>
+            <tr>
+                <th scope="col">일</th><th scope="col">월</th><th scope="col">화</th><th scope="col">수</th><th scope="col">목</th><th scope="col">금</th><th scope="col">토</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="week : ${weeks}">
+                <td th:each="cell : ${week}" style="vertical-align: top; height: 90px;" th:styleappend="${cell['inMonth'] ? '' : 'background: #f5f5f5;'}">
+                    <a href="javascript:void(0)" th:attr="data-day=${cell['day']}" onclick="fnGoDay(this)" th:text="${cell['dayNo']}" style="font-weight: 600;"></a>
+                    <span th:if="${cell['holiday'] != null}" th:text="${cell['holiday']}" style="color: red; font-size: 12px;"></span>
+                    <div th:each="r, rs : ${cell['rows']}" th:if="${rs.index < 3}" style="font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <a th:href="@{/schedule/scheduleWrite}" data-post th:attr="data-name='scheduleId',data-value=${r['scheduleId']}" th:text="${r['title']}"></a>
+                    </div>
+                    <div th:if="${cell['rows'] != null and cell['rows'].size() > 3}" style="font-size: 12px;">
+                        <a href="javascript:void(0)" th:attr="data-day=${cell['day']}" onclick="fnGoDay(this)" th:text="'+' + ${cell['rows'].size() - 3} + '건 더보기'"></a>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    </th:block>
+
+    <!-- 주/일 목록 -->
+    <th:block th:if="${view != 'month'}">
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>일정 목록</caption>
+            <colgroup>
+                <col style="width: 12%;">
+                <col>
+                <col style="width: 22%;">
+                <col style="width: 10%;">
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">일자</th>
+                <th scope="col">제목</th>
+                <th scope="col">기간</th>
+                <th scope="col">구분</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${resultList}">
+                <td th:text="${item['startDt']}"></td>
+                <td><a th:href="@{/schedule/scheduleWrite}" data-post th:attr="data-name='scheduleId',data-value=${item['scheduleId']}" th:text="${item['title']}"></a></td>
+                <td th:text="${item['startDt']} + ' ~ ' + ${item['endDt']}"></td>
+                <td th:text="${item['scheduleType']}"></td>
+            </tr>
+            <tr th:if="${resultList == null or resultList.isEmpty()}">
+                <td colspan="4">조회된 일정이 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    </th:block>
+<script th:inline="javascript">
+    var scheduleDate = /*[[${date}]]*/ '';
+    function fnGoView(view) {
+        document.getElementById('viewField').value = view;
+        document.getElementById('listForm').submit();
+    }
+    function fnGoWrite() {
+        var form = document.createElement('form');
+        form.method = 'post';
+        form.action = '/schedule/scheduleWrite';
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'date';
+        input.value = scheduleDate;
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+    function fnGoDay(a) {
+        document.getElementById('viewField').value = 'day';
+        document.getElementById('date').value = a.getAttribute('data-day');
+        document.getElementById('listForm').submit();
+    }
+</script>
+</div>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.category.service.impl.CategoryMapper">
+
+	<!-- 전체 조회 (트리 조립·자손 판정용. 카테고리 규모가 작다는 전제다) -->
+	<select id="selectCategoryAll" resultType="egovMap">
+		SELECT
+			CAT_ID,
+			UP_CAT_ID,
+			CAT_NM,
+			ORDR
+		FROM CATEGORY
+		ORDER BY ORDR, CAT_ID
+	</select>
+
+	<!-- 자식 목록 (드릴다운 1단) -->
+	<select id="selectCategoryChildren" parameterType="string" resultType="egovMap">
+		SELECT
+			CAT_ID,
+			UP_CAT_ID,
+			CAT_NM,
+			ORDR
+		FROM CATEGORY
+		<choose>
+			<when test="value == null or value == ''">
+				WHERE UP_CAT_ID IS NULL
+			</when>
+			<otherwise>
+				WHERE UP_CAT_ID = #{value}
+			</otherwise>
+		</choose>
+		ORDER BY ORDR, CAT_ID
+	</select>
+
+	<!-- 자식 존재 여부 (삭제 가드용) -->
+	<select id="countCategoryChildren" parameterType="string" resultType="int">
+		SELECT COUNT(*)
+		FROM CATEGORY
+		WHERE UP_CAT_ID = #{value}
+	</select>
+
+	<!-- 단건 조회 -->
+	<select id="selectCategoryDetail" parameterType="string" resultType="egovMap">
+		SELECT
+			CAT_ID,
+			UP_CAT_ID,
+			CAT_NM,
+			ORDR
+		FROM CATEGORY
+		WHERE CAT_ID = #{value}
+	</select>
+
+	<!-- 등록 -->
+	<insert id="insertCategory" parameterType="egovMap">
+		INSERT INTO CATEGORY (
+			CAT_ID,
+			UP_CAT_ID,
+			CAT_NM,
+			ORDR,
+			REGIST_DT,
+			REGISTER
+		) VALUES (
+			#{catId},
+			#{upCatId},
+			#{catNm},
+			#{ordr},
+			CURRENT_TIMESTAMP,
+			#{register}
+		)
+	</insert>
+
+	<!-- 수정 (이름·순서·상위 변경) -->
+	<update id="updateCategory" parameterType="egovMap">
+		UPDATE CATEGORY
+		SET
+			CAT_NM = #{catNm},
+			UP_CAT_ID = #{upCatId},
+			ORDR = #{ordr},
+			UPDT_DT = CURRENT_TIMESTAMP,
+			UPDUSR = #{updusr}
+		WHERE CAT_ID = #{catId}
+	</update>
+
+	<!-- 삭제. 하위 포함 여부는 Service에서 먼저 차단한다(하위 포함 삭제 금지 정책). -->
+	<delete id="deleteCategory" parameterType="string">
+		DELETE FROM CATEGORY
+		WHERE CAT_ID = #{value}
+	</delete>
+
+</mapper>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.schedule.service.impl.ScheduleMapper">
+
+	<!-- 근거: eGov v5.0 부서일정·일정·일지·메모할일 + 공휴일(달력). 월/주/일은 기간 조건만 다른 단일 쿼리다. -->
+
+	<!-- 일정 목록. 월/주/일은 기간 조건(fromDt/toDt)만 다르다. 기간에 걸치는 일정도 포함한다. -->
+	<select id="selectScheduleList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			SCHEDULE_ID,
+			TITLE,
+			START_DT,
+			END_DT,
+			SCHEDULE_TYPE,
+			REGISTER,
+			REGIST_DT
+		FROM SCHEDULE
+		WHERE START_DT &lt; #{toDt}
+			AND END_DT &gt;= #{fromDt}
+		<if test="scheduleType != null and scheduleType != ''">
+			AND SCHEDULE_TYPE = #{scheduleType}
+		</if>
+		<if test="searchKeyword != null and searchKeyword != ''">
+			AND TITLE LIKE '%' || #{searchKeyword} || '%'
+		</if>
+		ORDER BY START_DT, SCHEDULE_ID
+	</select>
+
+	<!-- 일정 상세 -->
+	<select id="selectScheduleDetail" parameterType="string" resultType="egovMap">
+		SELECT
+			SCHEDULE_ID,
+			TITLE,
+			CONTENT,
+			START_DT,
+			END_DT,
+			SCHEDULE_TYPE,
+			REGISTER,
+			REGIST_DT
+		FROM SCHEDULE
+		WHERE SCHEDULE_ID = #{scheduleId}
+	</select>
+
+	<!-- 일정 등록 -->
+	<insert id="insertSchedule" parameterType="egovMap">
+		INSERT INTO SCHEDULE (
+			SCHEDULE_ID,
+			TITLE,
+			CONTENT,
+			START_DT,
+			END_DT,
+			SCHEDULE_TYPE,
+			REGISTER,
+			REGIST_DT
+		) VALUES (
+			#{scheduleId},
+			#{title},
+			#{content},
+			#{startDt},
+			#{endDt},
+			#{scheduleType},
+			#{register},
+			CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<!-- 일정 수정 -->
+	<update id="updateSchedule" parameterType="egovMap">
+		UPDATE SCHEDULE
+		SET
+			TITLE = #{title},
+			CONTENT = #{content},
+			START_DT = #{startDt},
+			END_DT = #{endDt},
+			SCHEDULE_TYPE = #{scheduleType},
+			UPDT_DT = CURRENT_TIMESTAMP,
+			UPDUSR = #{updusr}
+		WHERE SCHEDULE_ID = #{scheduleId}
+	</update>
+
+	<!-- 일정 삭제 -->
+	<delete id="deleteSchedule" parameterType="string">
+		DELETE FROM SCHEDULE
+		WHERE SCHEDULE_ID = #{scheduleId}
+	</delete>
+
+	<!-- 월 공휴일 (YYYYMM 6자리 prefix) -->
+	<select id="selectHolidayList" parameterType="string" resultType="egovMap">
+		SELECT
+			HOLIDAY_DE,
+			HOLIDAY_NM
+		FROM HOLIDAY
+		WHERE HOLIDAY_DE LIKE #{yyyymm} || '%'
+		ORDER BY HOLIDAY_DE
+	</select>
+
+	<!-- 공휴일 등록 (MERGE: 같은 날짜 재등록 시 이름 갱신) -->
+	<update id="insertHoliday" parameterType="egovMap">
+		MERGE INTO HOLIDAY target
+		USING (VALUES (#{holidayDe}, #{holidayNm})) source(holiday_de, holiday_nm)
+		ON target.HOLIDAY_DE = source.holiday_de
+		WHEN MATCHED THEN UPDATE SET target.HOLIDAY_NM = source.holiday_nm
+		WHEN NOT MATCHED THEN INSERT (HOLIDAY_DE, HOLIDAY_NM) VALUES (source.holiday_de, source.holiday_nm)
+	</update>
+
+	<!-- 공휴일 삭제 -->
+	<delete id="deleteHoliday" parameterType="string">
+		DELETE FROM HOLIDAY
+		WHERE HOLIDAY_DE = #{holidayDe}
+	</delete>
+
+</mapper>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>공휴일관리</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">공휴일관리 (당직·일정 공통 달력용)</h2>
+
+    <form id="listForm" method="post" th:action="@{/schedule/holidayList}">
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <input type="month" name="yyyymm" class="krds-input" onclick="this.showPicker()" th:value="${#strings.substring(yyyymm,0,4) + '-' + #strings.substring(yyyymm,4,6)}">
+            <button type="submit" class="krds-btn medium secondary">검색</button>
+        </div>
+    </form>
+
+    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+        <input type="date" id="holidayDe" class="krds-input" onclick="this.showPicker()">
+        <input type="text" id="holidayNm" class="krds-input" style="flex: 1;" placeholder="공휴일 이름" maxlength="100">
+        <button type="button" class="krds-btn medium primary" onclick="fnSaveHoliday()">등록</button>
+    </div>
+
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>공휴일 목록</caption>
+            <colgroup>
+                <col style="width: 20%;">
+                <col>
+                <col style="width: 15%;">
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">날짜</th>
+                <th scope="col">이름</th>
+                <th scope="col">관리</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${resultList}">
+                <td th:text="${item['holidayDe']}"></td>
+                <td th:text="${item['holidayNm']}"></td>
+                <td><button type="button" class="krds-btn small danger" th:attr="data-de=${item['holidayDe']}" onclick="fnDeleteHoliday(this)">삭제</button></td>
+            </tr>
+            <tr th:if="${resultList == null or resultList.isEmpty()}">
+                <td colspan="3">조회된 공휴일이 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+<script>
+    function fnSaveHoliday() {
+        var de = ($('#holidayDe').val() || '').trim();
+        var nm = ($('#holidayNm').val() || '').trim();
+        if (de === '' || nm === '') {
+            alert('날짜와 이름을 입력하세요.');
+            return;
+        }
+        $.ajax({
+            type: 'post',
+            url: '/schedule/insertHoliday.json',
+            data: { holidayDe: de, holidayNm: nm },
+            success: function(res) {
+                if (res.success) { location.reload(); }
+                else { alert(res.message || '저장에 실패했습니다.'); }
+            },
+            error: function() { alert('저장 중 오류가 발생했습니다.'); }
+        });
+    }
+    function fnDeleteHoliday(btn) {
+        if (!confirm('삭제하시겠습니까?')) { return; }
+        $.ajax({
+            type: 'post',
+            url: '/schedule/deleteHoliday.json',
+            data: { holidayDe: btn.getAttribute('data-de') },
+            success: function(res) {
+                if (res.success) { location.reload(); }
+                else { alert(res.message || '삭제에 실패했습니다.'); }
+            },
+            error: function() { alert('삭제 중 오류가 발생했습니다.'); }
+        });
+    }
+</script>
+</div>
+</body>
+</html>

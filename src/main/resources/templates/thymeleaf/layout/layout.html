@@ -60,17 +60,18 @@
             location.href = '/board/ckeditorList';
         }
     }
-    // 새 글 실시간 알림(SSE) 구독 처리.
+    // 새 글 실시간 알림(SSE) 구독 처리. 통로는 1개만 연다.
+    // (CK·TOAST 2개를 열면 브라우저 연결 상한을 잡아먹어 메뉴 이동이 멈춘다)
     //
     // SSE(Server-Sent Events)란:
     // 서버가 브라우저에 한 방향으로 밀어넣는 기술이다. WebSocket과 달리
     // 별도 설치 없이 HTTP 하나로 되며, 끊기면 브라우저가 알아서 다시 붙는다.
     //
     // 동작 순서:
-    // 1) 아래 forEach가 CK·토스트 두 통로를 연다.
-    //    (GET /board/subscribe?boardType=CK|TOAST, BoardSseService가 통로를 보관)
-    // 2) 누군가 글을 등록(insertBoard 성공)하면 서버가 해당 게시판 통로로
-    //    {boardId,title}을 쏜다(BoardSseService.broadcast).
+    // 1) 아래에서 ALL 통로 1개를 연다.
+    //    (GET /board/subscribe?boardType=ALL, BoardSseService가 통로를 보관)
+    // 2) 누군가 글을 등록(insertBoard 성공)하면 서버가 해당 게시판+ALL 통로로
+    //    {boardId,title,boardType}을 쏜다(BoardSseService.broadcast).
     // 3) onmessage가 불리면 상단 배너를 보여준다. 버튼을 누르면 그 게시판 목록으로 간다.
     // 4) hideAfterMs(밀리초, 기본 0=계속 표시)가 있으면 그 뒤 배너를 숨긴다.
     //
@@ -78,26 +79,32 @@
     //   window.ARKIVE_SSE = { banner: false };      // 이 화면에서는 구독 안 함
     //   window.ARKIVE_SSE = { hideAfterMs: 30000 }; // 30초 뒤 자동 숨김
     (function() {
+        // SSE 전체 킬스위치. false면 어떤 화면에서도 구독하지 않는다. 켜려면 true.
+        var ARKIVE_SSE_ENABLED = false;
+        if (!ARKIVE_SSE_ENABLED) return;
         var cfg = window.ARKIVE_SSE || {};
         if (cfg.banner === false) return;
         var hideAfterMs = cfg.hideAfterMs || 0;
         var banner = document.getElementById('globalPostBanner');
         var hideTimer = null;
-        ['CK', 'TOAST'].forEach(function(boardType) {
-            try {
-                var source = new EventSource('/board/subscribe?boardType=' + boardType);
-                source.onmessage = function(e) {
-                    globalPostBoard = boardType;
-                    banner.style.display = 'block';
-                    if (hideTimer) clearTimeout(hideTimer);
-                    if (hideAfterMs > 0) {
-                        hideTimer = setTimeout(function() { banner.style.display = 'none'; }, hideAfterMs);
-                    }
-                };
-            } catch (err) {
-                // 구형 브라우저는 알림 없이 쓴다.
-            }
-        });
+        try {
+            var source = new EventSource('/board/subscribe?boardType=ALL');
+            source.onmessage = function(e) {
+                try {
+                    var data = JSON.parse(e.data);
+                    globalPostBoard = data.boardType || '';
+                } catch (err) {
+                    globalPostBoard = '';
+                }
+                banner.style.display = 'block';
+                if (hideTimer) clearTimeout(hideTimer);
+                if (hideAfterMs > 0) {
+                    hideTimer = setTimeout(function() { banner.style.display = 'none'; }, hideAfterMs);
+                }
+            };
+        } catch (err) {
+            // 구형 브라우저는 알림 없이 쓴다.
+        }
     })();
 </script>
 

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.poll.service.impl.PollMapper">
+
+	<!-- POLL 목록 (투표수 합계 포함) -->
+	<select id="selectPollList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			P.POLL_ID,
+			P.TITLE,
+			P.START_YMD,
+			P.END_YMD,
+			P.USE_YN,
+			P.REGIST_DT,
+			COALESCE((SELECT SUM(VOTE_CNT) FROM POLL_ITEM WHERE POLL_ID = P.POLL_ID), 0) AS TOTAL_VOTE
+		FROM POLL P
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND P.TITLE LIKE '%' || #{searchKeyword} || '%'
+			</if>
+			<if test="useYn != null and useYn != ''">
+				AND P.USE_YN = #{useYn}
+			</if>
+		</where>
+		ORDER BY P.REGIST_DT DESC
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<!-- POLL 전체 건수 -->
+	<select id="selectPollListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM POLL P
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND P.TITLE LIKE '%' || #{searchKeyword} || '%'
+			</if>
+			<if test="useYn != null and useYn != ''">
+				AND P.USE_YN = #{useYn}
+			</if>
+		</where>
+	</select>
+
+	<!-- POLL 상세 -->
+	<select id="selectPollDetail" parameterType="string" resultType="egovMap">
+		SELECT
+			POLL_ID,
+			TITLE,
+			START_YMD,
+			END_YMD,
+			USE_YN,
+			REGIST_DT
+		FROM POLL
+		WHERE POLL_ID = #{pollId}
+	</select>
+
+	<!-- POLL 보기 목록 (득표순) -->
+	<select id="selectPollItemList" parameterType="string" resultType="egovMap">
+		SELECT
+			ITEM_ID,
+			POLL_ID,
+			ITEM_NM,
+			ORDR,
+			VOTE_CNT
+		FROM POLL_ITEM
+		WHERE POLL_ID = #{pollId}
+		ORDER BY ORDR, ITEM_ID
+	</select>
+
+	<!-- POLL 등록 -->
+	<insert id="insertPoll" parameterType="egovMap">
+		INSERT INTO POLL (
+			POLL_ID,
+			TITLE,
+			START_YMD,
+			END_YMD,
+			USE_YN,
+			REGIST_DT,
+			REGISTER
+		) VALUES (
+			#{pollId},
+			#{title},
+			#{startYmd},
+			#{endYmd},
+			#{useYn},
+			CURRENT_TIMESTAMP,
+			#{register}
+		)
+	</insert>
+
+	<!-- POLL 수정 -->
+	<update id="updatePoll" parameterType="egovMap">
+		UPDATE POLL
+		SET
+			TITLE = #{title},
+			START_YMD = #{startYmd},
+			END_YMD = #{endYmd},
+			USE_YN = #{useYn},
+			UPDT_DT = CURRENT_TIMESTAMP,
+			UPDUSR = #{updusr}
+		WHERE POLL_ID = #{pollId}
+	</update>
+
+	<!-- POLL 삭제. 보기는 FK CASCADE로 함께 삭제된다. -->
+	<delete id="deletePoll" parameterType="string">
+		DELETE FROM POLL
+		WHERE POLL_ID = #{pollId}
+	</delete>
+
+	<!-- 보기 등록 -->
+	<insert id="insertPollItem" parameterType="egovMap">
+		INSERT INTO POLL_ITEM (
+			ITEM_ID,
+			POLL_ID,
+			ITEM_NM,
+			ORDR,
+			VOTE_CNT
+		) VALUES (
+			#{itemId},
+			#{pollId},
+			#{itemNm},
+			#{ordr},
+			0
+		)
+	</insert>
+
+	<!-- POLL 보기 전체 삭제 (수정 시 보기 재등록용) -->
+	<delete id="deletePollItemAll" parameterType="string">
+		DELETE FROM POLL_ITEM
+		WHERE POLL_ID = #{pollId}
+	</delete>
+
+	<!-- 투표. 득표수만 +1 한다. -->
+	<update id="votePollItem" parameterType="string">
+		UPDATE POLL_ITEM
+		SET VOTE_CNT = COALESCE(VOTE_CNT, 0) + 1
+		WHERE ITEM_ID = #{itemId}
+	</update>
+
+</mapper>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>카테고리 드릴다운</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">카테고리 (드릴다운형)</h2>
+
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+        <a th:href="@{/category/tree}" class="krds-btn medium secondary">트리형으로 보기</a>
+    </div>
+
+    <!-- 현재 경로. 이동은 POST로 한다(쿼리스트링 노출 방지). -->
+    <div style="margin-bottom: 12px;">
+        <a href="javascript:void(0)" onclick="fnGoDrill('')">최상위</a>
+        <span th:each="p : ${path}"> &gt; <a href="javascript:void(0)" th:attr="data-id=${p['catId']}" onclick="fnGoDrill(this.getAttribute('data-id'))" th:text="${p['catNm']}"></a></span>
+    </div>
+
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>하위 카테고리</caption>
+            <colgroup>
+                <col style="width: 10%;">
+                <col>
+                <col style="width: 10%;">
+                <col style="width: 20%;">
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">순서</th>
+                <th scope="col">이름</th>
+                <th scope="col">하위</th>
+                <th scope="col">관리</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${children}">
+                <td th:text="${item['ordr']}"></td>
+                <td><a href="javascript:void(0)" th:attr="data-id=${item['catId']}" onclick="fnGoDrill(this.getAttribute('data-id'))" th:text="${item['catNm']}"></a></td>
+                <td><button type="button" class="krds-btn xsmall secondary" th:attr="data-id=${item['catId']}" onclick="fnGoDrill(this.getAttribute('data-id'))">열기</button></td>
+                <td>
+                    <button type="button" class="krds-btn xsmall secondary" th:attr="data-id=${item['catId']},data-nm=${item['catNm']},data-ord=${item['ordr']}" onclick="fnRename(this)">이름변경</button>
+                    <button type="button" class="krds-btn xsmall danger" th:attr="data-id=${item['catId']}" onclick="fnDeleteCat(this)">삭제</button>
+                </td>
+            </tr>
+            <tr th:if="${children == null or children.isEmpty()}">
+                <td colspan="4">하위 카테고리가 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div style="display: flex; gap: 8px; margin-top: 12px;">
+        <input type="hidden" id="doubleSubmitToken" name="egovframework.double.submit.preventer.parameter.name" th:value="${doubleSubmitToken}">
+        <input type="text" id="catNm" class="krds-input" style="flex: 1;" placeholder="이 위치에 추가할 이름" maxlength="200">
+        <input type="text" id="ordr" class="krds-input" style="width: 80px;" placeholder="순서" value="0">
+        <button type="button" class="krds-btn medium primary" onclick="fnAddHere()">여기에 추가</button>
+    </div>
+<script th:inline="javascript">
+    var drillParentId = /*[[${parentId}]]*/ '';
+    function fnGoDrill(parentId) {
+        var form = document.createElement('form');
+        form.method = 'post';
+        form.action = '/category/drill';
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'parentId';
+        input.value = parentId || '';
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+    function fnAddHere() {
+        var nm = ($('#catNm').val() || '').trim();
+        if (nm === '') {
+            alert('카테고리 이름을 입력하세요.');
+            return;
+        }
+        $.ajax({
+            type: 'post',
+            url: '/category/saveCategory.json',
+            data: { upCatId: drillParentId, catNm: nm, ordr: $('#ordr').val(), 'egovframework.double.submit.preventer.parameter.name': $('#doubleSubmitToken').val() },
+            success: function(res) {
+                if (res.success) { location.reload(); }
+                else { alert(res.message || '저장에 실패했습니다.'); }
+            },
+            error: function() { alert('저장 중 오류가 발생했습니다.'); }
+        });
+    }
+    function fnRename(btn) {
+        var nm = prompt('새 이름', btn.getAttribute('data-nm'));
+        if (nm == null || nm.trim() === '') { return; }
+        $.ajax({
+            type: 'post',
+            url: '/category/saveCategory.json',
+            data: { catId: btn.getAttribute('data-id'), upCatId: drillParentId, catNm: nm.trim(), ordr: btn.getAttribute('data-ord') || 0, 'egovframework.double.submit.preventer.parameter.name': $('#doubleSubmitToken').val() },
+            success: function(res) {
+                if (res.success) { location.reload(); }
+                else { alert(res.message || '저장에 실패했습니다.'); }
+            },
+            error: function() { alert('저장 중 오류가 발생했습니다.'); }
+        });
+    }
+    function fnDeleteCat(btn) {
+        if (!confirm('하위가 있으면 삭제할 수 없습니다. 삭제하시겠습니까?')) { return; }
+        $.ajax({
+            type: 'post',
+            url: '/category/deleteCategory.json',
+            data: { catId: btn.getAttribute('data-id') },
+            success: function(res) {
+                if (res.success) { location.reload(); }
+                else { alert(res.message || '삭제에 실패했습니다.'); }
+            },
+            error: function() { alert('삭제 중 오류가 발생했습니다.'); }
+        });
+    }
+</script>
+</div>
+</body>
+</html>

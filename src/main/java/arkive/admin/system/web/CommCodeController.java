@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import arkive.admin.comm.web.CommUtil;
 import arkive.admin.system.service.CommCodeService;
@@ -22,6 +23,7 @@ import jakarta.servlet.http.HttpServletRequest;
 /**
  * 공통코드 관리. 마스터는 MASTR_CODE = DETAIL_CODE 인 행으로 표현한다.
  * 런타임 공용 조회(getCmmnCodeList.json)는 셀렉트박스 등에 쓴다.
+ * 근거: eGov v5.0 sym 공통코드(공통분류·상세코드). 별도 마스터 테이블 없이 1테이블로 관리한다.
  */
 @Controller
 @Tag(name = "공통코드", description = "마스터·상세 코드 관리, 셀렉트박스 공용 조회")
@@ -43,45 +45,54 @@ public class CommCodeController {
 
 	@Operation(summary = "마스터 목록 조회")
 	@RequestMapping(name = "마스터 목록", value = "/getMasterList.json", method = RequestMethod.POST)
-	public String getMasterList(HttpServletRequest request, ModelMap model) throws Exception {
+	@ResponseBody
+	public Map<String, Object> getMasterList(HttpServletRequest request) throws Exception {
 		EgovMap param = new EgovMap();
 		param.put("searchKeyword", cmmUtil.convertHtml(request, "searchKeyword"));
-		model.put("resultList", commCodeService.selectMasterList(param));
-		return "jsonView";
+		Map<String, Object> result = new HashMap<>();
+		result.put("resultList", commCodeService.selectMasterList(param));
+		return result;
 	}
 
 	@Operation(summary = "상세 목록 조회 (mastrCode 지정)")
 	@RequestMapping(name = "상세 목록", value = "/getDetailList.json", method = RequestMethod.POST)
-	public String getDetailList(HttpServletRequest request, ModelMap model) throws Exception {
+	@ResponseBody
+	public Map<String, Object> getDetailList(HttpServletRequest request) throws Exception {
 		EgovMap param = new EgovMap();
 		param.put("mastrCode", cmmUtil.convertHtml(request, "mastrCode"));
-		model.put("resultList", commCodeService.selectDetailList(param));
-		return "jsonView";
+		Map<String, Object> result = new HashMap<>();
+		result.put("resultList", commCodeService.selectDetailList(param));
+		return result;
 	}
 
 	@Operation(summary = "셀렉트박스 공용 코드 조회 (사용중만, 순서대로)")
 	@RequestMapping(name = "공용 코드 조회", value = "/getCmmnCodeList.json", method = RequestMethod.POST)
-	public String getCmmnCodeList(HttpServletRequest request, ModelMap model) throws Exception {
+	@ResponseBody
+	public Map<String, Object> getCmmnCodeList(HttpServletRequest request) throws Exception {
 		EgovMap param = new EgovMap();
 		param.put("mastrCode", cmmUtil.convertHtml(request, "mastrCode"));
-		List<EgovMap> result = commCodeService.selectCmmnCodeList(param);
-		model.put("resultList", result);
-		return "jsonView";
+		List<EgovMap> rows = commCodeService.selectCmmnCodeList(param);
+		Map<String, Object> result = new HashMap<>();
+		result.put("resultList", rows);
+		return result;
 	}
 
 	@Operation(summary = "코드 단건 조회 (수정 모달 채우기용)")
 	@RequestMapping(name = "코드 단건 조회", value = "/getCodeInfo.json", method = RequestMethod.POST)
-	public String getCodeInfo(HttpServletRequest request, ModelMap model) throws Exception {
+	@ResponseBody
+	public Map<String, Object> getCodeInfo(HttpServletRequest request) throws Exception {
 		EgovMap param = new EgovMap();
 		param.put("mastrCode", cmmUtil.convertHtml(request, "mastrCode"));
 		param.put("detailCode", cmmUtil.convertHtml(request, "detailCode"));
-		model.put("result", commCodeService.selectCodeInfo(param));
-		return "jsonView";
+		Map<String, Object> result = new HashMap<>();
+		result.put("result", commCodeService.selectCodeInfo(param));
+		return result;
 	}
 
 	@Operation(summary = "코드 등록 (중복이면 fail 반환)")
 	@RequestMapping(name = "코드 등록", value = "/setInsertCode.json", method = RequestMethod.POST)
-	public String setInsertCode(HttpServletRequest request, ModelMap model) throws Exception {
+	@ResponseBody
+	public Map<String, Object> setInsertCode(HttpServletRequest request) throws Exception {
 		Map<String, Object> result = new HashMap<>();
 		try {
 			EgovMap param = cmmUtil.makeRequestEgovMap(request);
@@ -97,14 +108,13 @@ public class CommCodeController {
 			result.put("result", "fail");
 			result.put("message", e.getMessage());
 		}
-		model.put("result", result.get("result"));
-		model.put("message", result.get("message"));
-		return "jsonView";
+		return result;
 	}
 
 	@Operation(summary = "코드 수정")
 	@RequestMapping(name = "코드 수정", value = "/setUpdateCode.json", method = RequestMethod.POST)
-	public String setUpdateCode(HttpServletRequest request, ModelMap model) throws Exception {
+	@ResponseBody
+	public Map<String, Object> setUpdateCode(HttpServletRequest request) throws Exception {
 		Map<String, Object> result = new HashMap<>();
 		try {
 			EgovMap param = cmmUtil.makeRequestEgovMap(request);
@@ -117,20 +127,20 @@ public class CommCodeController {
 			result.put("result", "fail");
 			result.put("message", e.getMessage());
 		}
-		model.put("result", result.get("result"));
-		model.put("message", result.get("message"));
-		return "jsonView";
+		return result;
 	}
 
 	@Operation(summary = "코드 삭제 (마스터 삭제는 상세 포함)")
 	@RequestMapping(name = "코드 삭제", value = "/setDeleteCode.json", method = RequestMethod.POST)
-	public String setDeleteCode(HttpServletRequest request, ModelMap model) throws Exception {
+	@ResponseBody
+	public Map<String, Object> setDeleteCode(HttpServletRequest request) throws Exception {
 		EgovMap param = new EgovMap();
 		param.put("mastrCode", cmmUtil.convertHtml(request, "mastrCode"));
 		param.put("detailCode", cmmUtil.convertHtml(request, "detailCode"));
 		commCodeService.deleteCode(param);
-		model.put("result", "success");
-		return "jsonView";
+		Map<String, Object> result = new HashMap<>();
+		result.put("result", "success");
+		return result;
 	}
 
 	/**

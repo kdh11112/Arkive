@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.memo.service.impl.MemoMapper">
+
+	<!-- 근거: eGov v5.0 cop 메모보고. 상태 전이(확인/의견)는 아래 UPDATE 조건으로 강제한다. -->
+
+	<!-- 메모보고 목록. 제목·보고자·대상자 검색, 10건 오프셋 페이징(HSQLDB). -->
+	<select id="selectMemoList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			REPORT_ID,
+			TITLE,
+			REPORTER,
+			RECEIVER,
+			STATUS,
+			REPORT_DT
+		FROM MEMO_REPORT
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR REPORTER LIKE '%' || #{searchKeyword} || '%'
+					OR RECEIVER LIKE '%' || #{searchKeyword} || '%')
+			</if>
+			<if test="status != null and status != ''">
+				AND STATUS = #{status}
+			</if>
+		</where>
+		ORDER BY REPORT_DT DESC
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<!-- 메모보고 전체 건수 -->
+	<select id="selectMemoListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM MEMO_REPORT
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR REPORTER LIKE '%' || #{searchKeyword} || '%'
+					OR RECEIVER LIKE '%' || #{searchKeyword} || '%')
+			</if>
+			<if test="status != null and status != ''">
+				AND STATUS = #{status}
+			</if>
+		</where>
+	</select>
+
+	<!-- 메모보고 상세 -->
+	<select id="selectMemoDetail" parameterType="string" resultType="egovMap">
+		SELECT
+			REPORT_ID,
+			TITLE,
+			CONTENT,
+			REPORTER,
+			RECEIVER,
+			STATUS,
+			REPORT_DT,
+			CONFIRM_DT,
+			OPINION
+		FROM MEMO_REPORT
+		WHERE REPORT_ID = #{reportId}
+	</select>
+
+	<!-- 메모보고 등록. 상태는 항상 '보고'로 시작한다. -->
+	<insert id="insertMemo" parameterType="egovMap">
+		INSERT INTO MEMO_REPORT (
+			REPORT_ID,
+			TITLE,
+			CONTENT,
+			REPORTER,
+			RECEIVER,
+			STATUS,
+			REPORT_DT
+		) VALUES (
+			#{reportId},
+			#{title},
+			#{content},
+			#{reporter},
+			#{receiver},
+			'보고',
+			CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<!-- 메모보고 수정. STATUS='보고'일 때만(확인·의견 이후 수정 차단). 성공 0건이면 Service에서 예외. -->
+	<update id="updateMemo" parameterType="egovMap">
+		UPDATE MEMO_REPORT
+		SET
+			TITLE = #{title},
+			CONTENT = #{content}
+		WHERE REPORT_ID = #{reportId}
+			AND STATUS = '보고'
+	</update>
+
+	<!-- 메모보고 삭제 -->
+	<delete id="deleteMemo" parameterType="string">
+		DELETE FROM MEMO_REPORT
+		WHERE REPORT_ID = #{reportId}
+	</delete>
+
+	<!-- 대상자 확인. 보고·의견 상태에서만 전이한다. -->
+	<update id="confirmMemo" parameterType="string">
+		UPDATE MEMO_REPORT
+		SET
+			STATUS = '확인',
+			CONFIRM_DT = CURRENT_TIMESTAMP
+		WHERE REPORT_ID = #{reportId}
+			AND STATUS IN ('보고', '의견')
+	</update>
+
+	<!-- 대상자 의견. 보고·확인 상태에서 전이한다. -->
+	<update id="opinionMemo" parameterType="egovMap">
+		UPDATE MEMO_REPORT
+		SET
+			STATUS = '의견',
+			OPINION = #{opinion},
+			CONFIRM_DT = CURRENT_TIMESTAMP
+		WHERE REPORT_ID = #{reportId}
+			AND STATUS IN ('보고', '확인')
+	</update>
+
+</mapper>

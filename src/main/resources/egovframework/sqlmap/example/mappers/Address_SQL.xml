@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.address.service.impl.AddressMapper">
+
+	<!-- 근거: eGov v5.0 cop 주소록관리. 부서일정 팝업 기반용으로 이름·부서 검색을 제공한다. -->
+
+	<!-- 주소록 목록 (이름·부서 검색) -->
+	<select id="selectAddressList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			ADDR_ID,
+			ADDR_NM,
+			DEPT_NM,
+			TEL_NO,
+			EMAIL,
+			REGIST_DT
+		FROM ADDRESS_BOOK
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (ADDR_NM LIKE '%' || #{searchKeyword} || '%'
+					OR DEPT_NM LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+		ORDER BY ADDR_NM
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<!-- 주소록 전체 건수 -->
+	<select id="selectAddressListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM ADDRESS_BOOK
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (ADDR_NM LIKE '%' || #{searchKeyword} || '%'
+					OR DEPT_NM LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+	</select>
+
+	<!-- 주소록 상세 -->
+	<select id="selectAddressDetail" parameterType="string" resultType="egovMap">
+		SELECT
+			ADDR_ID,
+			ADDR_NM,
+			DEPT_NM,
+			TEL_NO,
+			EMAIL,
+			MEMO,
+			REGIST_DT
+		FROM ADDRESS_BOOK
+		WHERE ADDR_ID = #{addrId}
+	</select>
+
+	<!-- 주소록 등록 -->
+	<insert id="insertAddress" parameterType="egovMap">
+		INSERT INTO ADDRESS_BOOK (
+			ADDR_ID,
+			ADDR_NM,
+			DEPT_NM,
+			TEL_NO,
+			EMAIL,
+			MEMO,
+			REGIST_DT,
+			REGISTER
+		) VALUES (
+			#{addrId},
+			#{addrNm},
+			#{deptNm},
+			#{telNo},
+			#{email},
+			#{memo},
+			CURRENT_TIMESTAMP,
+			#{register}
+		)
+	</insert>
+
+	<!-- 주소록 수정 -->
+	<update id="updateAddress" parameterType="egovMap">
+		UPDATE ADDRESS_BOOK
+		SET
+			ADDR_NM = #{addrNm},
+			DEPT_NM = #{deptNm},
+			TEL_NO = #{telNo},
+			EMAIL = #{email},
+			MEMO = #{memo},
+			UPDT_DT = CURRENT_TIMESTAMP,
+			UPDUSR = #{updusr}
+		WHERE ADDR_ID = #{addrId}
+	</update>
+
+	<!-- 주소록 삭제 -->
+	<delete id="deleteAddress" parameterType="string">
+		DELETE FROM ADDRESS_BOOK
+		WHERE ADDR_ID = #{addrId}
+	</delete>
+
+</mapper>

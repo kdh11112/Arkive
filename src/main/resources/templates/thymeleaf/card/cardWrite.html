@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>명함 등록</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large"><span th:text="${detail != null ? '명함 수정' : '명함 등록'}">명함 등록</span><div th:replace="~{cmm/doubleSubmit :: badge}"></div></h2>
+    <div class="conts-wrap">
+        <div class="fieldset input-form">
+            <input type="hidden" id="cardId" th:value="${detail != null ? detail['cardId'] : ''}">
+            <div th:replace="~{cmm/doubleSubmit :: token}"></div>
+            <div class="form-group">
+                <div class="form-tit"><label for="cardNm">이름</label></div>
+                <div class="form-conts"><input type="text" id="cardNm" class="krds-input" maxlength="100" th:value="${detail != null ? detail['cardNm'] : ''}"></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="companyNm">회사명</label></div>
+                <div class="form-conts"><input type="text" id="companyNm" class="krds-input" maxlength="100" th:value="${detail != null ? detail['companyNm'] : ''}"></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="deptNm">부서명</label></div>
+                <div class="form-conts"><input type="text" id="deptNm" class="krds-input" maxlength="100" th:value="${detail != null ? detail['deptNm'] : ''}"></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="positionNm">직함</label></div>
+                <div class="form-conts"><input type="text" id="positionNm" class="krds-input" maxlength="100" th:value="${detail != null ? detail['positionNm'] : ''}"></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="telNo">전화번호</label></div>
+                <div class="form-conts"><input type="text" id="telNo" class="krds-input" maxlength="30" th:value="${detail != null ? detail['telNo'] : ''}"></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="email">이메일</label></div>
+                <div class="form-conts"><input type="text" id="email" class="krds-input" maxlength="100" th:value="${detail != null ? detail['email'] : ''}"></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="openYn">공개여부 (공개 시 타인 사용등록 가능)</label></div>
+                <div class="form-conts">
+                    <select id="openYn" class="krds-form-select">
+                        <option value="Y" th:selected="${detail == null or detail['openYn'] == 'Y'}">공개</option>
+                        <option value="N" th:selected="${detail != null and detail['openYn'] == 'N'}">비공개</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="memo">메모</label></div>
+                <div class="form-conts"><textarea id="memo" class="krds-input" rows="4" style="width: 100%;" th:text="${detail != null ? detail['memo'] : ''}"></textarea></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="register">등록자 (수정·삭제 확인용)</label></div>
+                <div class="form-conts"><input type="text" id="register" class="krds-input" maxlength="50" th:value="${detail != null ? detail['register'] : ''}" th:readonly="${detail != null}"></div>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: center; gap: 8px; margin-top: 12px;">
+            <a th:href="@{/card/cardList}" class="krds-btn medium secondary">목록</a>
+            <button type="button" class="krds-btn medium danger" th:if="${detail != null}" onclick="fnDeleteCard()">삭제</button>
+            <button type="button" id="saveBtn" class="krds-btn medium primary" th:text="${detail != null ? '수정' : '등록'}" onclick="fnSaveCard()">저장</button>
+        </div>
+    </div>
+<script>
+    function fnSaveCard() {
+        if (window._cardSaving) { return; }
+        if (($('#cardNm').val() || '').trim() === '') {
+            alert('이름을 입력하세요.');
+            $('#cardNm').focus();
+            return;
+        }
+        if (($('#register').val() || '').trim() === '') {
+            alert('등록자를 입력하세요.');
+            $('#register').focus();
+            return;
+        }
+        var cardId = $('#cardId').val();
+        var isUpdate = cardId !== '';
+        $.ajax({
+            type: 'post',
+            url: isUpdate ? '/card/updateCard.json' : '/card/insertCard.json',
+            data: { cardId: cardId, cardNm: $('#cardNm').val(), companyNm: $('#companyNm').val(), deptNm: $('#deptNm').val(), positionNm: $('#positionNm').val(), telNo: $('#telNo').val(), email: $('#email').val(), openYn: $('#openYn').val(), memo: $('#memo').val(), register: $('#register').val(), 'egovframework.double.submit.preventer.parameter.name': $('#doubleSubmitToken').val() },
+            beforeSend: function() { window._cardSaving = true; $('#saveBtn').prop('disabled', true); },
+            complete: function() { window._cardSaving = false; $('#saveBtn').prop('disabled', false); },
+            success: function(res) {
+                if (res.success) { location.href = '/card/cardList'; }
+                else { alert(res.message || '저장에 실패했습니다.'); }
+            },
+            error: function() { alert('저장 중 오류가 발생했습니다.'); }
+        });
+    }
+    function fnDeleteCard() {
+        if (!confirm('사용등록도 함께 삭제됩니다. 삭제하시겠습니까?')) { return; }
+        $.ajax({
+            type: 'post',
+            url: '/card/deleteCard.json',
+            data: { cardId: $('#cardId').val(), register: $('#register').val() },
+            success: function(res) {
+                if (res.success) { location.href = '/card/cardList'; }
+                else { alert(res.message || '삭제에 실패했습니다.'); }
+            },
+            error: function() { alert('삭제 중 오류가 발생했습니다.'); }
+        });
+    }
+</script>
+</div>
+</body>
+</html>

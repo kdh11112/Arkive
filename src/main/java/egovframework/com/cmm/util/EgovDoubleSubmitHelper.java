@@ -1,5 +1,6 @@
 package egovframework.com.cmm.util;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -38,6 +39,35 @@ public class EgovDoubleSubmitHelper {
 
 	public static String getNewUUID() {
 		return UUID.randomUUID().toString().toUpperCase();
+	}
+
+	/**
+	 * 세션에 새 토큰을 발급한다. Thymeleaf 폼(GET)에서 호출해 model에 담는다.
+	 * 기존 checkAndSaveToken()과 쌍으로 사용한다.
+	 */
+	public static String setToken(HttpSession session) {
+		return setToken(session, DEFAULT_TOKEN_KEY);
+	}
+
+	/**
+	 * tokenKey별 토큰 발급. 여러 등록 화면을 동시에 띄우는 경우 key를 분리한다.
+	 * 예: BOARD_CK, BOARD_TOAST
+	 */
+	@SuppressWarnings("unchecked")
+	public static String setToken(HttpSession session, String tokenKey) {
+		synchronized (session) {
+			Object sessionTokenAttr = session.getAttribute(EgovDoubleSubmitHelper.SESSION_TOKEN_KEY);
+			Map<String, String> map;
+			if (sessionTokenAttr == null) {
+				map = new HashMap<>();
+				session.setAttribute(EgovDoubleSubmitHelper.SESSION_TOKEN_KEY, map);
+			} else {
+				map = (Map<String, String>) sessionTokenAttr;
+			}
+			String token = getNewUUID();
+			map.put(tokenKey, token);
+			return token;
+		}
 	}
 
 	public static boolean checkAndSaveToken() {

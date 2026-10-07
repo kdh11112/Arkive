@@ -32,12 +32,12 @@
             </thead>
             <tbody>
             <tr>
-                <th scope="row">CK에디터 게시판</th>
+                <th scope="row">공지사항관리</th>
                 <td th:text="${ckCount}">0</td>
                 <td><a th:href="@{/board/ckeditorList}" class="krds-btn small secondary">목록</a></td>
             </tr>
             <tr>
-                <th scope="row">토스트 게시판</th>
+                <th scope="row">자료실관리</th>
                 <td th:text="${toastCount}">0</td>
                 <td><a th:href="@{/board/toastList}" class="krds-btn small secondary">목록</a></td>
             </tr>
@@ -52,10 +52,10 @@
 
     <div style="display: flex; gap: 24px; align-items: flex-start; margin-top: 24px;">
         <div style="flex: 1; min-width: 0;">
-            <h3>CK 최근 글</h3>
+            <h3>공지사항 최근 글</h3>
             <div class="krds-table-wrap">
                 <table class="tbl col data">
-                    <caption>CK 최근 글 5건</caption>
+                    <caption>공지사항 최근 글 5건</caption>
                     <thead>
                     <tr>
                         <th scope="col">제목</th>
@@ -67,7 +67,7 @@
                         <td colspan="2">게시글이 없습니다.</td>
                     </tr>
                     <tr th:each="item : ${recentCk}">
-                        <td><a th:href="@{/board/detail(boardId=${item['boardId']})}" th:text="${item['title']}"></a></td>
+                        <td><a th:href="@{/board/detail}" data-post th:attr="data-name='boardId',data-value=${item['boardId']}" th:text="${item['title']}"></a></td>
                         <td th:text="${item['registDt'] != null ? #dates.format(item['registDt'], 'yyyy-MM-dd') : ''}"></td>
                     </tr>
                     </tbody>
@@ -75,10 +75,10 @@
             </div>
         </div>
         <div style="flex: 1; min-width: 0;">
-            <h3>토스트 최근 글</h3>
+            <h3>자료실 최근 글</h3>
             <div class="krds-table-wrap">
                 <table class="tbl col data">
-                    <caption>토스트 최근 글 5건</caption>
+                    <caption>자료실 최근 글 5건</caption>
                     <thead>
                     <tr>
                         <th scope="col">제목</th>
@@ -90,7 +90,7 @@
                         <td colspan="2">게시글이 없습니다.</td>
                     </tr>
                     <tr th:each="item : ${recentToast}">
-                        <td><a th:href="@{/board/detail(boardId=${item['boardId']})}" th:text="${item['title']}"></a></td>
+                        <td><a th:href="@{/board/detail}" data-post th:attr="data-name='boardId',data-value=${item['boardId']}" th:text="${item['title']}"></a></td>
                         <td th:text="${item['registDt'] != null ? #dates.format(item['registDt'], 'yyyy-MM-dd') : ''}"></td>
                     </tr>
                     </tbody>

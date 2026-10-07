@@ -8,6 +8,9 @@ target/
 # Local HSQLDB files (including transient lock and log files)
 /data/
 
+# Local DB dump files (Quartz DBJob output)
+/backup/
+
 ### Eclipse ###
 .metadata
 bin/

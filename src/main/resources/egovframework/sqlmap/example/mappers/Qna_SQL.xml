@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.qna.service.impl.QnaMapper">
+
+	<!-- Q&A 목록. 질문(BOARD_TYPE='QNA') + 답변 존재 여부로 상태 판정한다.
+	     참고: BLMS qnaList(bbsId=03, rlsYnCd/inqCnt), pony QUESTION(answerStatus '미답변').
+	     개선점: 상태 컬럼을 두지 않고 LEFT JOIN으로 판정 → 상태 동기화 불일치 원천 제거, COM028 불필요.
+	     1단계(비로그인)라 공개여부·비밀번호 조건은 제외한다. -->
+	<select id="selectQnaList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			B.BOARD_ID,
+			B.TITLE,
+			B.REGISTER,
+			B.REGIST_DT,
+			CASE WHEN A.BOARD_ID IS NULL THEN '미답변' ELSE '답변완료' END AS ANSWER_STATUS
+		FROM BOARD B
+		LEFT JOIN QNA_ANSWER A
+			ON B.BOARD_ID = A.BOARD_ID
+		WHERE B.BOARD_TYPE = 'QNA'
+		<if test="searchKeyword != null and searchKeyword != ''">
+			AND B.TITLE LIKE '%' || #{searchKeyword} || '%'
+		</if>
+		ORDER BY B.REGIST_DT DESC
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<!-- Q&A 전체 건수 (오프셋 페이징용) -->
+	<select id="selectQnaListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM BOARD
+		WHERE BOARD_TYPE = 'QNA'
+		<if test="searchKeyword != null and searchKeyword != ''">
+			AND TITLE LIKE '%' || #{searchKeyword} || '%'
+		</if>
+	</select>
+
+	<!-- Q&A 질문 상세 -->
+	<select id="selectQnaDetail" parameterType="string" resultType="egovMap">
+		SELECT
+			BOARD_ID,
+			TITLE,
+			CONTENT,
+			REGISTER,
+			REGIST_DT
+		FROM BOARD
+		WHERE BOARD_ID = #{boardId}
+			AND BOARD_TYPE = 'QNA'
+	</select>
+
+	<!-- Q&A 답변 조회 -->
+	<select id="selectQnaAnswer" parameterType="string" resultType="egovMap">
+		SELECT
+			BOARD_ID,
+			ANSWER_CONTENT,
+			ANSWERER,
+			ANSWER_DT
+		FROM QNA_ANSWER
+		WHERE BOARD_ID = #{boardId}
+	</select>
+
+	<!-- Q&A 질문 등록. BOARD_ID는 Controller에서 BD+일련으로 생성한다(Board 패턴). -->
+	<insert id="insertQna" parameterType="egovMap">
+		INSERT INTO BOARD (
+			BOARD_ID,
+			BOARD_TYPE,
+			TITLE,
+			CONTENT,
+			VIEW_CNT,
+			REGIST_DT,
+			REGISTER
+		) VALUES (
+			#{boardId},
+			'QNA',
+			#{title},
+			#{content},
+			0,
+			CURRENT_TIMESTAMP,
+			#{register}
+		)
+	</insert>
+
+	<!-- Q&A 질문 수정 -->
+	<update id="updateQna" parameterType="egovMap">
+		UPDATE BOARD
+		SET
+			TITLE = #{title},
+			CONTENT = #{content},
+			UPDT_DT = CURRENT_TIMESTAMP,
+			UPDUSR = #{updusr}
+		WHERE BOARD_ID = #{boardId}
+			AND BOARD_TYPE = 'QNA'
+	</update>
+
+	<!-- Q&A 질문 삭제. 답변은 FK ON DELETE CASCADE로 함께 삭제된다. -->
+	<delete id="deleteQna" parameterType="string">
+		DELETE FROM BOARD
+		WHERE BOARD_ID = #{boardId}
+			AND BOARD_TYPE = 'QNA'
+	</delete>
+
+	<!-- Q&A 답변 저장(등록·수정 겸용 UPSERT). V9 메뉴 MERGE와 같은 HSQLDB MERGE 패턴이다.
+	     MyBatis DTD에 merge 태그가 없어 update로 감싼다. -->
+	<update id="saveQnaAnswer" parameterType="egovMap">
+		MERGE INTO QNA_ANSWER target
+		USING (VALUES (#{boardId}, #{answerContent}, #{answerer})) source(board_id, answer_content, answerer)
+		ON target.BOARD_ID = source.board_id
+		WHEN MATCHED THEN UPDATE SET target.ANSWER_CONTENT = source.answer_content, target.ANSWERER = source.answerer, target.ANSWER_DT = CURRENT_TIMESTAMP
+		WHEN NOT MATCHED THEN INSERT (BOARD_ID, ANSWER_CONTENT, ANSWERER, ANSWER_DT) VALUES (source.board_id, source.answer_content, source.answerer, CURRENT_TIMESTAMP)
+	</update>
+
+</mapper>

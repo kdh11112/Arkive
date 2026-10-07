@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.duty.service.impl.DutyMapper">
+
+	<!-- 당직 월 목록 -->
+	<select id="selectDutyList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			DUTY_ID,
+			DUTY_DE,
+			DUTY_USER,
+			NOTE,
+			REGIST_DT
+		FROM DUTY
+		WHERE DUTY_DE LIKE #{yyyymm} || '%'
+		<if test="searchKeyword != null and searchKeyword != ''">
+			AND DUTY_USER LIKE '%' || #{searchKeyword} || '%'
+		</if>
+		ORDER BY DUTY_DE, DUTY_ID
+	</select>
+
+	<!-- 당직 상세 -->
+	<select id="selectDutyDetail" parameterType="string" resultType="egovMap">
+		SELECT
+			DUTY_ID,
+			DUTY_DE,
+			DUTY_USER,
+			NOTE,
+			REGIST_DT
+		FROM DUTY
+		WHERE DUTY_ID = #{dutyId}
+	</select>
+
+	<!-- 당직 등록 -->
+	<insert id="insertDuty" parameterType="egovMap">
+		INSERT INTO DUTY (
+			DUTY_ID,
+			DUTY_DE,
+			DUTY_USER,
+			NOTE,
+			REGIST_DT,
+			REGISTER
+		) VALUES (
+			#{dutyId},
+			#{dutyDe},
+			#{dutyUser},
+			#{note},
+			CURRENT_TIMESTAMP,
+			#{register}
+		)
+	</insert>
+
+	<!-- 당직 수정 -->
+	<update id="updateDuty" parameterType="egovMap">
+		UPDATE DUTY
+		SET
+			DUTY_DE = #{dutyDe},
+			DUTY_USER = #{dutyUser},
+			NOTE = #{note},
+			UPDT_DT = CURRENT_TIMESTAMP,
+			UPDUSR = #{updusr}
+		WHERE DUTY_ID = #{dutyId}
+	</update>
+
+	<!-- 당직 삭제 -->
+	<delete id="deleteDuty" parameterType="string">
+		DELETE FROM DUTY
+		WHERE DUTY_ID = #{dutyId}
+	</delete>
+
+</mapper>

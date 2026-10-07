@@ -8,15 +8,15 @@
 </head>
 <body>
 <div layout:fragment="content">
-    <h2 class="heading-large" th:text="${boardType == 'CK' ? 'CK에디터 게시판' : '토스트 게시판'}">게시판</h2>
+    <h2 class="heading-large" th:text="${boardType == 'CK' ? '공지사항관리' : '자료실관리'}">게시판</h2>
 
     <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
-        <a th:href="${boardType == 'CK' ? '/board/ckeditorWrite' : '/board/toastWrite'}" class="krds-btn medium primary">글쓰기</a>
+        <a th:href="${boardType == 'CK' ? '/board/ckeditorWrite' : '/board/toastWrite'}" class="krds-btn medium primary">등록</a>
     </div>
 
     <!-- CK: 전자정부 오프셋 페이징(서버 렌더 + KRDS 블록) -->
     <th:block th:if="${boardType == 'CK'}">
-    <form id="listForm" method="get" th:action="@{/board/ckeditorList}">
+    <form id="listForm" method="post" th:action="@{/board/ckeditorList}">
         <input type="hidden" id="pageIndex" name="pageIndex" th:value="${pageIndex}">
         <div style="display: flex; gap: 8px; margin-bottom: 12px;">
             <input type="text" name="searchKeyword" class="krds-input" style="flex: 1;" placeholder="제목 검색" th:value="${searchKeyword}">
@@ -25,7 +25,7 @@
     </form>
     <div class="krds-table-wrap">
         <table class="tbl col data">
-            <caption>CK에디터 게시판 목록</caption>
+            <caption>공지사항 목록</caption>
             <colgroup>
                 <col style="width: 10%;">
                 <col>
@@ -43,7 +43,7 @@
             <tbody>
             <tr th:each="item, stat : ${resultList}">
                 <td th:text="${paginationInfo.totalRecordCount + 1 - ((pageIndex - 1) * paginationInfo.recordCountPerPage + stat.count)}"></td>
-                <td><a th:href="@{/board/detail(boardId=${item['boardId']})}" th:text="${item['title']}"></a></td>
+                <td><a th:href="@{/board/detail}" data-post th:attr="data-name='boardId',data-value=${item['boardId']}" th:text="${item['title']}"></a></td>
                 <td th:text="${item['registDt'] != null ? #dates.format(item['registDt'], 'yyyy-MM-dd') : ''}"></td>
                 <td th:text="${item['viewCnt']}"></td>
             </tr>
@@ -64,7 +64,7 @@
     </div>
     <div class="krds-table-wrap">
         <table class="tbl col data">
-            <caption>토스트 게시판 목록</caption>
+            <caption>자료실 목록</caption>
             <colgroup>
                 <col style="width: 10%;">
                 <col>
@@ -103,6 +103,19 @@
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
+    // 상세 이동은 POST로 한다(쿼리스트링 노출 방지). arkive-common.js 전역 data-post와 같은 규칙이다.
+    function toastGoDetail(boardId) {
+        var form = document.createElement('form');
+        form.method = 'post';
+        form.action = '/board/detail';
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'boardId';
+        input.value = boardId;
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
     function toastLoad(reset) {
         if (toastLoading) return;
         toastLoading = true;
@@ -130,7 +143,7 @@
                     toastSeq++;
                     buffer.push('<tr>');
                     buffer.push('<td>' + toastSeq + '</td>');
-                    buffer.push('<td><a href="/board/detail?boardId=' + encodeURIComponent(item.boardId) + '">' + escapeHtml(item.title) + '</a></td>');
+                    buffer.push('<td><a href="javascript:void(0)" onclick="toastGoDetail(\'' + item.boardId + '\')">' + escapeHtml(item.title) + '</a></td>');
                     buffer.push('<td>' + escapeHtml(item.registDt) + '</td>');
                     buffer.push('<td>' + item.viewCnt + '</td>');
                     buffer.push('</tr>');

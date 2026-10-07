@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.popup.service.impl.PopupMapper">
+
+	<!-- 팝업 목록 (관리용 전체) -->
+	<select id="selectPopupList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			POPUP_ID,
+			TITLE,
+			START_YMD,
+			END_YMD,
+			LINK_URL,
+			USE_YN,
+			ATCH_FILE_GRPID,
+			REGIST_DT
+		FROM POPUP
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND TITLE LIKE '%' || #{searchKeyword} || '%'
+			</if>
+			<if test="useYn != null and useYn != ''">
+				AND USE_YN = #{useYn}
+			</if>
+		</where>
+		ORDER BY REGIST_DT DESC
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<!-- 팝업 전체 건수 -->
+	<select id="selectPopupListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM POPUP
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND TITLE LIKE '%' || #{searchKeyword} || '%'
+			</if>
+			<if test="useYn != null and useYn != ''">
+				AND USE_YN = #{useYn}
+			</if>
+		</where>
+	</select>
+
+	<!-- 팝업 상세 -->
+	<select id="selectPopupDetail" parameterType="string" resultType="egovMap">
+		SELECT
+			POPUP_ID,
+			TITLE,
+			CONTENT,
+			START_YMD,
+			END_YMD,
+			LINK_URL,
+			USE_YN,
+			ATCH_FILE_GRPID,
+			REGIST_DT
+		FROM POPUP
+		WHERE POPUP_ID = #{popupId}
+	</select>
+
+	<!-- 현재 게시중 팝업. 대시보드 진입 시 이 쿼리로 연계한다. HSQLDB CURRENT_DATE 기준. -->
+	<select id="selectActivePopupList" resultType="egovMap">
+		SELECT
+			POPUP_ID,
+			TITLE,
+			CONTENT,
+			LINK_URL,
+			ATCH_FILE_GRPID
+		FROM POPUP
+		WHERE USE_YN = 'Y'
+			AND START_YMD &lt;= REPLACE(CAST(CURRENT_DATE AS VARCHAR(10)), '-', '')
+			AND END_YMD &gt;= REPLACE(CAST(CURRENT_DATE AS VARCHAR(10)), '-', '')
+		ORDER BY REGIST_DT DESC
+	</select>
+
+	<!-- 팝업 등록 -->
+	<insert id="insertPopup" parameterType="egovMap">
+		INSERT INTO POPUP (
+			POPUP_ID,
+			TITLE,
+			CONTENT,
+			START_YMD,
+			END_YMD,
+			LINK_URL,
+			USE_YN,
+			ATCH_FILE_GRPID,
+			REGIST_DT,
+			REGISTER
+		) VALUES (
+			#{popupId},
+			#{title},
+			#{content},
+			#{startYmd},
+			#{endYmd},
+			#{linkUrl},
+			#{useYn},
+			#{atchFileGrpid},
+			CURRENT_TIMESTAMP,
+			#{register}
+		)
+	</insert>
+
+	<!-- 팝업 수정 -->
+	<update id="updatePopup" parameterType="egovMap">
+		UPDATE POPUP
+		SET
+			TITLE = #{title},
+			CONTENT = #{content},
+			START_YMD = #{startYmd},
+			END_YMD = #{endYmd},
+			LINK_URL = #{linkUrl},
+			USE_YN = #{useYn},
+			ATCH_FILE_GRPID = #{atchFileGrpid},
+			UPDT_DT = CURRENT_TIMESTAMP,
+			UPDUSR = #{updusr}
+		WHERE POPUP_ID = #{popupId}
+	</update>
+
+	<!-- 팝업 삭제 -->
+	<delete id="deletePopup" parameterType="string">
+		DELETE FROM POPUP
+		WHERE POPUP_ID = #{popupId}
+	</delete>
+
+</mapper>

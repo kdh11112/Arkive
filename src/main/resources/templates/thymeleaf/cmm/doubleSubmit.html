@@ -1,0 +1,10 @@
+<div th:fragment="token" xmlns:th="http://www.thymeleaf.org">
+    <input type="hidden" id="doubleSubmitToken"
+           name="egovframework.double.submit.preventer.parameter.name"
+           th:value="${doubleSubmitToken}" />
+</div>
+
+<div th:fragment="badge" xmlns:th="http://www.thymeleaf.org">
+    <span class="double-submit-badge"
+          style="display:inline-block;margin-left:8px;padding:2px 8px;font-size:12px;border:1px solid #2f7cf6;border-radius:12px;color:#2f7cf6;vertical-align:middle;">이중등록방지 적용됨</span>
+</div>

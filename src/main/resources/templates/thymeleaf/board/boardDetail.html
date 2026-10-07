@@ -4,7 +4,7 @@
       layout:decorate="~{layout/layout}">
 <head>
     <meta charset="utf-8">
-    <title>게시글 상세</title>
+    <title>게시글 상세보기</title>
 </head>
 <body>
 <div layout:fragment="content">
@@ -30,7 +30,7 @@
                 <tbody>
                 <tr>
                     <th scope="row">구분</th>
-                    <td th:text="${detail['boardType'] == 'CK' ? 'CK에디터' : '토스트'}"></td>
+                    <td th:text="${detail['boardType'] == 'CK' ? '공지사항' : '자료실'}"></td>
                     <th scope="row">조회수</th>
                     <td th:text="${detail['viewCnt']}"></td>
                 </tr>
@@ -55,14 +55,14 @@
                 <tr>
                     <th scope="row">다음글</th>
                     <td>
-                        <a th:if="${next != null}" th:href="@{/board/detail(boardId=${next['boardId']})}" th:text="${next['title']}"></a>
+                        <a th:if="${next != null}" th:href="@{/board/detail}" data-post th:attr="data-name='boardId',data-value=${next['boardId']}" th:text="${next['title']}"></a>
                         <span th:if="${next == null}">다음글이 없습니다.</span>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row">이전글</th>
                     <td>
-                        <a th:if="${prev != null}" th:href="@{/board/detail(boardId=${prev['boardId']})}" th:text="${prev['title']}"></a>
+                        <a th:if="${prev != null}" th:href="@{/board/detail}" data-post th:attr="data-name='boardId',data-value=${prev['boardId']}" th:text="${prev['title']}"></a>
                         <span th:if="${prev == null}">이전글이 없습니다.</span>
                     </td>
                 </tr>
@@ -70,16 +70,12 @@
             </table>
         </div>
         <hr>
-        <div style="display: flex; justify-content: space-between; margin-top: 12px;">
-            <div>
-                <a th:if="${detail != null and detail['boardType'] == 'CK'}" th:href="@{/board/ckeditorList}" class="krds-btn medium secondary">목록</a>
-                <a th:if="${detail != null and detail['boardType'] == 'TOAST'}" th:href="@{/board/toastList}" class="krds-btn medium secondary">목록</a>
-            </div>
-            <div>
-                <a th:if="${detail != null and detail['boardType'] == 'CK'}" th:href="@{/board/ckeditorWrite(boardId=${detail['boardId']})}" class="krds-btn medium secondary">수정</a>
-                <a th:if="${detail != null and detail['boardType'] == 'TOAST'}" th:href="@{/board/toastWrite(boardId=${detail['boardId']})}" class="krds-btn medium secondary">수정</a>
-                <button type="button" class="krds-btn medium danger" onclick="fnDelete()">삭제</button>
-            </div>
+        <div style="display: flex; justify-content: center; gap: 8px; margin-top: 12px;">
+            <a th:if="${detail != null and detail['boardType'] == 'CK'}" th:href="@{/board/ckeditorList}" class="krds-btn medium secondary">목록</a>
+            <a th:if="${detail != null and detail['boardType'] == 'TOAST'}" th:href="@{/board/toastList}" class="krds-btn medium secondary">목록</a>
+            <a th:if="${detail != null and detail['boardType'] == 'CK'}" th:href="@{/board/ckeditorWrite}" data-post th:attr="data-name='boardId',data-value=${detail['boardId']}" class="krds-btn medium secondary">수정</a>
+            <a th:if="${detail != null and detail['boardType'] == 'TOAST'}" th:href="@{/board/toastWrite}" data-post th:attr="data-name='boardId',data-value=${detail['boardId']}" class="krds-btn medium secondary">수정</a>
+            <button type="button" class="krds-btn medium danger" onclick="fnDelete()">삭제</button>
         </div>
     </div>
 <script th:inline="javascript">

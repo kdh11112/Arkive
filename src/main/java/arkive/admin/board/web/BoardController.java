@@ -1,10 +1,15 @@
 package arkive.admin.board.web;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
@@ -25,14 +30,17 @@ import arkive.admin.board.service.BoardSseService;
 import arkive.admin.comm.service.FileService;
 import arkive.admin.comm.web.CommUtil;
 import arkive.admin.comm.web.HtmlSanitizer;
+import egovframework.com.cmm.util.EgovDoubleSubmitHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * 게시판(CK/토스트 2종). 같은 BOARD 테이블을 BOARD_TYPE으로 분리한다.
  * 첨부는 기존 공통 업로드(tempFileUpload + saveTempFiles, BOARD_ 그룹)를 재사용한다.
+ * 근거: eGov v5.0 cop 게시판(통합게시판) 목록·상세·등록 패턴. CK/토스트 듀얼 에디터 구성은 Arkive-local이다.
  */
 @Tag(name = "게시판", description = "CK/토스트 목록·상세·등록·수정·삭제, 에디터 이미지 업로드")
 @Controller
@@ -59,17 +67,20 @@ public class BoardController {
 	 * 세션에 본 글 ID 집합을 꺼낸다. 없으면 만들어 세션에 넣는다.
 	 */
 	@SuppressWarnings("unchecked")
-	private java.util.Set<String> getViewedSet(HttpServletRequest request) {
-		jakarta.servlet.http.HttpSession session = request.getSession();
+	private Set<String> getViewedSet(HttpServletRequest request) {
+		HttpSession session = request.getSession();
 		Object attr = session.getAttribute("viewedBoards");
-		if (attr instanceof java.util.Set) {
-			return (java.util.Set<String>) attr;
+		if (attr instanceof Set) {
+			return (Set<String>) attr;
 		}
-		java.util.Set<String> viewed = new java.util.HashSet<>();
+		Set<String> viewed = new HashSet<>();
 		session.setAttribute("viewedBoards", viewed);
 		return viewed;
 	}
 
+	/**
+	 * CK 오프셋 목록. 근거: eGov PaginationInfo 표준(페이지당 10건·블록 10개).
+	 */
 	private void putBoardList(String boardType, int pageUnit, int pageSize, HttpServletRequest request, ModelMap model) throws Exception {
 		int pageIndex = 1;
 		try {
@@ -99,7 +110,7 @@ public class BoardController {
 	}
 
 	@Operation(summary = "CK 게시판 목록 (전자정부 오프셋 페이징)")
-	@RequestMapping(value = "/ckeditorList", method = RequestMethod.GET)
+	@RequestMapping(value = "/ckeditorList", method = { RequestMethod.GET, RequestMethod.POST })
 	public String ckeditorList(HttpServletRequest request, ModelMap model) throws Exception {
 		// CK 게시판 페이징: 페이지당 10건, 페이지 블록 10개
 		putBoardList("CK", 10, 10, request, model);
@@ -107,7 +118,7 @@ public class BoardController {
 	}
 
 	@Operation(summary = "토스트 게시판 목록 껍데기 (목록은 toastList.json 커서 방식)")
-	@RequestMapping(value = "/toastList", method = RequestMethod.GET)
+	@RequestMapping(value = "/toastList", method = { RequestMethod.GET, RequestMethod.POST })
 	public String toastList(HttpServletRequest request, ModelMap model) throws Exception {
 		// 토스트는 커서(키셋)+더보기 방식이라 첫 화면은 껍데기만 내려보내고 목록은 toastList.json으로 채운다.
 		model.put("boardType", "TOAST");
@@ -118,6 +129,7 @@ public class BoardController {
 	/**
 	 * 토스트 커서 목록(JSON). cursorId(마지막 글 BOARD_ID) 다음 묶음을 pageSize만큼 돌려준다.
 	 * limit = pageSize + 1 로 조회해 여분이 있으면 hasNext=true, nextCursorId는 마지막 실데이터 키다.
+	 * 근거: 키셋 페이지네이션. 오프셋의 뒤쪽 페이지 느려짐·삽입 시 중복 문제를 피한다(Arkive-local 개선).
 	 */
 	@Operation(summary = "토스트 커서 목록 (cursorId 다음 묶음, hasNext/nextCursorId 반환)")
 	@RequestMapping(value = "/toastList.json", method = RequestMethod.POST)
@@ -144,7 +156,7 @@ public class BoardController {
 				item.put("title", String.valueOf(r.get("title")));
 				item.put("viewCnt", r.get("viewCnt"));
 				Object dt = r.get("registDt");
-				item.put("registDt", dt instanceof java.util.Date ? fmt.format((java.util.Date) dt) : "");
+				item.put("registDt", dt instanceof Date ? fmt.format((Date) dt) : "");
 				list.add(item);
 			}
 			result.put("success", true);
@@ -160,7 +172,7 @@ public class BoardController {
 	}
 
 	@Operation(summary = "CK 글쓰기 화면 (boardId 있으면 수정)")
-	@RequestMapping(value = "/ckeditorWrite", method = RequestMethod.GET)
+	@RequestMapping(value = "/ckeditorWrite", method = { RequestMethod.GET, RequestMethod.POST })
 	public String ckeditorWrite(HttpServletRequest request, ModelMap model) throws Exception {
 		String boardId = cmmUtil.convertHtml(request, "boardId");
 		if (boardId != null && !boardId.isEmpty()) {
@@ -171,11 +183,13 @@ public class BoardController {
 			}
 		}
 		model.put("boardType", "CK");
+		// 이중등록방지 토큰 발급. CK/TOAST 화면 동시 사용 대비 key 분리.
+		model.put("doubleSubmitToken", EgovDoubleSubmitHelper.setToken(request.getSession(), "BOARD_CK"));
 		return "board/boardWriteCk";
 	}
 
 	@Operation(summary = "토스트 글쓰기 화면 (boardId 있으면 수정)")
-	@RequestMapping(value = "/toastWrite", method = RequestMethod.GET)
+	@RequestMapping(value = "/toastWrite", method = { RequestMethod.GET, RequestMethod.POST })
 	public String toastWrite(HttpServletRequest request, ModelMap model) throws Exception {
 		String boardId = cmmUtil.convertHtml(request, "boardId");
 		if (boardId != null && !boardId.isEmpty()) {
@@ -186,16 +200,19 @@ public class BoardController {
 			}
 		}
 		model.put("boardType", "TOAST");
+		// 이중등록방지 토큰 발급. CK/TOAST 화면 동시 사용 대비 key 분리.
+		model.put("doubleSubmitToken", EgovDoubleSubmitHelper.setToken(request.getSession(), "BOARD_TOAST"));
 		return "board/boardWriteToast";
 	}
 
 	@Operation(summary = "게시글 상세 (조회수 증가, 이전글/다음글 포함). boardId 파라미터로 조회한다")
-	@RequestMapping(value = "/detail", method = RequestMethod.GET)
+	@RequestMapping(value = "/detail", method = { RequestMethod.GET, RequestMethod.POST })
 	public String detail(HttpServletRequest request, ModelMap model) throws Exception {
+		// 근거: 동일 BOARD_TYPE 내 REGIST_DT·BOARD_ID 기준 이전/다음 1건. 조회수는 세션 집합으로 중복 방지한다.
 		String boardId = cmmUtil.convertHtml(request, "boardId");
 		// 조회수 중복 방지. 세션에 본 글 ID를 모아두고 처음 볼 때만 올린다.
 		// 새로고침·뒤로가기로 뻥튀기되는 것을 막는다. (세션 만료되면 다시 센다)
-		java.util.Set<String> viewed = getViewedSet(request);
+		Set<String> viewed = getViewedSet(request);
 		if (boardId != null && !boardId.isEmpty() && !viewed.contains(boardId)) {
 			boardService.updateViewCnt(boardId);
 			viewed.add(boardId);
@@ -227,6 +244,17 @@ public class BoardController {
 			String boardType = cmmUtil.convertHtml(request, "boardType");
 			if (!"CK".equals(boardType) && !"TOAST".equals(boardType)) {
 				throw new IllegalArgumentException("boardType이 올바르지 않습니다.");
+			}
+			// 이중등록방지 검사. 글쓰기 화면 tokenKey와 쌍을 맞춘다.
+			String tokenKey = "CK".equals(boardType) ? "BOARD_CK" : "BOARD_TOAST";
+			boolean valid;
+			try {
+				valid = EgovDoubleSubmitHelper.checkAndSaveToken(tokenKey);
+			} catch (RuntimeException e) {
+				valid = false;
+			}
+			if (!valid) {
+				throw new IllegalStateException("중복 제출이 감지되었습니다. 목록에서 등록 여부를 확인하세요.");
 			}
 			EgovMap param = new EgovMap();
 			param.put("boardId", "BD" + CommUtil.getFileId());
@@ -309,9 +337,9 @@ public class BoardController {
 				// 본문 HTML 속 에디터 이미지(file/downloadFile.do?downloadFileId=...)도 함께 삭제한다.
 				// 다른 글에서 같은 이미지를 참조하면 함께 안 보이게 되므로 복붙 공유는 운영상 자제한다.
 				String content = String.valueOf(detail.get("content"));
-				java.util.regex.Matcher m = java.util.regex.Pattern
+				Matcher m = Pattern
 						.compile("downloadFileId=([A-Za-z0-9_\\-]+)").matcher(content);
-				java.util.Set<String> seen = new java.util.HashSet<>();
+				Set<String> seen = new HashSet<>();
 				while (m.find()) {
 					if (seen.add(m.group(1))) {
 						try {

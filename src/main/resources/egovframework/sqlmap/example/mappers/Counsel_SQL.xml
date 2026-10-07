@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.counsel.service.impl.CounselMapper">
+
+	<!-- 상담 목록. 작성자명·상담제목 검색. -->
+	<select id="selectCounselList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			COUNSEL_ID,
+			TITLE,
+			WRITER,
+			STATUS,
+			REGIST_DT
+		FROM COUNSEL
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR WRITER LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+		ORDER BY REGIST_DT DESC
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<!-- 상담 전체 건수 -->
+	<select id="selectCounselListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM COUNSEL
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR WRITER LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+	</select>
+
+	<!-- 상담 상세 (비밀번호 제외) -->
+	<select id="selectCounselDetail" parameterType="string" resultType="egovMap">
+		SELECT
+			COUNSEL_ID,
+			TITLE,
+			CONTENT,
+			WRITER,
+			STATUS,
+			ANSWER,
+			ANSWER_DT,
+			ATCH_FILE_GRPID,
+			REGIST_DT
+		FROM COUNSEL
+		WHERE COUNSEL_ID = #{counselId}
+	</select>
+
+	<!-- 비밀번호 일치 확인 (수정·삭제 전) -->
+	<select id="checkCounselPassword" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM COUNSEL
+		WHERE COUNSEL_ID = #{counselId}
+			AND PASSWORD = #{password}
+	</select>
+
+	<!-- 상담 등록. 상태는 항상 '접수대기'로 시작한다(COM028=1). -->
+	<insert id="insertCounsel" parameterType="egovMap">
+		INSERT INTO COUNSEL (
+			COUNSEL_ID,
+			TITLE,
+			CONTENT,
+			WRITER,
+			PASSWORD,
+			STATUS,
+			ATCH_FILE_GRPID,
+			REGIST_DT
+		) VALUES (
+			#{counselId},
+			#{title},
+			#{content},
+			#{writer},
+			#{password},
+			'접수대기',
+			#{atchFileGrpid},
+			CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<!-- 상담 수정 -->
+	<update id="updateCounsel" parameterType="egovMap">
+		UPDATE COUNSEL
+		SET
+			TITLE = #{title},
+			CONTENT = #{content},
+			ATCH_FILE_GRPID = #{atchFileGrpid},
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE COUNSEL_ID = #{counselId}
+	</update>
+
+	<!-- 상담 삭제 -->
+	<delete id="deleteCounsel" parameterType="string">
+		DELETE FROM COUNSEL
+		WHERE COUNSEL_ID = #{counselId}
+	</delete>
+
+	<!-- 관리자 답변 목록. 작성자명·진행상태 검색. -->
+	<select id="selectCounselAnswerList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			COUNSEL_ID,
+			TITLE,
+			WRITER,
+			STATUS,
+			REGIST_DT
+		FROM COUNSEL
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND WRITER LIKE '%' || #{searchKeyword} || '%'
+			</if>
+			<if test="status != null and status != ''">
+				AND STATUS = #{status}
+			</if>
+		</where>
+		ORDER BY REGIST_DT DESC
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<!-- 관리자 답변 목록 건수 -->
+	<select id="selectCounselAnswerListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM COUNSEL
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND WRITER LIKE '%' || #{searchKeyword} || '%'
+			</if>
+			<if test="status != null and status != ''">
+				AND STATUS = #{status}
+			</if>
+		</where>
+	</select>
+
+	<!-- 답변 저장. 작성자 정보는 건드리지 않고 답변·상태만 갱신한다. -->
+	<update id="updateCounselAnswer" parameterType="egovMap">
+		UPDATE COUNSEL
+		SET
+			ANSWER = #{answer},
+			STATUS = #{status},
+			ANSWER_DT = CURRENT_TIMESTAMP,
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE COUNSEL_ID = #{counselId}
+	</update>
+
+</mapper>

@@ -28,6 +28,8 @@ import com.nhncorp.lucy.security.xss.XssFilter;
  *
  * 서블릿 필터(XssEscapeServletFilter)는 쓰지 않는다.
  * 그 필터는 javax.servlet용이라 Boot 3(jakarta)에서 동작하지 않는다.
+ *
+ * 근거: eGov 시큐어코딩(XSS) + Lucy XssFilter core 직접 사용. 서블릿 필터 방식 대신 저장 직전 정제로 바꿨다.
  */
 @Component
 public class HtmlSanitizer {

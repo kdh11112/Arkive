@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>당직관리</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">당직관리</h2>
+
+    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 8px;">
+        <a th:href="@{/duty/downloadDutyTemplate.do}" class="krds-btn medium secondary">양식 다운로드</a>
+        <a th:href="@{/duty/dutyWrite}" class="krds-btn medium primary">등록</a>
+    </div>
+
+    <form id="listForm" method="post" th:action="@{/duty/dutyList}">
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <input type="month" name="yyyymm" class="krds-input" onclick="this.showPicker()" th:value="${#strings.substring(yyyymm,0,4) + '-' + #strings.substring(yyyymm,4,6)}">
+            <input type="text" name="searchKeyword" class="krds-input" style="flex: 1;" placeholder="당직자 검색" th:value="${searchKeyword}">
+            <button type="submit" class="krds-btn medium secondary">검색</button>
+            <button type="submit" class="krds-btn medium secondary" formaction="/duty/downloadDutyExcel.do" formmethod="get">엑셀 다운로드</button>
+        </div>
+    </form>
+
+    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+        <input type="file" id="excelFile" accept=".xls,.xlsx">
+        <button type="button" class="krds-btn medium secondary" onclick="fnUploadExcel()">엑셀 일괄등록</button>
+        <span id="uploadMsg" style="font-size: 12px;"></span>
+    </div>
+
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>당직 목록</caption>
+            <colgroup>
+                <col style="width: 15%;">
+                <col style="width: 20%;">
+                <col>
+                <col style="width: 15%;">
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">날짜</th>
+                <th scope="col">당직자</th>
+                <th scope="col">비고</th>
+                <th scope="col">등록일</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${resultList}">
+                <td><a th:href="@{/duty/dutyWrite}" data-post th:attr="data-name='dutyId',data-value=${item['dutyId']}" th:text="${item['dutyDe']}"></a></td>
+                <td th:text="${item['dutyUser']}"></td>
+                <td th:text="${item['note']}"></td>
+                <td th:text="${item['registDt'] != null ? #dates.format(item['registDt'], 'yyyy-MM-dd') : ''}"></td>
+            </tr>
+            <tr th:if="${resultList == null or resultList.isEmpty()}">
+                <td colspan="4">조회된 당직이 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+<script>
+    function fnUploadExcel() {
+        var f = document.getElementById('excelFile').files[0];
+        if (!f) {
+            alert('엑셀 파일을 선택하세요.');
+            return;
+        }
+        var fd = new FormData();
+        fd.append('file', f);
+        document.getElementById('uploadMsg').textContent = '업로드 중...';
+        $.ajax({
+            type: 'POST', url: '/duty/uploadDutyExcel.json', data: fd,
+            processData: false, contentType: false,
+            success: function(res) {
+                if (res.success) {
+                    var msg = res.okCnt + '건 등록, ' + res.failCnt + '건 실패';
+                    if (res.errors && res.errors.length > 0) { msg += '\n' + res.errors.join('\n'); }
+                    alert(msg);
+                    location.reload();
+                } else { alert(res.message || '업로드에 실패했습니다.'); }
+                document.getElementById('uploadMsg').textContent = '';
+            },
+            error: function() { alert('업로드 중 오류가 발생했습니다.'); document.getElementById('uploadMsg').textContent = ''; }
+        });
+    }
+</script>
+</div>
+</body>
+</html>

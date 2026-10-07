@@ -1,5 +1,7 @@
 package arkive.admin.board.service.impl;
 
+import java.io.Reader;
+import java.sql.Clob;
 import java.util.List;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
@@ -39,8 +41,8 @@ public class BoardServiceImpl extends EgovAbstractServiceImpl implements BoardSe
 		if (detail != null) {
 			// HSQLDB CLOB은 EgovMap에 JDBCClob 객체로 담기므로 문자열로 변환한다. (DB 이식성 유지)
 			Object content = detail.get("content");
-			if (content instanceof java.sql.Clob clob) {
-				try (java.io.Reader reader = clob.getCharacterStream()) {
+			if (content instanceof Clob clob) {
+				try (Reader reader = clob.getCharacterStream()) {
 					StringBuilder sb = new StringBuilder();
 					char[] buf = new char[8192];
 					int len;

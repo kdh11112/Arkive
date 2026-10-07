@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>파일 미리보기</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">파일 미리보기</h2>
+    <p th:text="${fileName}"></p>
+
+    <!-- 이미지: downloadFile URL 그대로 표시. 경로는 노출되지 않는다(fileId만). -->
+    <div th:if="${viewKind == 'image'}" style="text-align: center;">
+        <img th:src="@{/file/downloadFile.do(downloadFileId=${fileId})}" th:alt="${fileName}" style="max-width: 100%;">
+    </div>
+
+    <!-- PDF: iframe 표시. 브라우저 PDF 미지원이면 다운로드로 대체된다. -->
+    <div th:if="${viewKind == 'pdf'}">
+        <iframe th:src="@{/file/downloadFile.do(downloadFileId=${fileId})}" style="width: 100%; height: 700px;" title="PDF 미리보기"></iframe>
+    </div>
+
+    <!-- 그 외: 미리보기 미지원 안내 + 다운로드 -->
+    <div th:if="${viewKind == 'other'}">
+        <p>미리보기를 지원하지 않는 형식입니다.</p>
+        <a th:if="${fileId != null}" th:href="@{/file/downloadFile.do(downloadFileId=${fileId})}" class="krds-btn medium primary">다운로드</a>
+    </div>
+</div>
+</body>
+</html>

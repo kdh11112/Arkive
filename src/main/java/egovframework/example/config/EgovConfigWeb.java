@@ -10,7 +10,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.core.Ordered;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -20,8 +19,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.handler.SimpleMappingExceptionResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
-import org.springframework.web.servlet.view.BeanNameViewResolver;
-import org.springframework.web.servlet.view.json.MappingJackson2JsonView;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
@@ -84,12 +81,8 @@ public class EgovConfigWeb implements WebMvcConfigurer, ApplicationContextAware 
         return viewResolver;
     }
     
-    @Bean
-    public BeanNameViewResolver beanNameViewResolver() {
-        BeanNameViewResolver viewResolver = new BeanNameViewResolver();
-        viewResolver.setOrder(Ordered.HIGHEST_PRECEDENCE);
-        return viewResolver;
-    }
+    // jsonView 방식은 @ResponseBody로 전부 전환되어 BeanNameViewResolver·MappingJackson2JsonView를 제거했다.
+    // 구 방식이 필요하면 EgovConfigWeb 변경 이력을 참고한다.
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -204,7 +197,15 @@ public class EgovConfigWeb implements WebMvcConfigurer, ApplicationContextAware 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(localeChangeInterceptor());
-        registry.addInterceptor(new MenuInterceptor());
+        // 메뉴는 화면에만 필요하고 정적 파일·API에는 불필요하다.
+        // 기존에는 전체 경로에서 매 요청 DB 조회를 때려 페이지당 수십 건 쿼리가 나갔다(렉 원인).
+        registry.addInterceptor(new MenuInterceptor())
+                .addPathPatterns("/**")
+                .excludePathPatterns(
+                        "/css/**", "/js/**", "/images/**", "/img/**", "/vendor/**",
+                        "/favicon.ico", "/error",
+                        "/swagger-ui/**", "/v3/api-docs/**",
+                        "/actuator/**");
     }
 
     @Override
@@ -225,11 +226,6 @@ public class EgovConfigWeb implements WebMvcConfigurer, ApplicationContextAware 
         smer.setExceptionMappings(prop);
         smer.setStatusCodes(statusCode);
         resolvers.add(smer);
-    }
-
-    @Bean
-    public MappingJackson2JsonView jsonView() {
-        return new MappingJackson2JsonView();
     }
 
 }

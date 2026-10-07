@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.info.Info;
  * Swagger(SpringDoc) API 문서 설정.
  * application.properties의 springdoc.packages-to-scan이 egovframework,arkive를 보도록 둔다.
  * 문서는 /swagger-ui.html, 스펙 JSON은 /v3/api-docs 에서 본다.
+ *
+ * 위험: 운영 공개 시 민감 API가 노출된다. 내부망 제한 또는 비활성화를 검토한다.
  */
 @Configuration
 @OpenAPIDefinition(info = @Info(

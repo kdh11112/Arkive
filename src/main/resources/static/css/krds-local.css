@@ -80,6 +80,7 @@
   overflow-x: auto;
 }
 .krds-table-wrap > table {
+  width: 100%;
   min-width: 720px;
 }
 @media (max-width: 1023px) {

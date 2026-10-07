@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>명함관리</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">명함관리</h2>
+
+    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <div style="display: flex; gap: 4px;">
+            <button type="button" class="krds-btn small" th:classappend="${tab == 'public' ? ' primary' : ' secondary'}" onclick="fnGoTab('public')">공개 명함</button>
+            <button type="button" class="krds-btn small" th:classappend="${tab == 'mine' ? ' primary' : ' secondary'}" onclick="fnGoTab('mine')">내 명함</button>
+        </div>
+        <a th:href="@{/card/cardWrite}" class="krds-btn medium primary">등록</a>
+    </div>
+
+    <form id="listForm" method="post" th:action="@{/card/cardList}">
+        <input type="hidden" name="tab" id="tabField" th:value="${tab}">
+        <input type="hidden" id="pageIndex" name="pageIndex" th:value="${pageIndex}">
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <input type="text" name="userNm" id="userNmField" class="krds-input" style="width: 140px;" placeholder="내 이름" th:value="${userNm}">
+            <input type="text" name="searchKeyword" class="krds-input" style="flex: 1;" placeholder="이름·회사명·부서명 검색" th:value="${searchKeyword}">
+            <button type="submit" class="krds-btn medium secondary" onclick="document.getElementById('pageIndex').value=1;">검색</button>
+        </div>
+    </form>
+
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>명함 목록</caption>
+            <colgroup>
+                <col style="width: 8%;">
+                <col style="width: 14%;">
+                <col style="width: 16%;">
+                <col style="width: 14%;">
+                <col style="width: 16%;">
+                <col>
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">번호</th>
+                <th scope="col">이름</th>
+                <th scope="col">회사명</th>
+                <th scope="col">부서명</th>
+                <th scope="col">전화번호</th>
+                <th scope="col">관리</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item, stat : ${resultList}">
+                <td th:text="${paginationInfo.totalRecordCount + 1 - ((pageIndex - 1) * paginationInfo.recordCountPerPage + stat.count)}"></td>
+                <td><a th:href="@{/card/cardWrite}" data-post th:attr="data-name='cardId',data-value=${item['cardId']}" th:text="${item['cardNm']}"></a></td>
+                <td th:text="${item['companyNm']}"></td>
+                <td th:text="${item['deptNm']}"></td>
+                <td th:text="${item['telNo']}"></td>
+                <td>
+                    <button th:if="${tab == 'public' and item['usedYn'] == 'N'}" type="button" class="krds-btn xsmall primary" th:attr="data-id=${item['cardId']}" onclick="fnUseCard(this)">사용등록</button>
+                    <span th:if="${tab == 'public' and item['usedYn'] == 'Y'}">사용중</span>
+                    <button th:if="${tab == 'mine'}" type="button" class="krds-btn xsmall danger" th:attr="data-id=${item['cardId']}" onclick="fnCancelUse(this)">사용취소</button>
+                </td>
+            </tr>
+            <tr th:if="${resultList == null or resultList.isEmpty()}">
+                <td colspan="6">조회된 명함이 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="paging" class="krds-pagination w-page" th:utext="${#egovKrdsPaginationRenderer.renderPagination(paginationInfo, 'cardPaging')}"></div>
+<script th:inline="javascript">
+    var cardUserNm = /*[[${userNm}]]*/ '';
+    function cardPaging(pageIndex) {
+        document.getElementById('pageIndex').value = pageIndex;
+        document.getElementById('listForm').submit();
+    }
+    function fnGoTab(tab) {
+        document.getElementById('tabField').value = tab;
+        document.getElementById('pageIndex').value = 1;
+        document.getElementById('listForm').submit();
+    }
+    function needUser() {
+        var current = document.getElementById('userNmField').value || '';
+        if (current.trim() === '') {
+            alert('상단에 내 이름을 먼저 입력하고 조회하세요.');
+            return false;
+        }
+        cardUserNm = current;
+        return true;
+    }
+    function fnUseCard(btn) {
+        if (!needUser()) { return; }
+        $.ajax({
+            type: 'post',
+            url: '/card/useCard.json',
+            data: { cardId: btn.getAttribute('data-id'), userNm: cardUserNm },
+            success: function(res) {
+                if (res.success) { location.reload(); }
+                else { alert(res.message || '사용등록에 실패했습니다.'); }
+            },
+            error: function() { alert('처리 중 오류가 발생했습니다.'); }
+        });
+    }
+    function fnCancelUse(btn) {
+        if (!needUser()) { return; }
+        $.ajax({
+            type: 'post',
+            url: '/card/cancelUseCard.json',
+            data: { cardId: btn.getAttribute('data-id'), userNm: cardUserNm },
+            success: function(res) {
+                if (res.success) { location.reload(); }
+                else { alert(res.message || '취소에 실패했습니다.'); }
+            },
+            error: function() { alert('처리 중 오류가 발생했습니다.'); }
+        });
+    }
+</script>
+</div>
+</body>
+</html>
