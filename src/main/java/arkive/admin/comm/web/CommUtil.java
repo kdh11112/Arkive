@@ -71,7 +71,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import arkive.admin.comm.service.EgovProperties;
-import egovframework.com.com.service.impl.EgovComAbstractDAO;
+import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;

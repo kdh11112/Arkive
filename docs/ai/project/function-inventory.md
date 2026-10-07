@@ -35,6 +35,8 @@
 | 샘플 기능 | `egovframework.example.sample.*`, `EgovSample_Sample_SQL.xml` | eGovFrame 샘플 CRUD 및 페이징 코드가 있음 | 샘플 코드, 업무 소유권 해당 없음 |
 | 시스템 설정·예약 DB 작업 | `egovframework.example.config.*`, `arkive.com.config.*` | DB·Mapper 설정, 10분 Trigger와 덤프 작업 코드가 있음 | 운영 책임자 미확인 |
 | 기타 업무 기능 | `src/main/java/arkive/` 전체 | 본 목록에서 완전 분류하지 않음 | 미확인 |
+| 소셜 로그인 | 미적용(보류). `ext/oauth` + scribejava + 로그인/사용자관리 세트 필요 | Naver 중심 코드, `Sns.*` 자리만 있음 | 보류: 로그인 체계 후에 진행 |
+| 댓글 관리 | 미적용(제외). `cop/cmt` + 게시판(`cop/bbs`) 세트 필요 | `BoardMaster` 직접 import 확인 | 제외: 게시판 이식 시 함께 진행 |
 
 ## 유지 기준
 
