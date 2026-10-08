@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>사용자관리</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">사용자관리</h2>
+
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+        <a th:href="@{/auth/userWrite}" class="krds-btn medium primary">등록</a>
+    </div>
+
+    <form id="listForm" method="post" th:action="@{/auth/userList}">
+        <input type="hidden" id="pageIndex" name="pageIndex" th:value="${pageIndex}">
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <input type="text" name="searchKeyword" class="krds-input" style="flex: 1;" placeholder="아이디·이름 검색" th:value="${searchKeyword}">
+            <button type="submit" class="krds-btn medium secondary" onclick="document.getElementById('pageIndex').value=1;">검색</button>
+        </div>
+    </form>
+
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>사용자 목록</caption>
+            <colgroup>
+                <col style="width: 8%;">
+                <col style="width: 15%;">
+                <col style="width: 15%;">
+                <col>
+                <col style="width: 8%;">
+                <col style="width: 8%;">
+                <col style="width: 20%;">
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">번호</th>
+                <th scope="col">아이디</th>
+                <th scope="col">이름</th>
+                <th scope="col">이메일</th>
+                <th scope="col">실패</th>
+                <th scope="col">잠금</th>
+                <th scope="col">관리</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item, stat : ${resultList}">
+                <td th:text="${paginationInfo.totalRecordCount + 1 - ((pageIndex - 1) * paginationInfo.recordCountPerPage + stat.count)}"></td>
+                <td><a th:href="@{/auth/userWrite}" data-post th:attr="data-name='userId',data-value=${item['userId']}" th:text="${item['userId']}"></a></td>
+                <td th:text="${item['userNm']}"></td>
+                <td th:text="${item['email']}"></td>
+                <td th:text="${item['failedCnt']}"></td>
+                <td th:text="${item['lockYn']}"></td>
+                <td>
+                    <button type="button" class="krds-btn xsmall secondary" th:attr="data-id=${item['userId']}" onclick="fnUnlock(this)">잠금해제</button>
+                    <button type="button" class="krds-btn xsmall secondary" th:attr="data-id=${item['userId']}" onclick="fnResetPw(this)">비번초기화</button>
+                </td>
+            </tr>
+            <tr th:if="${resultList == null or resultList.isEmpty()}">
+                <td colspan="7">조회된 사용자가 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="paging" class="krds-pagination w-page" th:utext="${#egovKrdsPaginationRenderer.renderPagination(paginationInfo, 'userPaging')}"></div>
+<script>
+    function userPaging(pageIndex) {
+        document.getElementById('pageIndex').value = pageIndex;
+        document.getElementById('listForm').submit();
+    }
+    function fnUnlock(btn) {
+        $.ajax({
+            type: 'post',
+            url: '/auth/unlockUser.json',
+            data: { userId: btn.getAttribute('data-id') },
+            success: function(res) {
+                if (res.success) { location.reload(); }
+                else { alert(res.message || '처리에 실패했습니다.'); }
+            },
+            error: function() { alert('처리 중 오류가 발생했습니다.'); }
+        });
+    }
+    function fnResetPw(btn) {
+        if (!confirm('비밀번호를 초기화합니다. 계속하시겠습니까?')) { return; }
+        $.ajax({
+            type: 'post',
+            url: '/auth/resetPassword.json',
+            data: { userId: btn.getAttribute('data-id') },
+            success: function(res) {
+                if (res.success) { alert('초기화된 비밀번호: ' + res.tempPassword + '\n반드시 전달 후 변경하세요.'); location.reload(); }
+                else { alert(res.message || '처리에 실패했습니다.'); }
+            },
+            error: function() { alert('처리 중 오류가 발생했습니다.'); }
+        });
+    }
+</script>
+</div>
+</body>
+</html>

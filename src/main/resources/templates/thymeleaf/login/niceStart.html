@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>본인확인</title>
+</head>
+<body onload="document.getElementById('niceForm').submit();">
+<p>본인확인 페이지로 이동 중입니다...</p>
+<form id="niceForm" name="niceForm" method="post" action="https://nice.checkplus.co.kr/CheckPlusSafeModel/checkplus.cb">
+    <input type="hidden" name="m" value="checkplusSerivce">
+    <input type="hidden" name="EncodeData" th:value="${sEncodeData}">
+</form>
+</body>
+</html>

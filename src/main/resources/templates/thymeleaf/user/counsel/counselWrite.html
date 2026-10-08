@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{user/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>상담신청</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">상담신청<div th:replace="~{cmm/doubleSubmit :: badge}"></div></h2>
+    <div class="conts-wrap">
+        <div class="fieldset input-form">
+            <input type="hidden" id="atchFileGrpid" value="">
+            <div th:replace="~{cmm/doubleSubmit :: token}"></div>
+            <div class="form-group">
+                <div class="form-tit"><label for="title">제목</label></div>
+                <div class="form-conts"><input type="text" id="title" class="krds-input"></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="writer">작성자</label></div>
+                <div class="form-conts"><input type="text" id="writer" class="krds-input" maxlength="50"></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="password">비밀번호 (수정·삭제 확인용)</label></div>
+                <div class="form-conts"><input type="password" id="password" class="krds-input" maxlength="50"></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="content">내용</label></div>
+                <div class="form-conts"><textarea id="content" class="krds-input" rows="8" style="width: 100%;"></textarea></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="file">첨부파일 (최대 3개)</label></div>
+                <div class="form-conts">
+                    <input type="file" id="file" multiple onchange="fnUploadFiles()">
+                    <ul id="fileList" style="margin-top: 8px;"></ul>
+                </div>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: center; gap: 8px; margin-top: 12px;">
+            <a th:href="@{/user/userMain}" class="krds-btn medium secondary">메인</a>
+            <button type="button" id="saveBtn" class="krds-btn medium primary" onclick="fnSaveCounsel()">신청</button>
+        </div>
+    </div>
+<script>
+    var counselGrpid = '';
+    function renderFiles(files) {
+        var ul = document.getElementById('fileList');
+        ul.innerHTML = '';
+        files.forEach(function(f) {
+            var li = document.createElement('li');
+            li.textContent = f.fileName || f.fileId;
+            ul.appendChild(li);
+        });
+    }
+    function fnUploadFiles() {
+        var input = document.getElementById('file');
+        if (input.files.length === 0) { return; }
+        var fd = new FormData();
+        for (var i = 0; i < input.files.length; i++) { fd.append('file', input.files[i]); }
+        fd.append('atchFileGrpid', counselGrpid);
+        $.ajax({
+            type: 'POST', url: '/user/counsel/counselFileUpload.json', data: fd,
+            processData: false, contentType: false,
+            success: function(res) {
+                if (res.success) {
+                    counselGrpid = res.grpid;
+                    renderFiles(res.files);
+                } else { alert(res.message || '업로드에 실패했습니다.'); }
+                input.value = '';
+            },
+            error: function() { alert('업로드 중 오류가 발생했습니다.'); input.value = ''; }
+        });
+    }
+    function fnSaveCounsel() {
+        if (window._counselSaving) { return; }
+        var title = ($('#title').val() || '').trim();
+        if (title === '') {
+            alert('제목을 입력하세요.');
+            $('#title').focus();
+            return;
+        }
+        if (($('#writer').val() || '').trim() === '') {
+            alert('작성자를 입력하세요.');
+            $('#writer').focus();
+            return;
+        }
+        if (($('#password').val() || '') === '') {
+            alert('비밀번호를 입력하세요.');
+            $('#password').focus();
+            return;
+        }
+        $.ajax({
+            type: 'post',
+            url: '/user/counsel/insertCounsel.json',
+            data: { title: title, content: $('#content').val(), writer: $('#writer').val(), password: $('#password').val(), atchFileGrpid: counselGrpid, 'egovframework.double.submit.preventer.parameter.name': $('#doubleSubmitToken').val() },
+            beforeSend: function() { window._counselSaving = true; $('#saveBtn').prop('disabled', true); },
+            complete: function() { window._counselSaving = false; $('#saveBtn').prop('disabled', false); },
+            success: function(res) {
+                if (res.success) { alert('상담이 신청되었습니다.'); location.href = '/user/userMain'; }
+                else { alert(res.message || '저장에 실패했습니다.'); }
+            },
+            error: function() { alert('저장 중 오류가 발생했습니다.'); }
+        });
+    }
+</script>
+</div>
+</body>
+</html>

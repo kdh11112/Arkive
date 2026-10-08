@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{user/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>자료실</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">자료실</h2>
+
+    <div class="user-list-search">
+        <input type="text" id="archiveKeyword" class="krds-input" style="flex: 1;" placeholder="제목 검색" th:value="${searchKeyword}">
+        <button type="button" class="krds-btn medium secondary" onclick="archiveSearch();">검색</button>
+    </div>
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>자료실 목록</caption>
+            <colgroup>
+                <col style="width: 10%;">
+                <col>
+                <col style="width: 15%;">
+                <col style="width: 10%;">
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">번호</th>
+                <th scope="col">제목</th>
+                <th scope="col">등록일</th>
+                <th scope="col">조회수</th>
+            </tr>
+            </thead>
+            <tbody id="archiveTb">
+            </tbody>
+        </table>
+    </div>
+    <div style="text-align: center; margin-top: 12px;">
+        <button type="button" id="archiveMoreBtn" class="krds-btn medium secondary" onclick="archiveMore();">더보기</button>
+        <div id="archiveEndMsg" class="text-muted" style="display:none;">마지막 글입니다.</div>
+    </div>
+<script>
+    // 내부 토스트 목록 API(/board/toastList.json)를 그대로 쓴다. BOARD_TYPE=TOAST 고정이라 자료실과 같다.
+    var archiveCursor = '';
+    var archiveLoading = false;
+    var archiveSeq = 0;
+    function escapeHtml(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    function archiveGoDetail(boardId) {
+        var form = document.createElement('form');
+        form.method = 'post';
+        form.action = '/user/board/archiveDetail';
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'boardId';
+        input.value = boardId;
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+    function archiveLoad(reset) {
+        if (archiveLoading) return;
+        archiveLoading = true;
+        if (reset) {
+            archiveCursor = '';
+            archiveSeq = 0;
+            $('#archiveTb').empty();
+        }
+        $.ajax({
+            type: 'post',
+            url: '/board/toastList.json',
+            data: { searchKeyword: $('#archiveKeyword').val(), cursorId: archiveCursor },
+            dataType: 'json',
+            success: function(data) {
+                if (!data || !data.success) {
+                    alert((data && data.message) || '목록 조회에 실패했습니다.');
+                    archiveLoading = false;
+                    return;
+                }
+                var buffer = [];
+                if (data.list.length === 0 && archiveSeq === 0) {
+                    buffer.push("<tr><td colspan='4'>게시글이 없습니다.</td></tr>");
+                }
+                $.each(data.list, function(i, item) {
+                    archiveSeq++;
+                    buffer.push('<tr>');
+                    buffer.push('<td>' + archiveSeq + '</td>');
+                    buffer.push('<td><a href="javascript:void(0)" onclick="archiveGoDetail(\'' + item.boardId + '\')">' + escapeHtml(item.title) + '</a></td>');
+                    buffer.push('<td>' + escapeHtml(item.registDt) + '</td>');
+                    buffer.push('<td>' + item.viewCnt + '</td>');
+                    buffer.push('</tr>');
+                });
+                $('#archiveTb').append(buffer.join(''));
+                archiveCursor = data.nextCursorId || '';
+                if (data.hasNext) {
+                    $('#archiveMoreBtn').show();
+                    $('#archiveEndMsg').hide();
+                } else {
+                    $('#archiveMoreBtn').hide();
+                    if (archiveSeq > 0) $('#archiveEndMsg').show();
+                }
+                archiveLoading = false;
+            },
+            error: function() {
+                alert('에러가 발생하였습니다. 관리자에게 문의하세요.');
+                archiveLoading = false;
+            }
+        });
+    }
+    function archiveMore() { archiveLoad(false); }
+    function archiveSearch() { archiveLoad(true); }
+    $(function() { archiveLoad(true); });
+</script>
+</div>
+</body>
+</html>

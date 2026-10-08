@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>아카이브</title>
+    <link rel="stylesheet" type="text/css" th:href="@{/css/component/output.css}">
+    <!-- 외부 관문 틀. KRDS HTML/SCSS 템플릿 패턴 CSS다. 관리 화면에는 물리지 않는다. -->
+    <link rel="stylesheet" type="text/css" th:href="@{/portal/css/output/p_common.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/portal/css/output/p_layout.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/portal/css/output/p_content.css}">
+    <!-- 구형 관문 CSS의 간격 토큰 차이를 보정하는 프로젝트 오버라이드 -->
+    <link rel="stylesheet" type="text/css" th:href="@{/css/krds-local.css(v=2)}">
+    <script th:src="@{/js/jquery.min.js}"></script>
+    <script th:src="@{/js/arkive-common.js}"></script>
+</head>
+
+<body>
+<div id="wrap">
+    <div id="skip-nav">
+        <a href="#container">본문 바로가기</a>
+    </div>
+
+    <!-- 헤더. KRDS 관문 틀(header-in·head-gnb)이다. -->
+    <header id="header">
+        <div class="header-in">
+            <div class="head-body">
+                <div class="inner">
+                    <div class="head-etc">
+                        <ul class="etc-ul">
+                            <li class="li" th:if="${session.LOGIN_USER == null}">
+                                <a th:href="@{/login/login}" class="btn btn-txt xsm">로그인</a>
+                            </li>
+                            <li class="li" th:if="${session.LOGIN_USER == null}">
+                                <!-- 2단계 로그인 완성 전에는 대시보드로 바로 간다. 로그인 붙으면 여기가 관문이 된다. -->
+                                <a th:href="@{/login/adminLogin}" class="btn btn-txt xsm">관리자로그인</a>
+                            </li>
+                            <li class="li" th:if="${session.LOGIN_USER != null}">
+                                <span class="btn btn-txt xsm" th:text="${session.LOGIN_USER['userNm']}"></span>
+                            </li>
+                            <li class="li" th:if="${session.LOGIN_USER != null}">
+                                <a th:href="@{/login/logout}" class="btn btn-txt xsm">로그아웃</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="head-in">
+                        <h1 class="logo">
+                            <a th:href="@{/user/userMain}">아카이브</a>
+                        </h1>
+                    </div>
+                </div>
+            </div>
+            <nav class="head-gnb">
+                <div class="inner">
+                    <ul class="gnb">
+                        <li class="li"><a th:href="@{/user/board/noticeList}" class="mn mn-link">공지사항</a></li>
+                        <li class="li"><a th:href="@{/user/board/archiveList}" class="mn mn-link">자료실</a></li>
+                        <li class="li"><a th:href="@{/user/faq/faqList}" class="mn mn-link">FAQ</a></li>
+                        <li class="li"><a th:href="@{/user/qna/qnaList}" class="mn mn-link">Q&A</a></li>
+                        <li class="li"><a th:href="@{/user/poll/pollList}" class="mn mn-link">온라인POLL</a></li>
+                        <li class="li"><a th:href="@{/user/counsel/counselWrite}" class="mn mn-link">상담신청</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 외부 화면: 좌측 관리 메뉴 없이 본문만 둔다. 내부 등록분이 그대로 보인다. -->
+    <main id="container" class="user-site">
+        <div class="inner user-content">
+            <div layout:fragment="content">
+                공통 레이아웃
+            </div>
+        </div>
+    </main>
+
+    <!-- 푸터. KRDS 관문 틀(foot-quick·f-cnt)이다. -->
+    <footer id="footer">
+        <div class="foot-quick">
+            <div class="inner">
+                <a th:href="@{/user/board/noticeList}" class="link">공지사항</a>
+                <a th:href="@{/user/qna/qnaList}" class="link">Q&A</a>
+                <a th:href="@{/user/counsel/counselWrite}" class="link">상담신청</a>
+            </div>
+        </div>
+        <div class="inner">
+            <div class="f-cnt">
+                <div class="f-info">
+                    <p>아카이브. 내부(관리) 등록분이 그대로 보이는 외부 화면이다.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+</div>
+
+</body>
+</html>

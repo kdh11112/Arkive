@@ -24,8 +24,8 @@ import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import org.thymeleaf.templatemode.TemplateMode;
 
-import arkive.admin.system.service.SystemService;
-import egovframework.example.pagination.EgovKrdsPaginationRenderer;
+import arkive.admin.auth.web.AuthInterceptor;
+import arkive.admin.system.service.SystemService;import egovframework.example.pagination.EgovKrdsPaginationRenderer;
 import egovframework.example.pagination.EgovPaginationDialect;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -206,6 +206,13 @@ public class EgovConfigWeb implements WebMvcConfigurer, ApplicationContextAware 
                         "/favicon.ico", "/error",
                         "/swagger-ui/**", "/v3/api-docs/**",
                         "/actuator/**");
+        // 로그인 검사는 AuthInterceptor 빈으로 둔다(공개 경로는 클래스 안에서 제외).
+        registry.addInterceptor(authInterceptor());
+    }
+
+    @Bean
+    public AuthInterceptor authInterceptor() {
+        return new AuthInterceptor();
     }
 
     @Override

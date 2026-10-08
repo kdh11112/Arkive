@@ -28,6 +28,12 @@ public class ArkiveController {
 	private FileService fileService;
 	
 	@RequestMapping("/")
+	public String root() {
+		// 첫 페이지는 외부 화면이다. 관리는 /dashboard(2단계에서 로그인 관문)다.
+		return "redirect:/user/userMain";
+	}
+
+	@RequestMapping("/dashboard")
 	public String dashboard(ModelMap model) throws Exception {
 		EgovMap ckParam = new EgovMap();
 		ckParam.put("boardType", "CK");

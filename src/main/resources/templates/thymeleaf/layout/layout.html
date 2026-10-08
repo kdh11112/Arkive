@@ -19,7 +19,8 @@
                         </h2>
                     </div>
                     <div class="header-actions">
-                        <span class="krds-btn small text">관리자</span>
+                        <span class="krds-btn small text" th:text="${session.LOGIN_USER != null ? session.LOGIN_USER['userNm'] : '관리자'}">관리자</span>
+                        <a th:if="${session.LOGIN_USER != null}" th:href="@{/login/logout}" class="krds-btn small secondary">로그아웃</a>
                     </div>
                 </div>
             </div>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{user/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>FAQ</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">FAQ</h2>
+
+    <form id="listForm" method="post" th:action="@{/user/faq/faqList}">
+        <input type="hidden" id="pageIndex" name="pageIndex" th:value="${pageIndex}">
+        <div class="user-list-search">
+            <input type="text" name="searchKeyword" class="krds-input" style="flex: 1;" placeholder="제목 검색" th:value="${searchKeyword}">
+            <button type="submit" class="krds-btn medium secondary" onclick="document.getElementById('pageIndex').value=1;">검색</button>
+        </div>
+    </form>
+
+    <div class="faq-list">
+        <details th:each="item : ${resultList}" style="border: 1px solid #ddd; border-radius: 8px; margin-bottom: 8px; padding: 8px 12px;">
+            <summary th:text="${item['title']}" style="cursor: pointer; font-weight: 600;"></summary>
+            <div th:text="${item['content']}" style="white-space: pre-wrap; margin-top: 8px;"></div>
+        </details>
+        <p th:if="${resultList == null or resultList.isEmpty()}">조회된 FAQ가 없습니다.</p>
+    </div>
+
+    <div id="paging" class="krds-pagination w-page" th:utext="${#egovKrdsPaginationRenderer.renderPagination(paginationInfo, 'faqPaging')}"></div>
+<script>
+    function faqPaging(pageIndex) {
+        document.getElementById('pageIndex').value = pageIndex;
+        document.getElementById('listForm').submit();
+    }
+</script>
+</div>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{user/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>Q&A 상세보기</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">Q&A 상세보기</h2>
+    <div class="conts-wrap" th:if="${detail != null}">
+        <div class="fieldset input-form">
+            <div class="form-group">
+                <div class="form-tit">질문</div>
+                <div class="form-conts"><p th:text="${detail['title']}"></p></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit">작성자</div>
+                <div class="form-conts"><p th:text="${detail['register']}"></p></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit">내용</div>
+                <div class="form-conts"><p th:text="${detail['content']}" style="white-space: pre-wrap;"></p></div>
+            </div>
+            <div class="form-group" th:if="${answer != null}">
+                <div class="form-tit">답변</div>
+                <div class="form-conts"><p th:text="${answer['answerContent']}" style="white-space: pre-wrap;"></p></div>
+            </div>
+        </div>
+        <p th:if="${answer == null}">등록된 답변이 없습니다. 답변이 달리면 목록 상태가 답변완료로 바뀝니다.</p>
+    </div>
+    <div style="margin-top: 12px;">
+        <a th:href="@{/user/qna/qnaList}" class="krds-btn medium secondary">목록</a>
+    </div>
+</div>
+</body>
+</html>

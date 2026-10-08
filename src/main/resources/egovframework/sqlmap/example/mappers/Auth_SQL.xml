@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.auth.service.impl.AuthMapper">
+
+	<!-- 로그인 조회. USE_YN='Y'만 대상으로 한다. -->
+	<select id="selectLoginUser" parameterType="string" resultType="egovMap">
+		SELECT
+			USER_ID,
+			PASSWORD,
+			USER_NM,
+			EMAIL,
+			FAILED_CNT,
+			LOCK_YN,
+			USE_YN
+		FROM APP_USER
+		WHERE USER_ID = #{userId}
+			AND USE_YN = 'Y'
+	</select>
+
+	<!-- 사용자 목록 -->
+	<select id="selectUserList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			USER_ID,
+			USER_NM,
+			EMAIL,
+			FAILED_CNT,
+			LOCK_YN,
+			USE_YN,
+			REGIST_DT
+		FROM APP_USER
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (USER_ID LIKE '%' || #{searchKeyword} || '%'
+					OR USER_NM LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+		ORDER BY REGIST_DT DESC
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<!-- 사용자 전체 건수 -->
+	<select id="selectUserListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM APP_USER
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (USER_ID LIKE '%' || #{searchKeyword} || '%'
+					OR USER_NM LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+	</select>
+
+	<!-- 사용자 상세 (비밀번호 제외) -->
+	<select id="selectUserDetail" parameterType="string" resultType="egovMap">
+		SELECT
+			USER_ID,
+			USER_NM,
+			EMAIL,
+			FAILED_CNT,
+			LOCK_YN,
+			USE_YN,
+			REGIST_DT
+		FROM APP_USER
+		WHERE USER_ID = #{userId}
+	</select>
+
+	<!-- 사용자 등록. 비밀번호는 Controller에서 bcrypt 해시로 넘긴다. -->
+	<insert id="insertUser" parameterType="egovMap">
+		INSERT INTO APP_USER (
+			USER_ID,
+			PASSWORD,
+			USER_NM,
+			EMAIL,
+			FAILED_CNT,
+			LOCK_YN,
+			USE_YN,
+			REGIST_DT
+		) VALUES (
+			#{userId},
+			#{password},
+			#{userNm},
+			#{email},
+			0,
+			'N',
+			'Y',
+			CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<!-- 사용자 수정 -->
+	<update id="updateUser" parameterType="egovMap">
+		UPDATE APP_USER
+		SET
+			USER_NM = #{userNm},
+			EMAIL = #{email},
+			USE_YN = #{useYn},
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE USER_ID = #{userId}
+	</update>
+
+	<!-- 사용자 삭제 -->
+	<delete id="deleteUser" parameterType="string">
+		DELETE FROM APP_USER
+		WHERE USER_ID = #{userId}
+	</delete>
+
+	<!-- 로그인 실패 누적 -->
+	<update id="addFailCount" parameterType="string">
+		UPDATE APP_USER
+		SET FAILED_CNT = COALESCE(FAILED_CNT, 0) + 1
+		WHERE USER_ID = #{userId}
+	</update>
+
+	<!-- 잠금. 실패 5회 도달 시 호출한다. -->
+	<update id="lockUser" parameterType="string">
+		UPDATE APP_USER
+		SET LOCK_YN = 'Y',
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE USER_ID = #{userId}
+	</update>
+
+	<!-- 실패 초기화 + 잠금 해제 (로그인 성공·관리자 해제·비밀번호 초기화 시) -->
+	<update id="resetFailCount" parameterType="string">
+		UPDATE APP_USER
+		SET FAILED_CNT = 0,
+			LOCK_YN = 'N',
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE USER_ID = #{userId}
+	</update>
+
+	<!-- 비밀번호 변경 (본인·관리자 초기화 공용) -->
+	<update id="updatePassword" parameterType="egovMap">
+		UPDATE APP_USER
+		SET PASSWORD = #{password},
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE USER_ID = #{userId}
+	</update>
+
+	<!-- 소셜 연계 조회 -->
+	<select id="selectOauthLink" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			PROVIDER,
+			PROVIDER_ID,
+			USER_ID,
+			LINK_DT
+		FROM OAUTH_LINK
+		WHERE PROVIDER = #{provider}
+			AND PROVIDER_ID = #{providerId}
+	</select>
+
+	<!-- 소셜 연계 등록 -->
+	<insert id="insertOauthLink" parameterType="egovMap">
+		INSERT INTO OAUTH_LINK (
+			PROVIDER,
+			PROVIDER_ID,
+			USER_ID,
+			LINK_DT
+		) VALUES (
+			#{provider},
+			#{providerId},
+			#{userId},
+			CURRENT_TIMESTAMP
+		)
+	</insert>
+
+</mapper>

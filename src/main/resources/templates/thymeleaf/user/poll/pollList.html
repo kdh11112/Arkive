@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{user/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>온라인POLL</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">온라인POLL</h2>
+
+    <form id="listForm" method="post" th:action="@{/user/poll/pollList}">
+        <input type="hidden" id="pageIndex" name="pageIndex" th:value="${pageIndex}">
+        <div class="user-list-search">
+            <input type="text" name="searchKeyword" class="krds-input" style="flex: 1;" placeholder="제목 검색" th:value="${searchKeyword}">
+            <button type="submit" class="krds-btn medium secondary" onclick="document.getElementById('pageIndex').value=1;">검색</button>
+        </div>
+    </form>
+
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>POLL 목록</caption>
+            <colgroup>
+                <col style="width: 8%;">
+                <col>
+                <col style="width: 18%;">
+                <col style="width: 10%;">
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">번호</th>
+                <th scope="col">제목</th>
+                <th scope="col">투표기간</th>
+                <th scope="col">총 투표수</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item, stat : ${resultList}">
+                <td th:text="${paginationInfo.totalRecordCount + 1 - ((pageIndex - 1) * paginationInfo.recordCountPerPage + stat.count)}"></td>
+                <td><a th:href="@{/user/poll/pollDetail}" data-post th:attr="data-name='pollId',data-value=${item['pollId']}" th:text="${item['title']}"></a></td>
+                <td th:text="${item['startYmd']} + ' ~ ' + ${item['endYmd']}"></td>
+                <td th:text="${item['totalVote']}"></td>
+            </tr>
+            <tr th:if="${resultList == null or resultList.isEmpty()}">
+                <td colspan="4">진행 중인 POLL이 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="paging" class="krds-pagination w-page" th:utext="${#egovKrdsPaginationRenderer.renderPagination(paginationInfo, 'pollPaging')}"></div>
+<script>
+    function pollPaging(pageIndex) {
+        document.getElementById('pageIndex').value = pageIndex;
+        document.getElementById('listForm').submit();
+    }
+</script>
+</div>
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{user/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>아카이브</title>
+</head>
+<body>
+<div layout:fragment="content">
+<div class="user-main">
+    <!-- 히어로 비주얼. GTEMS main_visual + BLMS main_kv 구성이다. -->
+    <section class="user-main-hero" aria-labelledby="userMainTitle">
+        <div class="user-main-hero-copy">
+            <p class="user-main-eyebrow">정보와 소식을 한곳에서</p>
+            <h2 id="userMainTitle">아카이브</h2>
+            <p class="user-main-description">공지사항과 자료를 확인하고, 필요한 서비스를 편리하게 이용하세요.</p>
+        </div>
+        <div class="user-main-actions">
+            <a th:href="@{/user/board/noticeList}" class="krds-btn medium primary">공지사항 보기</a>
+            <a th:href="@{/user/counsel/counselWrite}" class="krds-btn medium secondary user-main-secondary">상담신청</a>
+        </div>
+        <span class="user-main-hero-mark" aria-hidden="true">KR</span>
+    </section>
+
+    <!-- 바로가기 박스. BLMS main_link + GTEMS m_banner 구성이다. -->
+    <div class="user-main-links">
+        <a th:href="@{/user/board/noticeList}" class="link-box">
+            <div class="tit">공지사항</div>
+            <div class="desc">중요 공지를 확인하세요.</div>
+        </a>
+        <a th:href="@{/user/board/archiveList}" class="link-box">
+            <div class="tit">자료실</div>
+            <div class="desc">필요한 자료를 찾아보세요.</div>
+        </a>
+        <a th:href="@{/user/qna/qnaList}" class="link-box">
+            <div class="tit">Q&A</div>
+            <div class="desc">궁금한 점을 질문하세요.</div>
+        </a>
+        <a th:href="@{/user/faq/faqList}" class="link-box">
+            <div class="tit">FAQ</div>
+            <div class="desc">자주 묻는 질문입니다.</div>
+        </a>
+        <a th:href="@{/user/poll/pollList}" class="link-box">
+            <div class="tit">온라인POLL</div>
+            <div class="desc">진행 중인 투표에 참여하세요.</div>
+        </a>
+        <a th:href="@{/user/counsel/counselWrite}" class="link-box">
+            <div class="tit">상담신청</div>
+            <div class="desc">1:1 상담을 신청하세요.</div>
+        </a>
+    </div>
+
+    <!-- 내부 팝업·배너 연계. activePopup.json/activeBanner.json 공용 API를 쓴다. -->
+    <div id="popupZone" style="margin-bottom: 16px;"></div>
+    <div id="bannerZone" style="display: flex; gap: 8px; margin-bottom: 16px;"></div>
+
+    <!-- 새소식. BLMS news_wrap + pill 탭 + 카드 구성이다. -->
+    <div class="user-main-news">
+        <div class="user-main-section-heading">
+            <div>
+                <p class="user-main-eyebrow">ARCHIVE NEWS</p>
+                <h3 class="m_tit">새소식</h3>
+                <p>새롭게 등록된 공지와 자료를 확인해 보세요.</p>
+            </div>
+            <a th:href="@{/user/board/noticeList}" class="krds-btn link basic">전체 소식 보기</a>
+        </div>
+        <div class="user-main-tabs">
+            <button type="button" class="tab is-active" id="newsTabBtn0" onclick="fnNewsTab(0)">공지사항</button>
+            <button type="button" class="tab" id="newsTabBtn1" onclick="fnNewsTab(1)">자료실</button>
+            <button type="button" class="tab" id="newsTabBtn2" onclick="fnNewsTab(2)">FAQ</button>
+        </div>
+        <div id="newsTab0">
+            <div class="user-main-cards">
+                <p th:if="${recentNotice == null or recentNotice.isEmpty()}">게시글이 없습니다.</p>
+                <a th:each="item : ${recentNotice}" th:href="@{/user/board/noticeDetail}" data-post th:attr="data-name='boardId',data-value=${item['boardId']}" class="nlink">
+                    <div class="type"><span>공지</span></div>
+                    <div class="tit" th:text="${item['title']}"></div>
+                    <div class="date" th:text="${item['registDt'] != null ? #dates.format(item['registDt'], 'yyyy-MM-dd') : ''}"></div>
+                </a>
+            </div>
+        </div>
+        <div id="newsTab1" style="display: none;">
+            <div class="user-main-cards">
+                <p th:if="${recentArchive == null or recentArchive.isEmpty()}">게시글이 없습니다.</p>
+                <a th:each="item : ${recentArchive}" th:href="@{/user/board/archiveDetail}" data-post th:attr="data-name='boardId',data-value=${item['boardId']}" class="nlink">
+                    <div class="type"><span>자료실</span></div>
+                    <div class="tit" th:text="${item['title']}"></div>
+                    <div class="date" th:text="${item['registDt'] != null ? #dates.format(item['registDt'], 'yyyy-MM-dd') : ''}"></div>
+                </a>
+            </div>
+        </div>
+        <div id="newsTab2" style="display: none;">
+            <div class="user-main-cards">
+                <p th:if="${recentFaq == null or recentFaq.isEmpty()}">게시글이 없습니다.</p>
+                <a th:each="item : ${recentFaq}" th:href="@{/user/faq/faqList}" class="nlink">
+                    <div class="type"><span>FAQ</span></div>
+                    <div class="tit" th:text="${item['title']}"></div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 진행 중 POLL + 참여 배너 -->
+    <div class="user-main-bottom">
+        <section class="user-main-bottom-panel">
+            <h3>진행 중 POLL</h3>
+            <div class="krds-table-wrap">
+                <table class="tbl col data">
+                    <caption>진행 중 POLL 3건</caption>
+                    <tbody>
+                    <tr th:if="${activePolls == null or activePolls.isEmpty()}">
+                        <td>진행 중인 POLL이 없습니다.</td>
+                    </tr>
+                    <tr th:each="item : ${activePolls}">
+                        <td><a th:href="@{/user/poll/pollDetail}" data-post th:attr="data-name='pollId',data-value=${item['pollId']}" th:text="${item['title']}"></a></td>
+                        <td th:text="${item['startYmd']} + ' ~ ' + ${item['endYmd']}" style="width: 40%;"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <section class="user-main-bottom-panel user-main-contact">
+            <h3>궁금한 점이 있으신가요</h3>
+            <p>1:1 상담을 신청하시면 담당자가 답변을 등록해 드립니다.</p>
+            <a th:href="@{/user/counsel/counselWrite}" class="krds-btn medium primary">지금 상담신청</a>
+        </section>
+    </div>
+</div>
+<script>
+    function fnNewsTab(n) {
+        for (var i = 0; i < 3; i++) {
+            document.getElementById('newsTab' + i).style.display = (i === n) ? '' : 'none';
+            var btn = document.getElementById('newsTabBtn' + i);
+            if (btn.className.indexOf('is-active') >= 0 && i !== n) {
+                btn.className = btn.className.replace(' is-active', '');
+            }
+            if (i === n && btn.className.indexOf('is-active') < 0) {
+                btn.className += ' is-active';
+            }
+        }
+    }
+    // 내부에서 등록·게시한 팝업과 배너를 외부 메인에 그린다.
+    $.ajax({
+        type: 'get', url: '/popup/activePopup.json', dataType: 'json',
+        success: function(res) {
+            if (!res || !res.success || !res.list) { return; }
+            var html = '';
+            res.list.forEach(function(p) {
+                html += '<div style="border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 8px;">'
+                    + '<strong>' + $('<div>').text(p.title || '').html() + '</strong>'
+                    + (p.linkUrl ? ' <a href="' + p.linkUrl + '">바로가기</a>' : '')
+                    + '</div>';
+            });
+            $('#popupZone').html(html);
+        }
+    });
+    $.ajax({
+        type: 'get', url: '/banner/activeBanner.json', data: { position: 'MAIN' }, dataType: 'json',
+        success: function(res) {
+            if (!res || !res.success || !res.list) { return; }
+            var html = '';
+            res.list.forEach(function(b) {
+                html += '<div style="border: 1px solid #ddd; border-radius: 8px; padding: 8px;">'
+                    + '<div>' + $('<div>').text(b.title || '').html() + '</div>'
+                    + (b.linkUrl ? '<a href="' + b.linkUrl + '">바로가기</a>' : '')
+                    + '</div>';
+            });
+            $('#bannerZone').html(html);
+        }
+    });
+</script>
+</div>
+</body>
+</html>

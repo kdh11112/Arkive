@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>로그인</title>
+    <link rel="stylesheet" type="text/css" th:href="@{/css/component/output.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/css/krds-local.css}">
+    <script th:src="@{/js/jquery.min.js}"></script>
+</head>
+<body>
+<div class="inner" style="max-width: 480px; margin: 80px auto;">
+    <h2 class="heading-large" style="text-align: center;">아카이브 로그인</h2>
+    <div class="conts-wrap">
+        <div class="fieldset input-form">
+            <div class="form-group">
+                <div class="form-tit"><label for="userId">아이디</label></div>
+                <div class="form-conts"><input type="text" id="userId" class="krds-input" maxlength="20" autocomplete="username"></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="password">비밀번호</label></div>
+                <div class="form-conts"><input type="password" id="password" class="krds-input" maxlength="50" autocomplete="current-password"></div>
+            </div>
+        </div>
+        <div style="margin-top: 12px; display: flex; gap: 8px;">
+            <button type="button" id="loginBtn" class="krds-btn medium primary" style="flex: 1;" onclick="fnLogin()">세션 로그인</button>
+            <button type="button" id="jwtBtn" class="krds-btn medium secondary" style="flex: 1;" onclick="fnJwtLogin()">JWT 로그인</button>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 8px;" th:if="${naverEnabled or kakaoEnabled or googleEnabled}">
+            <a th:if="${naverEnabled}" th:href="@{/login/oauth/naver}" class="krds-btn medium secondary" style="flex: 1;">네이버 로그인</a>
+            <a th:if="${kakaoEnabled}" th:href="@{/login/oauth/kakao}" class="krds-btn medium secondary" style="flex: 1;">카카오 로그인</a>
+            <a th:if="${googleEnabled}" th:href="@{/login/oauth/google}" class="krds-btn medium secondary" style="flex: 1;">구글 로그인</a>
+        </div>
+        <p style="font-size: 12px; margin-top: 8px;">5회 실패하면 잠깁니다. 초기 관리자 admin / Admin1234! (운영 전 변경)</p>
+        <p style="font-size: 12px; margin-top: 4px;"><a th:href="@{/login/apiDemo}">JWT 동작 데모 보기</a></p>
+    </div>
+</div>
+<script>
+    document.getElementById('password').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { fnLogin(); }
+    });
+    function fnLogin() {
+        var userId = ($('#userId').val() || '').trim();
+        if (userId === '' || ($('#password').val() || '') === '') {
+            alert('아이디와 비밀번호를 입력하세요.');
+            return;
+        }
+        $('#loginBtn').prop('disabled', true);
+        $.ajax({
+            type: 'post',
+            url: '/login/login.json',
+            data: { userId: userId, password: $('#password').val() },
+            complete: function() { $('#loginBtn').prop('disabled', false); },
+            success: function(res) {
+                if (res.success) { location.href = '/'; }
+                else { alert(res.message || '로그인에 실패했습니다.'); }
+            },
+            error: function(xhr) {
+                if (xhr.status === 401) { alert('로그인이 필요합니다.'); }
+                else { alert('로그인 중 오류가 발생했습니다.'); }
+            }
+        });
+    }
+    // JWT 로그인. 토큰을 받아 저장하고 JWT playground로 간다. 세션은 안 쓴다.
+    function fnJwtLogin() {
+        var userId = ($('#userId').val() || '').trim();
+        if (userId === '' || ($('#password').val() || '') === '') {
+            alert('아이디와 비밀번호를 입력하세요.');
+            return;
+        }
+        $('#jwtBtn').prop('disabled', true);
+        $.ajax({
+            type: 'post',
+            url: '/api/login.json',
+            data: { userId: userId, password: $('#password').val() },
+            complete: function() { $('#jwtBtn').prop('disabled', false); },
+            success: function(res) {
+                if (res.success && res.token) {
+                    try { sessionStorage.setItem('jwt', res.token); } catch (e) {}
+                    location.href = '/login/apiDemo';
+                } else { alert(res.message || '로그인에 실패했습니다.'); }
+            },
+            error: function() { alert('로그인 중 오류가 발생했습니다.'); }
+        });
+    }
+</script>
+</body>
+</html>
