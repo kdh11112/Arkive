@@ -518,6 +518,39 @@
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.12</version>
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<goals><goal>prepare-agent</goal></goals>
+					</execution>
+					<execution>
+						<id>report-on-verify</id>
+						<phase>verify</phase>
+						<goals><goal>report</goal></goals>
+					</execution>
+					<!-- 임계값은 기준 측정 후 좁게 시작. 전체가 아닌 검증된 클래스 한정. -->
+					<execution>
+						<id>coverage-check</id>
+						<phase>verify</phase>
+						<goals><goal>check</goal></goals>
+						<configuration>
+							<rules><rule>
+								<element>CLASS</element>
+								<includes><include>arkive.admin.comm.web.HtmlSanitizer</include></includes>
+								<limits><limit>
+									<counter>BRANCH</counter><value>COVEREDRATIO</value>
+									<minimum>0.80</minimum>
+								</limit></limits></rule></rules>
+						</configuration>
+					</execution>
+					<!-- check rule goes here after measuring the baseline.
+					     Start narrow: core logic packages only, BRANCH COVEREDRATIO. -->
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 </project>

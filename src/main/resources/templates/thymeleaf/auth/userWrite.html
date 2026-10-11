@@ -37,6 +37,15 @@
                     </select>
                 </div>
             </div>
+            <div class="form-group" th:if="${detail != null}">
+                <div class="form-tit"><label for="adminYn">관리자여부</label></div>
+                <div class="form-conts">
+                    <select id="adminYn" class="krds-form-select" style="width: 150px;">
+                        <option value="Y" th:selected="${detail['adminYn'] == 'Y'}">관리자</option>
+                        <option value="N" th:selected="${detail['adminYn'] != 'Y'}">일반</option>
+                    </select>
+                </div>
+            </div>
         </div>
         <div style="display: flex; justify-content: center; gap: 8px; margin-top: 12px;">
             <a th:href="@{/auth/userList}" class="krds-btn medium secondary">목록</a>
@@ -67,7 +76,7 @@
         $.ajax({
             type: 'post',
             url: isUpdate ? '/auth/updateUser.json' : '/auth/insertUser.json',
-            data: { userId: userId, password: $('#password').val(), userNm: $('#userNm').val(), email: $('#email').val(), useYn: $('#useYn').val(), 'egovframework.double.submit.preventer.parameter.name': $('#doubleSubmitToken').val() },
+            data: { userId: userId, password: $('#password').val(), userNm: $('#userNm').val(), email: $('#email').val(), useYn: $('#useYn').val(), adminYn: $('#adminYn').val(), 'egovframework.double.submit.preventer.parameter.name': $('#doubleSubmitToken').val() },
             beforeSend: function() { window._userSaving = true; $('#saveBtn').prop('disabled', true); },
             complete: function() { window._userSaving = false; $('#saveBtn').prop('disabled', false); },
             success: function(res) {

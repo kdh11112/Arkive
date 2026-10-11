@@ -25,10 +25,10 @@
 | --- | --- | --- | --- |
 | 메뉴 관리 | `/system/menuList` 화면에서 Controller가 Service를 호출하고 Mapper/XML로 조회·등록·수정·삭제를 연결한다. | `SystemController`, `SystemServiceImpl`, `SystemMapper`, `System_SQL.xml` | 화면 호출 상세, 인증/권한, 메뉴 정책, 오류 계약 |
 | 파일 처리 | 공통 FileController가 업로드·목록·다운로드·삭제 및 TUS 경로를 제공하고 파일 Service/Mapper 및 파일 저장 경로 설정을 사용한다. | `FileController`, `FileServiceImpl`, `File_SQL.xml`, `application.properties` | 화면별 호출 관계, 파일 접근 권한, 보존·삭제 정책, 외부 연계 |
-| DB 초기화/마이그레이션 | Spring SQL 초기화는 꺼져 있다. 애플리케이션 시작 시 `SCHEMA_MIGRATION`에 없는 `db/V숫자__설명.sql`만 숫자 순서로 실행한다. | `application.properties`, `EgovConfigDatasource`, `src/main/resources/db/V*.sql` | 운영 DB 제품·버전과 백업/복구 절차 |
-| 레거시 초기화 SQL | `sampledb.sql`, `system.sql`은 저장소에 남아 있으나 기본 설정에서는 실행되지 않는다. 수동 실행 시 기존 테이블을 삭제할 수 있다. | `application.properties`, `src/main/resources/db/sampledb.sql`, `system.sql` | 별도 수동 사용 여부 미확인 |
+| DB 초기화/마이그레이션 | Spring SQL 초기화는 꺼져 있다. 애플리케이션 시작 시 `SCHEMA_MIGRATION`에 없는 `db/versions/V1__baseline.sql`만 1회 실행한다. 2026-10-11에 구 체인을 단일 V1으로 합쳤다. | `application.properties`, `EgovConfigDatasource`, `src/main/resources/db/versions/V1__baseline.sql` | 운영 DB 제품·버전과 백업/복구 절차 |
+| 레거시 초기화 SQL | `sampledb.sql`, `baseline_schema.sql`은 2026-10-11에 삭제했다. `db/data.sql`은 DBJob 덤프 대상 표시용 주석 파일로 남았다. | `application.properties`, `src/main/resources/db/data.sql` | 실제 서버 파일 권한·출력 위치, 백업 보관/복구 정책 |
 | 예약 DB 작업 | Quartz 설정이 `DBJob`을 10분마다 실행하도록 Trigger를 선언하고, Job은 HSQLDB `SCRIPT` 명령에 `/db/data.sql` 경로를 전달한다. 이 절대 경로가 저장소의 `src/main/resources/db/data.sql`을 뜻한다고 보장되지 않는다. | `QuartzConfig`, `DBJob`, `src/main/resources/db/data.sql` | 실제 서버 파일 권한·출력 위치, 백업 보관/복구 정책 |
-| eGovFrame 샘플 | Controller, Service, Mapper/XML, 샘플 CRUD 및 페이지 처리 코드가 있다. V5 마이그레이션이 `SAMPLE`, `IDS`와 기본 레코드를 준비한다. | `egovframework.example.sample.*`, `EgovSample_Sample_SQL.xml`, `db/V5__create_sample_tables.sql` | 실제 업무 사용 여부 |
+| eGovFrame 샘플 | Controller, Service, Mapper/XML, 샘플 CRUD 및 페이지 처리 코드가 있다. V1 baseline이 `SAMPLE`, `IDS`와 기본 레코드를 준비한다. | `egovframework.example.sample.*`, `EgovSample_Sample_SQL.xml`, `db/versions/V1__baseline.sql` | 실제 업무 사용 여부 |
 
 ## 현행 분석 보완 양식
 
@@ -36,4 +36,4 @@
 | --- | --- | --- | --- | --- | --- | --- |
 |  |  |  |  |  |  |  |
 
-코드에서 확인되지 않는 정책·역할·데이터 의미는 담당자나 승인된 문서로 확인한다. 변경 전·후 차이는 해당 작업의 [Acceptance Criteria](../common/acceptance-template.md), Baseline 및 [Evidence](../common/evidence-report-template.md)와 연결해 기록한다.
+코드에서 확인되지 않는 정책·역할·데이터 의미는 담당자나 승인된 문서로 확인한다. 변경 전·후 차이는 해당 작업의 [Acceptance Criteria](../portable/acceptance-template.md), Baseline 및 [Evidence](../portable/evidence-report-template.md)와 연결해 기록한다.

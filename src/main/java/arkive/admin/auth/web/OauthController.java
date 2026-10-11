@@ -146,7 +146,14 @@ public class OauthController {
 			loginUser.put("userId", String.valueOf(user.get("userId")));
 			loginUser.put("userNm", String.valueOf(user.get("userNm")));
 			request.getSession().setAttribute(LoginController.SESSION_KEY, loginUser);
-			return "redirect:/dashboard";
+			if ("Y".equals(String.valueOf(user.get("adminYn")))) {
+				EgovMap adminUser = new EgovMap();
+				adminUser.put("userId", String.valueOf(user.get("userId")));
+				adminUser.put("userNm", String.valueOf(user.get("userNm")));
+				request.getSession().setAttribute(LoginController.ADMIN_KEY, adminUser);
+				return "redirect:/dashboard";
+			}
+			return "redirect:/user/userMain";
 		}
 		profile.put("provider", provider);
 		profile.put("providerId", providerId);
@@ -280,8 +287,16 @@ public class OauthController {
 			loginUser.put("userId", String.valueOf(user.get("userId")));
 			loginUser.put("userNm", String.valueOf(user.get("userNm")));
 			request.getSession().setAttribute(LoginController.SESSION_KEY, loginUser);
+			boolean isAdmin = "Y".equals(String.valueOf(user.get("adminYn")));
+			if (isAdmin) {
+				EgovMap adminUser = new EgovMap();
+				adminUser.put("userId", String.valueOf(user.get("userId")));
+				adminUser.put("userNm", String.valueOf(user.get("userNm")));
+				request.getSession().setAttribute(LoginController.ADMIN_KEY, adminUser);
+			}
 			request.getSession().removeAttribute(SESSION_PROFILE);
 			result.put("success", true);
+			result.put("isAdmin", isAdmin);
 		} catch (Exception e) {
 			logger.error("linkAccount failed", e);
 			result.put("success", false);

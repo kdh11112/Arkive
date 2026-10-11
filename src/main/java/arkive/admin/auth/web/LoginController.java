@@ -46,47 +46,10 @@ public class LoginController {
 
 	private CommUtil cmmUtil = new CommUtil();
 
-	@Operation(summary = "관리자 로그인 화면 (일반 로그인과 진입·세션 분리)")
-	@RequestMapping(value = "/adminLogin", method = { RequestMethod.GET, RequestMethod.POST })
-	public String adminLogin(HttpServletRequest request, ModelMap model) {
-		model.put("naverEnabled", isOauthEnabled(request, "naver"));
-		model.put("kakaoEnabled", isOauthEnabled(request, "kakao"));
-		return "login/adminLogin";
-	}
-
-	@Operation(summary = "관리자 로그인 처리 (ADMIN 세션 별도)")
-	@RequestMapping(value = "/adminLogin.json", method = RequestMethod.POST)
-	@ResponseBody
-	public Map<String, Object> adminLoginAction(HttpServletRequest request) {
-		Map<String, Object> result = loginAction(request);
-		if (Boolean.TRUE.equals(result.get("success"))) {
-			EgovMap adminUser = new EgovMap();
-			adminUser.put("userId", ((EgovMap) request.getSession().getAttribute(SESSION_KEY)).get("userId"));
-			adminUser.put("userNm", ((EgovMap) request.getSession().getAttribute(SESSION_KEY)).get("userNm"));
-			request.getSession().setAttribute(ADMIN_KEY, adminUser);
-		}
-		return result;
-	}
-
 	@Operation(summary = "로그인 화면")
 	@RequestMapping(value = "/login", method = { RequestMethod.GET, RequestMethod.POST })
 	public String login(HttpServletRequest request, ModelMap model) {
-		model.put("naverEnabled", isOauthEnabled(request, "naver"));
-		model.put("kakaoEnabled", isOauthEnabled(request, "kakao"));
-		model.put("googleEnabled", isOauthEnabled(request, "google"));
 		return "login/login";
-	}
-
-	private boolean isOauthEnabled(HttpServletRequest request, String provider) {
-		try {
-			org.springframework.web.context.WebApplicationContext ctx =
-					org.springframework.web.context.support.WebApplicationContextUtils
-							.getWebApplicationContext(request.getServletContext());
-			String clientId = ctx.getEnvironment().getProperty("Globals." + provider + ".clientId");
-			return clientId != null && !clientId.trim().isEmpty();
-		} catch (Exception e) {
-			return false;
-		}
 	}
 
 	@Operation(summary = "로그인 처리 (실패 누적·잠금 포함)")
@@ -128,10 +91,148 @@ public class LoginController {
 			loginUser.put("userId", String.valueOf(user.get("userId")));
 			loginUser.put("userNm", String.valueOf(user.get("userNm")));
 			request.getSession().setAttribute(SESSION_KEY, loginUser);
+			// 관리자면 ADMIN 세션도 함께 넣어 /system·/auth 관문을 통과시킨다.
+			boolean isAdmin = "Y".equals(String.valueOf(user.get("adminYn")));
+			if (isAdmin) {
+				EgovMap adminUser = new EgovMap();
+				adminUser.put("userId", String.valueOf(user.get("userId")));
+				adminUser.put("userNm", String.valueOf(user.get("userNm")));
+				request.getSession().setAttribute(ADMIN_KEY, adminUser);
+			}
 			result.put("success", true);
 			result.put("userNm", loginUser.get("userNm"));
+			result.put("isAdmin", isAdmin);
 		} catch (Exception e) {
 			logger.error("login failed", e);
+			result.put("success", false);
+			result.put("message", e.getMessage());
+		}
+		return result;
+	}
+
+	@Operation(summary = "회원가입 화면")
+	@RequestMapping(value = "/signup", method = { RequestMethod.GET, RequestMethod.POST })
+	public String signup() {
+		return "login/signup";
+	}
+
+	@Operation(summary = "회원가입 처리 (일반 회원으로만 가입, ADMIN_YN 강제 N)")
+	@RequestMapping(value = "/signup.json", method = RequestMethod.POST)
+	@ResponseBody
+	public Map<String, Object> signupAction(HttpServletRequest request) {
+		Map<String, Object> result = new HashMap<>();
+		try {
+			String userId = cmmUtil.convertHtml(request, "userId");
+			String password = cmmUtil.convertHtml(request, "password");
+			String userNm = cmmUtil.convertHtml(request, "userNm");
+			if (userId == null || !userId.matches("^[A-Za-z0-9]{4,20}$")) {
+				throw new IllegalArgumentException("아이디는 영문·숫자 4~20자로 입력하세요.");
+			}
+			if (password == null || password.length() < 8) {
+				throw new IllegalArgumentException("비밀번호는 8자 이상 입력하세요.");
+			}
+			if (userNm == null || userNm.trim().isEmpty()) {
+				throw new IllegalArgumentException("이름을 입력하세요.");
+			}
+			if (authService.selectLoginUser(userId) != null) {
+				throw new IllegalArgumentException("이미 등록된 아이디입니다.");
+			}
+			EgovMap param = new EgovMap();
+			param.put("userId", userId);
+			param.put("password", passwordEncoder.encode(password));
+			param.put("userNm", userNm.trim());
+			param.put("email", cmmUtil.convertHtml(request, "email"));
+			authService.insertUser(param);
+			result.put("success", true);
+		} catch (Exception e) {
+			logger.error("signup failed", e);
+			result.put("success", false);
+			result.put("message", e.getMessage());
+		}
+		return result;
+	}
+
+	@Operation(summary = "아이디 찾기 화면")
+	@RequestMapping(value = "/findId", method = { RequestMethod.GET, RequestMethod.POST })
+	public String findId() {
+		return "login/findId";
+	}
+
+	@Operation(summary = "아이디 찾기 (이름+이메일, 마스킹 반환)")
+	@RequestMapping(value = "/findId.json", method = RequestMethod.POST)
+	@ResponseBody
+	public Map<String, Object> findIdAction(HttpServletRequest request) {
+		Map<String, Object> result = new HashMap<>();
+		try {
+			String userNm = cmmUtil.convertHtml(request, "userNm");
+			String email = cmmUtil.convertHtml(request, "email");
+			if (userNm == null || userNm.trim().isEmpty() || email == null || email.trim().isEmpty()) {
+				throw new IllegalArgumentException("이름과 이메일을 입력하세요.");
+			}
+			EgovMap param = new EgovMap();
+			param.put("userNm", userNm.trim());
+			param.put("email", email.trim());
+			EgovMap found = authService.selectFindUserId(param);
+			if (found == null) {
+				throw new IllegalArgumentException("일치하는 회원 정보가 없습니다.");
+			}
+			String userId = String.valueOf(found.get("userId"));
+			// 앞 3자만 보여주고 나머지는 가린다.
+			String masked = userId.length() <= 3
+					? userId.charAt(0) + "**"
+					: userId.substring(0, 3) + "****";
+			result.put("success", true);
+			result.put("userId", masked);
+		} catch (Exception e) {
+			logger.error("findId failed", e);
+			result.put("success", false);
+			result.put("message", e.getMessage());
+		}
+		return result;
+	}
+
+	@Operation(summary = "비밀번호 찾기 화면")
+	@RequestMapping(value = "/findPw", method = { RequestMethod.GET, RequestMethod.POST })
+	public String findPw() {
+		return "login/findPw";
+	}
+
+	@Operation(summary = "비밀번호 찾기 (임시 비밀번호 1회 발급, 잠금도 함께 해제)")
+	@RequestMapping(value = "/findPw.json", method = RequestMethod.POST)
+	@ResponseBody
+	public Map<String, Object> findPwAction(HttpServletRequest request) {
+		Map<String, Object> result = new HashMap<>();
+		try {
+			String userId = cmmUtil.convertHtml(request, "userId");
+			String userNm = cmmUtil.convertHtml(request, "userNm");
+			String email = cmmUtil.convertHtml(request, "email");
+			if (userId == null || userId.trim().isEmpty()
+					|| userNm == null || userNm.trim().isEmpty()
+					|| email == null || email.trim().isEmpty()) {
+				throw new IllegalArgumentException("아이디·이름·이메일을 입력하세요.");
+			}
+			EgovMap user = authService.selectLoginUser(userId.trim());
+			if (user == null
+					|| !userNm.trim().equals(String.valueOf(user.get("userNm")))
+					|| !email.trim().equalsIgnoreCase(String.valueOf(user.get("email")))) {
+				throw new IllegalArgumentException("일치하는 회원 정보가 없습니다.");
+			}
+			// 영문·숫자 10자리 임시 비밀번호. 화면에 1회만 보여준다.
+			String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+			java.security.SecureRandom random = new java.security.SecureRandom();
+			StringBuilder tempPw = new StringBuilder();
+			for (int i = 0; i < 10; i++) {
+				tempPw.append(chars.charAt(random.nextInt(chars.length())));
+			}
+			EgovMap param = new EgovMap();
+			param.put("userId", userId.trim());
+			param.put("password", passwordEncoder.encode(tempPw.toString()));
+			authService.updatePassword(param);
+			authService.resetFailCount(userId.trim());
+			result.put("success", true);
+			result.put("tempPw", tempPw.toString());
+		} catch (Exception e) {
+			logger.error("findPw failed", e);
 			result.put("success", false);
 			result.put("message", e.getMessage());
 		}

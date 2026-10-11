@@ -7,6 +7,7 @@
     <link rel="stylesheet" type="text/css" th:href="@{/css/component/output.css}">
     <link rel="stylesheet" type="text/css" th:href="@{/css/krds-local.css}">
     <script th:src="@{/js/jquery.min.js}"></script>
+    <script th:src="@{/js/arkive-common.js}"></script>
 </head>
 <body>
 <div class="inner" style="max-width: 480px; margin: 80px auto;">
@@ -21,21 +22,54 @@
                 <div class="form-tit"><label for="password">비밀번호</label></div>
                 <div class="form-conts"><input type="password" id="password" class="krds-input" maxlength="50" autocomplete="current-password"></div>
             </div>
+            <div class="form-group">
+                <div class="form-conts">
+                    <div class="krds-form-check">
+                        <input type="checkbox" id="saveId">
+                        <label for="saveId">아이디 저장</label>
+                    </div>
+                </div>
+            </div>
         </div>
         <div style="margin-top: 12px; display: flex; gap: 8px;">
             <button type="button" id="loginBtn" class="krds-btn medium primary" style="flex: 1;" onclick="fnLogin()">세션 로그인</button>
             <button type="button" id="jwtBtn" class="krds-btn medium secondary" style="flex: 1;" onclick="fnJwtLogin()">JWT 로그인</button>
         </div>
-        <div style="display: flex; gap: 8px; margin-top: 8px;" th:if="${naverEnabled or kakaoEnabled or googleEnabled}">
-            <a th:if="${naverEnabled}" th:href="@{/login/oauth/naver}" class="krds-btn medium secondary" style="flex: 1;">네이버 로그인</a>
-            <a th:if="${kakaoEnabled}" th:href="@{/login/oauth/kakao}" class="krds-btn medium secondary" style="flex: 1;">카카오 로그인</a>
-            <a th:if="${googleEnabled}" th:href="@{/login/oauth/google}" class="krds-btn medium secondary" style="flex: 1;">구글 로그인</a>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button type="button" class="krds-btn medium secondary" style="flex: 1;" onclick="openReadyModal()">네이버 로그인</button>
+            <button type="button" class="krds-btn medium secondary" style="flex: 1;" onclick="openReadyModal()">카카오 로그인</button>
         </div>
         <p style="font-size: 12px; margin-top: 8px;">5회 실패하면 잠깁니다. 초기 관리자 admin / Admin1234! (운영 전 변경)</p>
         <p style="font-size: 12px; margin-top: 4px;"><a th:href="@{/login/apiDemo}">JWT 동작 데모 보기</a></p>
+        <p style="font-size: 12px; margin-top: 4px;">
+            <a th:href="@{/login/signup}">회원가입</a> ·
+            <a th:href="@{/login/findId}">아이디 찾기</a> ·
+            <a th:href="@{/login/findPw}">비밀번호 찾기</a>
+        </p>
     </div>
 </div>
+<section id="readyModal" class="krds-modal fade" role="dialog" aria-labelledby="tit_readyModal" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="tit_readyModal" class="modal-title">알림</h2>
+            </div>
+            <div class="modal-conts">
+                <div class="conts-area">소셜 로그인은 준비중입니다.</div>
+            </div>
+            <div class="modal-btn btn-wrap">
+                <button type="button" class="krds-btn medium primary" onclick="closeReadyModal()">확인</button>
+            </div>
+            <button type="button" class="krds-btn medium icon btn-close close-modal" onclick="closeReadyModal()">
+                <span class="sr-only">닫기</span>
+                <i class="svg-icon ico-popup-close"></i>
+            </button>
+        </div>
+    </div>
+    <div class="modal-back" onclick="closeReadyModal()"></div>
+</section>
 <script>
+    loadSavedId('userId', 'saveId');
     document.getElementById('password').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') { fnLogin(); }
     });
@@ -52,7 +86,10 @@
             data: { userId: userId, password: $('#password').val() },
             complete: function() { $('#loginBtn').prop('disabled', false); },
             success: function(res) {
-                if (res.success) { location.href = '/'; }
+                if (res.success) {
+                    storeSavedId(userId, document.getElementById('saveId').checked);
+                    location.href = res.isAdmin ? '/dashboard' : '/user/userMain';
+                }
                 else { alert(res.message || '로그인에 실패했습니다.'); }
             },
             error: function(xhr) {
@@ -61,6 +98,24 @@
             }
         });
     }
+    function openReadyModal() {
+        var m = document.getElementById('readyModal');
+        m.style.display = 'block';
+        m.classList.add('shown');
+        m.querySelector('.modal-back').classList.add('in');
+        setTimeout(function() { m.classList.add('in'); }, 50);
+    }
+    function closeReadyModal() {
+        var m = document.getElementById('readyModal');
+        if (!m.classList.contains('shown')) return;
+        m.classList.remove('in');
+        m.querySelector('.modal-back').classList.remove('in');
+        setTimeout(function() { m.style.display = 'none'; m.classList.remove('shown'); }, 150);
+    }
+    document.getElementById('readyModal').querySelector('.modal-back').addEventListener('click', closeReadyModal);
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeReadyModal();
+    });
     // JWT 로그인. 토큰을 받아 저장하고 JWT playground로 간다. 세션은 안 쓴다.
     function fnJwtLogin() {
         var userId = ($('#userId').val() || '').trim();

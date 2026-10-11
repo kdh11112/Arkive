@@ -21,25 +21,22 @@
 ## 현재 확인된 상태 (Arkive 예시)
 
 - 기본 DB는 `./data/ArkiveDB` 파일 HSQLDB이며 서버 재시작 뒤에도 파일의 스키마와 데이터를 재사용한다.
-- 애플리케이션 시작 시 `SCHEMA_MIGRATION` 테이블을 준비하고, `db/versions/V숫자__설명.sql`에서 적용되지 않은 버전만 숫자 순으로 실행한 뒤 버전과 파일명을 기록한다.
-- `db/data.sql`은 시작 마이그레이션이 아니다. `DBJob`은 HSQLDB `SCRIPT` 명령에 `/db/data.sql` 절대 경로를 전달하므로, 실행 환경에서 실제로 쓰이는 경로와 저장소 classpath의 `src/main/resources/db/data.sql`은 같다고 보장되지 않는다.
-- 모든 스키마 생성과 초기 데이터 SQL은 `db/versions/` 바로 아래의 버전 파일로 관리한다. 별도 기준 SQL이나 수동 실행 단계는 없다.
-- V1은 `ATCH_FILE`, V2는 시스템 메뉴 테이블과 기본 메뉴를 준비한다. V3는 과거 구성에서 사용했을 수 있어 재사용하지 않으며, V4는 과거 샘플 테이블을 정리하고 V5는 복원된 샘플 기능의 테이블과 기본 데이터를 준비한다. 신규 변경은 V6부터 추가한다. V6은 기타 업로드 메뉴를 드롭존 업로드로 변경하고, V7은 hard delete 전환에 따라 `ATCH_FILE.USE_YN`을 제거하고, V8은 OTHER_ 그룹을 DROPZONE_으로 이전한다.
-- `db/system.sql`, `db/sampledb.sql`은 레거시 초기화 스크립트로 남아 있지만 기본 설정에서 실행되지 않는다. 새 변경에는 사용하지 않는다. 두 파일을 직접 실행하면 `DROP TABLE`로 데이터가 삭제될 수 있다.
+- 애플리케이션 시작 시 `SCHEMA_MIGRATION` 테이블을 준비하고, `db/versions/V1__baseline.sql`이 미적용이면 1회 실행한 뒤 버전과 파일명을 기록한다.
+- 2026-10-11 스쿼시: 구 체인(V1,V2,V6~V29, 빈 번호 V3·삭제된 V4·V5 포함)을 최종 상태 단일 V1으로 교체했다. 구 이력이 남은 DB에서는 새 V1이 스킵되므로 `data/`를 지우고 시작해야 한다 (`data/`는 `.gitignore`).
+- `db/data.sql`은 시작 마이그레이션이 아니다. `DBJob` 덤프 대상 파일명 표시용 주석 파일이며, 로더는 `db/versions/V*__*.sql`만 읽는다. 덤프 실체는 `backup/ArkiveDB.sql`이다.
+- `db/baseline_schema.sql`(구 밑그림)과 `db/sampledb.sql`(레거시, `DROP TABLE` 포함)은 2026-10-11에 삭제했다. 새 변경에는 사용하지 않는다.
 - `./data/ArkiveDB`는 로컬 HSQLDB의 실제 저장 경로다. 런타임 DB 파일은 `.gitignore`로 Git 추적에서 제외하고, `.lck` 파일은 DB 실행 중 잠금 용도로 사용한다.
 - 운영 배포, DDL 승인, 백업 및 롤백 담당자·절차: 미확인.
 
 ## 템플릿 복사 (새 프로젝트)
 
-- `db/` 바로 아래가 아니라 `db/versions/` 아래의 V 파일은 "진화 체인"이다. 적용된 DB가 있어서 고치지 않고 새 버전만 추가한다.
-- `db/baseline_schema.sql`은 "복사용 밑그림"이다. 현재 스키마 전체 + 현재 메뉴값을 담고 있다.
-- 실행기는 `db/versions/V*__*.sql` 패턴만 읽으므로 baseline은 자동 실행되지 않는다.
-- 새 프로젝트 절차: baseline을 `db/versions/V1__baseline.sql`로 복사 → 기존 V 파일 삭제 → 빈 DB로 시작.
-- 이력이 있는 DB에는 baseline을 쓰지 않는다. 그런 DB는 V 체인으로만 변경한다.
+- `db/versions/V1__baseline.sql` 하나면 빈 DB가 한 번에 현재 스키마가 된다. 복사 후 패키지·테이블명만 대상에 맞게 바꾼다.
+- 이력이 있는 DB에는 baseline을 쓰지 않는다. 그런 DB는 V2부터의 새 버전 체인으로만 변경한다.
+- 삭제된 구 체인은 Git 이력에 남아 있다. 과거 버전별 변경 내역이 필요하면 2026-10-11 이전 커밋을 본다.
 
 ## 개발자 사용법
 
-1. `src/main/resources/db/versions/`에 `V9__add_file_description.sql`처럼 다음 버전 SQL 파일을 추가한다.
+1. `src/main/resources/db/versions/`에 `V2__add_file_description.sql`처럼 다음 버전 SQL 파일을 추가한다 (V1은 baseline이라 건드리지 않는다).
 2. 파일은 이미 적용한 뒤에는 수정하지 않는다. 수정이 필요하면 더 높은 버전의 새 SQL을 추가한다.
 3. 프로젝트를 시작하면 미적용 버전만 실행된다. 적용 결과는 `SCHEMA_MIGRATION`의 `VERSION`, `SCRIPT_NAME`, `APPLIED_AT`에서 확인한다.
 4. SQL 구문 실패 시 해당 버전은 기록되지 않으며 시작이 실패한다. 원인을 수정한 뒤 SQL을 검증하고 재시작한다.

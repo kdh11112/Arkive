@@ -33,10 +33,6 @@
                             <li class="li" th:if="${session.LOGIN_USER == null}">
                                 <a th:href="@{/login/login}" class="btn btn-txt xsm">로그인</a>
                             </li>
-                            <li class="li" th:if="${session.LOGIN_USER == null}">
-                                <!-- 2단계 로그인 완성 전에는 대시보드로 바로 간다. 로그인 붙으면 여기가 관문이 된다. -->
-                                <a th:href="@{/login/adminLogin}" class="btn btn-txt xsm">관리자로그인</a>
-                            </li>
                             <li class="li" th:if="${session.LOGIN_USER != null}">
                                 <span class="btn btn-txt xsm" th:text="${session.LOGIN_USER['userNm']}"></span>
                             </li>

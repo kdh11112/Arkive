@@ -25,17 +25,21 @@
 
 ## 작성 예시 (Arkive) — 아래는 참고용, 새 프로젝트에서는 지우고 다시 채운다.
 
-> 2026-09-25 저장소 검색으로 확인한 주요 코드 영역의 시작 목록이다. 전체 기능 목록이나 조직별 소유권을 확정한 문서가 아니다. 소유자는 근거가 없어 미확인으로 둔다.
+> 2026-10-11 저장소 검색으로 확인한 주요 코드 영역의 목록이다. 전체 기능 목록이나 조직별 소유권을 확정한 문서가 아니다. 소유자는 근거가 없어 미확인으로 둔다.
 
 | 기능/영역 | 확인된 구현 위치 | 확인된 범위 | 책임자/소유권 |
 | --- | --- | --- | --- |
-| 시스템 메뉴 관리 | `arkive.admin.system.*`, `System_SQL.xml`, `templates/thymeleaf/system/` | 메뉴 목록·상세 조회, 중복 조회, 등록·수정·삭제 경로가 있음 | 미확인 |
-| 공통 파일 처리 | `arkive.admin.comm.web.FileController`, `FileService*`, `File_SQL.xml` | 파일 업로드·다운로드·목록·삭제, TUS 업로드 관련 코드가 있음 | 미확인 |
-| NICE 본인 확인 연계 | `NiceCheckController`, `NiceCheck`, 관련 VO | NICE 연계 Controller/모델이 있음. 실제 계약과 운영 사용 여부는 미확인 | 미확인 |
+| 시스템 메뉴·공통코드 관리 | `arkive.admin.system.*`, `System_SQL.xml`, `CommCode_SQL.xml`, `templates/thymeleaf/system/` | 메뉴·코드 목록·상세·등록·수정·삭제 (`/system` prefix) | 미확인 |
+| 로그인·회원·계정 찾기 | `arkive.admin.auth.web.LoginController`, `Auth_SQL.xml`(APP_USER), `templates/thymeleaf/login/` | 로그인·회원가입·ID/PW찾기·로그아웃 (`/login`) | 미확인 |
+| 사용자관리 | `arkive.admin.auth.web.UserManageController`, `templates/thymeleaf/auth/` | 목록·등록·수정·삭제·잠금해제·비번초기화 (`/auth`). 메뉴 `ME02010400` | 미확인 |
+| 소셜 로그인 연계 | `arkive.admin.auth.web.OauthController`, `OAUTH_LINK` | 제공자 연결·콜백·연계 (`/login/oauth`) | 미확인 |
+| NICE 본인 확인 | `NiceCheckController`(`/niceExt`), `NiceVerifyController`(`/login/nice`) | 연계·시작·콜백·상태 | 미확인 (외부 계약은 연계 명세 확인) |
+| 공통 파일 처리 | `arkive.admin.comm.web.FileController`, `FileService*`, `File_SQL.xml` | 멀티파트·TUS·드롭존 업로드, 다운로드, 삭제 (`/system`, `/file`) | 미확인 |
+| 게시판 (관리자) | `arkive.admin.board.*`, `Board_SQL.xml` | CK·토스트 목록·쓰기·상세·등록·수정·삭제·구독 (`/board`) | 미확인 |
+| 팝업·배너·카테고리·일정·POLL·상담·명함·주소록·당직·메모·FAQ·Q&A (관리자) | `arkive.admin.popup/banner/category/schedule/poll/counsel/card/address/duty/memo/faq/qna.*` | 각 `/popup`·`/banner`·`/category`·`/schedule`·`/poll`·`/counsel`·`/card`·`/address`·`/duty`·`/faq`·`/memo`·`/qna` prefix | 미확인 |
+| 외부포털 (사용자) | `arkive.user.board/faq/qna/poll/counsel/main.*` | 공지·자료·FAQ·Q&A·POLL·상담·메인 (`/user/**`) | 미확인 |
 | 샘플 기능 | `egovframework.example.sample.*`, `EgovSample_Sample_SQL.xml` | eGovFrame 샘플 CRUD 및 페이징 코드가 있음 | 샘플 코드, 업무 소유권 해당 없음 |
 | 시스템 설정·예약 DB 작업 | `egovframework.example.config.*`, `arkive.com.config.*` | DB·Mapper 설정, 10분 Trigger와 덤프 작업 코드가 있음 | 운영 책임자 미확인 |
-| 기타 업무 기능 | `src/main/java/arkive/` 전체 | 본 목록에서 완전 분류하지 않음 | 미확인 |
-| 소셜 로그인 | 미적용(보류). `ext/oauth` + scribejava + 로그인/사용자관리 세트 필요 | Naver 중심 코드, `Sns.*` 자리만 있음 | 보류: 로그인 체계 후에 진행 |
 | 댓글 관리 | 미적용(제외). `cop/cmt` + 게시판(`cop/bbs`) 세트 필요 | `BoardMaster` 직접 import 확인 | 제외: 게시판 이식 시 함께 진행 |
 
 ## 유지 기준

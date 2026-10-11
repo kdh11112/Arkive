@@ -25,6 +25,26 @@ document.addEventListener('click', function (event) {
     tr.classList.add('selected');
 });
 
+/* 아이디 저장. localStorage에 보관한다. 서버로 보내지 않는다. */
+var SAVE_ID_KEY = 'arkiveSavedId';
+function loadSavedId(inputId, checkId) {
+    try {
+        var saved = localStorage.getItem(SAVE_ID_KEY);
+        if (saved) {
+            document.getElementById(inputId).value = saved;
+            document.getElementById(checkId).checked = true;
+        }
+    } catch (e) {}
+}
+function storeSavedId(userId, checked) {
+    try {
+        if (checked) {
+            localStorage.setItem(SAVE_ID_KEY, userId);
+        } else {
+            localStorage.removeItem(SAVE_ID_KEY);
+        }
+    } catch (e) {}
+}
 /* POST 이동. URL 쿼리스트링 노출 없이 값을 넘긴다.
    a[data-post]를 누르면 href로 POST 폼을 만들어 보낸다.
    값은 data-name/data-value에 담는다. (th:attr="data-name='boardId',data-value=${item['boardId']}")

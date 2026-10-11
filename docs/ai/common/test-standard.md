@@ -1,10 +1,12 @@
 # 공통 테스트 및 검증 표준
 
-> 이식 구분: 복붙 가능. 타 프로젝트에 그대로 복사해서 사용한다.
+> 이식 구분: 가이드형. 파일째 복사하되, 적용할 때는 프로젝트 테스트 환경 값으로 판단한다.
 
 변경 범위와 위험도에 맞는 검증을 선택한다. 모든 변경에 모든 종류의 테스트를 강제하지 않으며, 수행하지 않은 검증을 통과했다고 표현하지 않는다. 프로젝트에 기존 테스트 도구와 실행 방식이 있으면 이를 우선한다.
 
 Baseline, Snapshot, Verifier와 Runtime 검증의 공통 절차는 [verification-standard.md](verification-standard.md)를 따른다. 기대 결과와 테스트 사례는 관련 프로젝트 정책, 계약 및 Acceptance Criteria에서 확인한다.
+
+테스트 스택 자체의 이식(Boot용/클래식용 pom·CI·뼈대)은 Boot [test-stack-boot.md](../boot/test-stack-boot.md), 클래식 [test-stack-classic.md](../classic/test-stack-classic.md)를 따른다.
 
 ## 기본 확인 항목
 
@@ -43,7 +45,7 @@ Baseline, Snapshot, Verifier와 Runtime 검증의 공통 절차는 [verification
 - 테스트 결과에는 가능한 경우 테스트 항목, 입력/실행 조건 또는 명령, 기대 결과, 실제 결과, 판정 및 근거 위치를 남긴다.
 - 판정은 `통과`, `실패`, `N/A`, `미수행`을 구분한다. 실패 또는 미수행 항목이 있으면 원인과 완료 판단에 미치는 영향을 기록한다.
 - 화면, API, 서버, DB 등 Runtime 확인은 변경 특성에 맞는 범위에서 수행한다. 소스가 정상으로 보인다는 이유만으로 실행 검증을 완료했다고 판단하지 않는다.
-- 중요한 변경의 실행 근거를 남길 필요가 있으면 [evidence-report-template.md](evidence-report-template.md)를 사용한다.
+- 중요한 변경의 실행 근거를 남길 필요가 있으면 [evidence-report-template.md](../portable/evidence-report-template.md)를 사용한다.
 
 ## 회귀 검증
 

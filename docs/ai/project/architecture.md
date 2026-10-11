@@ -50,6 +50,27 @@
 - `arkive.com.config.QuartzConfig`에서 `DBJob`을 10분 간격으로 실행하는 Trigger를 구성한다.
 - `DBJob`은 DB 덤프를 파일로 기록하는 코드를 포함한다. 스케줄 활성화, 경로, 보존 및 복구 정책은 [project-overview.md](project-overview.md)와 운영 담당자 확인을 참조한다.
 
+## 참조와 개선 결정 (Arkive 예시)
+
+기능을 만들 때 아래를 참고하고, 더 나은 방법이 있으면 그 방법을 사용한다. 똑같이 만드는 게 목표가 아니다.
+
+- eGovFrame 공통컴포넌트 v5.0 가이드: https://www.egovframe.go.kr/wiki/doku.php?id=egovframework:com:v5.0:init_guide
+  - 명함관리(cop)·상담관리(uss) 등 업무 규칙·테이블·상태코드의 근거로 사용했다.
+- 저장소 내 실측 프로젝트: ADTM, BLMS, gcsms, GIES, GTEMS (pony-main, GCG-master, HTA-main 포함 survey)
+  - BLMS 팝업·배너·카테고리·FAQ/Q&A, pony 공지·Q&A, gcsms 당직·엑셀·민원, GTEMS 설문(qestnr)을 CRUD·스키마 패턴 근거로 사용했다.
+  - ADTM(지역 JOIN)·HTA(raw JDBC)는 이식 부적합이라 제외했다.
+
+대표 개선 예시:
+
+| 기능 | 참조 | 더 나은 방식 |
+| --- | --- | --- |
+| FAQ·Q&A 질문 | BLMS/gcsms 단일테이블+타입코드 | 신규 테이블 없이 `BOARD`+`BOARD_TYPE` 재사용 |
+| Q&A·메모 상태 | pony `answerStatus` 컬럼 | Q&A는 상태 컬럼 제거(JOIN 판정), 메모는 상태 전이를 SQL 조건으로 강제 (동기화 불일치 제거) |
+| 카테고리 트리 | BLMS jstree 라이브러리 | 네이티브 `<details>` + jstree 규격 `tree.json` 병행 (의존성 제거) |
+| 메인이미지 | eGov 별도 컴포넌트 | `BANNER`+`POSITION` 통합 |
+| 파일 실형식 검증 | 로드맵 Tika案 | `FileTypeUtil` 매직바이트 검사 (의존성 추가 없음) |
+| 온라인POLL 중복투표 | 로그인 전제 방식 | 세션 집합 차단 |
+
 ## 확인이 필요한 점
 
 - 인증·인가 필터/인터셉터 적용 범위와 실제 역할 매핑

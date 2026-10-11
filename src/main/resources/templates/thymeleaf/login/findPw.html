@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>비밀번호 찾기</title>
+    <link rel="stylesheet" type="text/css" th:href="@{/css/component/output.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/css/krds-local.css}">
+    <script th:src="@{/js/jquery.min.js}"></script>
+</head>
+<body>
+<div class="inner" style="max-width: 480px; margin: 80px auto;">
+    <h2 class="heading-large" style="text-align: center;">비밀번호 찾기</h2>
+    <div class="conts-wrap">
+        <div class="fieldset input-form">
+            <div class="form-group">
+                <div class="form-tit"><label for="userId">아이디</label></div>
+                <div class="form-conts"><input type="text" id="userId" class="krds-input" maxlength="20" autocomplete="username"></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="userNm">이름</label></div>
+                <div class="form-conts"><input type="text" id="userNm" class="krds-input" maxlength="100"></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="email">이메일</label></div>
+                <div class="form-conts"><input type="text" id="email" class="krds-input" maxlength="100" autocomplete="email"></div>
+            </div>
+            <div class="form-group" id="resultRow" style="display: none;">
+                <div class="form-tit">임시 비밀번호</div>
+                <div class="form-conts"><strong id="tempPw"></strong>
+                    <p style="font-size: 12px;">화면을 닫으면 다시 볼 수 없습니다. 로그인 후 꼭 변경하세요.</p>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top: 12px; display: flex; gap: 8px;">
+            <button type="button" class="krds-btn medium primary" style="flex: 1;" onclick="fnFindPw()">발급받기</button>
+        </div>
+        <p style="font-size: 12px; margin-top: 8px;"><a th:href="@{/login/login}">로그인으로 돌아가기</a></p>
+    </div>
+</div>
+<script>
+    function fnFindPw() {
+        if (($('#userId').val() || '').trim() === ''
+                || ($('#userNm').val() || '').trim() === ''
+                || ($('#email').val() || '').trim() === '') {
+            alert('아이디·이름·이메일을 입력하세요.');
+            return;
+        }
+        $.ajax({
+            type: 'post',
+            url: '/login/findPw.json',
+            data: { userId: $('#userId').val(), userNm: $('#userNm').val(), email: $('#email').val() },
+            success: function(res) {
+                if (res.success) {
+                    $('#tempPw').text(res.tempPw);
+                    $('#resultRow').show();
+                } else {
+                    $('#resultRow').hide();
+                    alert(res.message || '찾기에 실패했습니다.');
+                }
+            },
+            error: function() { alert('찾기 중 오류가 발생했습니다.'); }
+        });
+    }
+</script>
+</body>
+</html>

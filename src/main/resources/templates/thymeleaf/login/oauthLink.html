@@ -40,7 +40,7 @@
             url: '/login/oauth/link.json',
             data: { mode: mode, userId: $('#userId').val(), userNm: $('#userNm').val(), password: $('#password').val() },
             success: function(res) {
-                if (res.success) { location.href = '/dashboard'; }
+                if (res.success) { location.href = res.isAdmin ? '/dashboard' : '/user/userMain'; }
                 else { alert(res.message || '연결에 실패했습니다.'); }
             },
             error: function() { alert('연결 중 오류가 발생했습니다.'); }

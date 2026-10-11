@@ -10,7 +10,6 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.env.Environment;
@@ -18,7 +17,9 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 
 @Configuration
-@PropertySource("classpath:/application.properties")
+// @PropertySource를 쓰지 않는다. Boot가 application.properties를
+// main+test 합쳐서 Environment에 넣는데, @PropertySource는 중복 파일 중
+// 첫 번째 것만 읽어서 테스트 오버라이드가 묻힌다.
 public class EgovConfigDatasource implements ApplicationRunner {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EgovConfigDatasource.class);

@@ -158,6 +158,8 @@ public class UserManageController {
 			param.put("email", cmmUtil.convertHtml(request, "email"));
 			String useYn = cmmUtil.convertHtml(request, "useYn");
 			param.put("useYn", "N".equals(useYn) ? "N" : "Y");
+			String adminYn = cmmUtil.convertHtml(request, "adminYn");
+			param.put("adminYn", "Y".equals(adminYn) ? "Y" : "N");
 			authService.updateUser(param);
 			result.put("success", true);
 		} catch (Exception e) {

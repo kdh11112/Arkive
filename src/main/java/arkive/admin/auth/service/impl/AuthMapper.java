@@ -19,6 +19,8 @@ public interface AuthMapper {
 
 	EgovMap selectUserDetail(String userId) throws Exception;
 
+	EgovMap selectFindUserId(EgovMap egovMap) throws Exception;
+
 	void insertUser(EgovMap egovMap) throws Exception;
 
 	void updateUser(EgovMap egovMap) throws Exception;

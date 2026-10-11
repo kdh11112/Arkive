@@ -16,8 +16,8 @@
 
 <!--
 문서 상태: 부분 미완성
-미완성 항목: 전체 API 경로, 허용 HTTP method, Request/Response 스키마, 인증·권한, 상태/오류 코드, 호환성 및 외부 API 명세.
-필요한 근거/확인자: Controller와 실제 호출 화면·클라이언트, 승인된 OpenAPI/API 명세, 연계 시스템 담당자.
+미완성 항목: Request/Response 스키마, 인증·권한, 상태/오류 코드, 호환성 및 외부 API 명세. 경로·method 인벤토리는 2026-10-11 코드 대조로 완성.
+필요한 근거/확인자: 실제 호출 화면·클라이언트, 승인된 OpenAPI/API 명세, 연계 시스템 담당자.
 완성 방법: 경로 인벤토리를 호출처와 대조하고 계약 기록 양식을 사용해 필드·상태·오류를 확인한다. 코드 선언만으로 계약을 확정하지 않는다.
 완료 기준: 운영/지원 대상 API가 명세 또는 확인된 현행 계약에 연결되고, 미지원·미확인 경로가 구분되어 있다.
 -->
@@ -26,26 +26,48 @@
 
 ## 작성 예시 (Arkive) — 아래는 참고용
 
-## 확인된 시스템 메뉴 경로 (Arkive 예시)
+## 확인된 경로 인벤토리 (Arkive 예시, 2026-10-11 코드 기준)
 
-Controller 기준 prefix는 `/system`이다.
+클래스 prefix 기준이다. 화면 경로는 GET+POST, `.json`은 POST가 기본이다 (`/system`·`/file` 예외 별기).
 
-| 경로 | 코드상 기능 설명 | HTTP method | 계약 상태 |
+| prefix | Controller | 대표 경로 | HTTP method (코드 선언) |
 | --- | --- | --- | --- |
-| `/system/menuList` | 메뉴 관리 화면 | 미지정 | 화면 경로만 확인 |
-| `/system/getMenuList.json` | 메뉴 목록 조회 | 미지정 | 파라미터/응답 스키마 미확인 |
-| `/system/getMenuDetailList.json` | 하위 메뉴 조회 | 미지정 | `menuId` 읽는 코드 확인, 스키마 미확인 |
-| `/system/getChkMenuId.json` | 메뉴 중복 조회 | 미지정 | Request/응답 의미 확인 필요 |
-| `/system/getChkUpMenuId.json` | 상위 메뉴 중복 조회 | 미지정 | Request/응답 의미 확인 필요 |
-| `/system/setInsertMenu.json` | 메뉴 등록 | 미지정 | 입력/오류 계약 확인 필요 |
-| `/system/setUpdateMenu.json` | 메뉴 수정 | 미지정 | 입력/오류 계약 확인 필요 |
-| `/system/setDeleteMenu.json` | 메뉴 삭제 | 미지정 | 입력/오류 계약 확인 필요 |
+| `/system` | `admin.system.web.SystemController` | `/menuList`, `/getMenuList.json`, `/getMenuDetailList.json`, `/getChkMenuId.json`, `/getChkUpMenuId.json`, `/setInsertMenu.json`, `/setUpdateMenu.json`, `/setDeleteMenu.json` | 화면 GET, 조회·등록·수정·삭제별 GET/POST 선언 (코드 확인) |
+| `/system` | `admin.system.web.CommCodeController` | `/commCodeList`, `/getMasterList.json`, `/getDetailList.json`, `/getCmmnCodeList.json`, `/getCodeInfo.json`, `/setInsertCode.json`, `/setUpdateCode.json`, `/setDeleteCode.json` | 화면 GET, `.json` POST |
+| `/system`, `/file` | `admin.comm.web.FileController` | `/multipartUpload`, `/tusUpload`, `/tusPopup`, `/dropzoneUpload`, `/dropzonePopup`, `/tus`, `/tus/{fileId}`, `/file/tempFileUpload.json`, `/file/saveTempFiles.json`, `/file/setFileDelete.json`, `file/downloadFile.do` | 화면 GET, TUS에 OPTIONS/HEAD/PATCH/DELETE 있음 |
+| `/login` | `admin.auth.web.LoginController` | `/login`, `/login.json`, `/signup`, `/signup.json`, `/findId`, `/findId.json`, `/findPw`, `/findPw.json`, `/logout`, `/apiDemo` | 화면 GET+POST, `.json` POST |
+| `/auth` | `admin.auth.web.UserManageController` | `/userList`, `/userWrite`, `/insertUser.json`, `/updateUser.json`, `/deleteUser.json`, `/unlockUser.json`, `/resetPassword.json` | 화면 GET+POST, `.json` POST |
+| `/login/oauth` | `admin.auth.web.OauthController` | `/{provider}`, `/{provider}Callback`, `/link.json` | 화면 GET+POST, 연계 POST |
+| `/login/nice` | `admin.auth.web.NiceVerifyController` | `/start`, `/callback`, `/status.json`, `/clear.json` | GET+POST 혼합, 해제 POST |
+| `/api` | `admin.auth.web.ApiController` | `/login.json`, `/noticeList.json`, `/noticeDetail.json`, `/faqList.json` | POST 또는 GET+POST |
+| `/board` | `admin.board.web.BoardController` | `/ckeditorList`, `/toastList`, `/toastList.json`, `/ckeditorWrite`, `/toastWrite`, `/detail`, `/insertBoard.json`, `/updateBoard.json`, `/deleteBoard.json`, `/subscribe`, `/editorImageUpload.json` | 화면 GET+POST, `.json` POST, 구독 GET |
+| `/popup` | `admin.popup.web.PopupController` | `/popupList`, `/popupWrite`, `/activePopup.json`, `/popupImageUpload.json`, `/insertPopup.json`, `/updatePopup.json`, `/deletePopup.json` | 화면 GET+POST, `.json` POST |
+| `/banner` | `admin.banner.web.BannerController` | `/bannerList`, `/bannerWrite`, `/activeBanner.json`, `/bannerImageUpload.json`, `/insertBanner.json`, `/updateBanner.json` | 화면 GET+POST, `.json` POST |
+| `/category` | `admin.category.web.CategoryController` | `/tree`, `/drill`, `/tree.json`, `/saveCategory.json`, `/deleteCategory.json` | 화면·조회 GET+POST, 저장·삭제 POST |
+| `/schedule` | `admin.schedule.web.ScheduleController` | `/scheduleList`, `/scheduleWrite`, `/insertSchedule.json`, `/updateSchedule.json`, `/deleteSchedule.json`, `/holidayList`, `/insertHoliday.json`, `/deleteHoliday.json` | 화면 GET+POST, `.json` POST |
+| `/poll` | `admin.poll.web.PollController` | `/pollList`, `/pollWrite`, `/pollDetail`, `/insertPoll.json`, `/updatePoll.json`, `/deletePoll.json`, `/votePoll.json` | 화면 GET+POST, `.json` POST |
+| `/counsel` | `admin.counsel.web.CounselController` | `/counselList`, `/counselWrite`, `/counselDetail`, `/answerList`, `/checkPassword.json`, `/counselFileUpload.json`, `/insertCounsel.json`, `/updateCounsel.json`, `/deleteCounsel.json`, `/updateCounselAnswer.json` | 화면 GET+POST, `.json` POST |
+| `/card` | `admin.card.web.CardController` | `/cardList`, `/cardWrite`, `/insertCard.json`, `/updateCard.json`, `/deleteCard.json`, `/useCard.json`, `/cancelUseCard.json` | 화면 GET+POST, `.json` POST |
+| `/address` | `admin.address.web.AddressController` | `/addressList`, `/addressWrite`, `/insertAddress.json`, `/updateAddress.json`, `/deleteAddress.json` | 화면 GET+POST, `.json` POST |
+| `/duty` | `admin.duty.web.DutyController` | `/dutyList`, `/dutyWrite`, `/insertDuty.json`, `/updateDuty.json`, `/deleteDuty.json`, `/downloadDutyExcel.do`, `/downloadDutyTemplate.do`, `/uploadDutyExcel.json` | 화면 GET+POST, `.json` POST, 엑셀 GET |
+| `/faq` | `admin.faq.web.FaqController` | `/faqList`, `/faqWrite`, `/insertFaq.json`, `/updateFaq.json`, `/deleteFaq.json` | 화면 GET+POST, `.json` POST |
+| `/memo` | `admin.memo.web.MemoController` | `/memoList`, `/memoWrite`, `/memoDetail`, `/insertMemo.json`, `/updateMemo.json`, `/deleteMemo.json`, `/confirmMemo.json`, `/opinionMemo.json` | 화면 GET+POST, `.json` POST |
+| `/qna` | `admin.qna.web.QnaController` | `/qnaList`, `/qnaWrite`, `/qnaDetail`, `/insertQna.json`, `/updateQna.json`, `/deleteQna.json`, `/saveAnswer.json` | 화면 GET+POST, `.json` POST |
+| `/niceExt` | `admin.comm.web.NiceCheckController` | `/niceCheckAjax.do`, `/niceOpen.do` | method 미지정 (임의기재 금지). 외부 계약은 연계 명세 확인 |
+| `/preview` | `admin.preview.web.PreviewController` | `/fileView` (GET, `fileId` 파라미터), `/canPreview.json` (GET+POST, `success`+`canPreview`) | 코드 선언 확인 |
+| `/user` | `user.main.web.UserMainController` | `/userMain` | GET+POST |
+| `/user/board` | `user.board.web.UserBoardController` | `/noticeList`, `/noticeDetail`, `/archiveList`, `/archiveDetail` | GET+POST |
+| `/user/faq` | `user.faq.web.UserFaqController` | `/faqList` | GET+POST |
+| `/user/qna` | `user.qna.web.UserQnaController` | `/qnaList`, `/qnaDetail`, `/qnaWrite`, `/insertQna.json` | 화면 GET+POST, 등록 POST |
+| `/user/poll` | `user.poll.web.UserPollController` | `/pollList`, `/pollDetail`, `/votePoll.json` | 화면 GET+POST, 투표 POST |
+| `/user/counsel` | `user.counsel.web.UserCounselController` | `/counselWrite`, `/counselFileUpload.json`, `/insertCounsel.json` | 화면 GET+POST, `.json` POST |
+| `/` | `com.controller.ArkiveController` | `/`, `/dashboard` | 미확인 |
+| 샘플 | `egovframework.example.sample.web.EgovSampleController` | `/egov`, `/egovSampleList.do`, `/addSample.do` 등 | GET/POST 선언됨. 샘플 기능으로 취급 |
 
 ## 추가 인벤토리
 
-- `arkive.admin.comm.web.FileController`에는 파일 업로드·다운로드, TUS, 파일 목록/삭제 등 다수 경로가 선언되어 있다. 정식 목록은 Controller 전체와 클라이언트 호출부를 대조해 유지한다.
-- `arkive.admin.comm.web.NiceCheckController`에는 `/niceExt` prefix와 본인 확인 관련 경로가 선언되어 있다. 외부 계약은 연계 명세를 확인한다.
-- `egovframework.example.sample.web.EgovSampleController` 경로는 샘플 기능으로 취급한다.
+- 위 표가 전체다. 2026-10-11에 29개 Controller prefix와 선언 method를 코드에서 대조했다.
+- `NiceCheckController`(`/niceExt`) 외부 계약은 연계 명세를 확인한다.
 
 ## 계약 기록 양식
 

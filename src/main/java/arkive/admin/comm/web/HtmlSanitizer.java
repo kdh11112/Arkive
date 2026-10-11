@@ -57,6 +57,10 @@ public class HtmlSanitizer {
 			"^https?://(www\\.youtube\\.com/embed/|www\\.youtube-nocookie\\.com/embed/|youtu\\.be/|player\\.vimeo\\.com/video/)",
 			Pattern.CASE_INSENSITIVE);
 
+	/** Lucy 진단 주석 제거용. 진단용이라 출력에 둘 이유가 없다. */
+	private static final Pattern LUCY_COMMENT =
+			Pattern.compile("<!-- Not Allowed .*?-->", Pattern.DOTALL);
+
 	/** Lucy 필터는 무겁지 않지만 매번 만들지 않고 하나를 공유한다. 스레드 안전하다. */
 	private final XssFilter xssFilter;
 
@@ -84,6 +88,7 @@ public class HtmlSanitizer {
 		cleaned = filterIframes(cleaned);
 		if (xssFilter != null) {
 			cleaned = xssFilter.doFilter(cleaned);
+			cleaned = LUCY_COMMENT.matcher(cleaned).replaceAll("");
 		}
 		return cleaned;
 	}

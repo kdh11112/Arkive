@@ -38,6 +38,10 @@ public class AuthServiceImpl extends EgovAbstractServiceImpl implements AuthServ
 		return authMapper.selectUserDetail(userId);
 	}
 
+	public EgovMap selectFindUserId(EgovMap egovMap) throws Exception {
+		return authMapper.selectFindUserId(egovMap);
+	}
+
 	@Override
 	public void insertUser(EgovMap egovMap) throws Exception {
 		authMapper.insertUser(egovMap);
