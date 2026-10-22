@@ -11,7 +11,7 @@
 - [ ] 기존 화면 표시, 메시지, API 계약에 회귀 없음
 
 ## Mapper / DB
-- [ ] 변경된 Mapper SQL이 PostgreSQL에서 실행됨
+- [ ] 변경된 Mapper SQL이 대상 DB 제품에서 실행됨
 - [ ] 동적 if/choose/foreach 분기 확인
 - [ ] 0건/1건/다건 및 NULL 결과 확인
 - [ ] 조인/집계/정렬/페이징 결과 확인

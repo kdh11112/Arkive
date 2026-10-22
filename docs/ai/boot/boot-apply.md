@@ -17,11 +17,16 @@
 ## 설정
 
 - `src/main/resources/application.properties` + `Globals.*` 키가 설정 진실 공급원이다.
-  확인된 키: `Globals.DbType`, `Globals.hsql_server.*`(Driver·Url·User·DatabasePath),
+  확인된 키: `Globals.DbType`, `Globals.hsql_server.*`(Driver·Url·User·DatabasePath·Port),
   `Globals.dumpPath`, `Globals.jwt.*`, `Globals.naver.*`, `Globals.kakao.*`.
   비밀값(시크릿·키)은 커밋하지 말고 환경·시크릿 저장소에서 주입한다.
-- 테스트 오버라이드는 `src/test/resources/application-test.properties` 1줄 + `@TestPropertySource`다.
+- 테스트 오버라이드는 `application-test.properties.template`을 대상 DB에 맞게 채워
+  `src/test/resources/application-test.properties`로 저장하고, `@TestPropertySource`를 묶은
+  합성 애노테이션(`ArkiveIntegrationTest` → 대상에서는 `IntegrationTest`)으로 적용한다.
   동명 `application.properties`를 test에 두지 않는다(main 전체가 가려진다).
+  `Globals.hsql_server.Port`와 `Globals.hsql_server.Url`의 포트는 반드시 같아야 한다(Arkive 테스트는 9002).
+- 로그인 세션은 `TestSessions`로 만들고, 테스트별 복사·수정은
+  [test-porting-sheet.md](../portable/test-porting-sheet.md)에 기록한다.
 
 ## 화면·정적자원
 

@@ -1,6 +1,7 @@
 # verify.cmd / doctor.cmd 이식
 
 > 이식 구분: 복붙 가능(원본 보관). 아래 전문으로 없으면 만든다.
+> 정본은 루트의 `verify.cmd`·`doctor.cmd`다. 이 문서의 전문은 대상에 파일이 없을 때만 사용하고, 수정하면 양쪽을 함께 갱신한다.
 
 ## 없을 때 만드는 방법
 
@@ -51,6 +52,11 @@ cd /d "%~dp0"
 set FAIL=0
 
 call :checkFile "verify.cmd" "verify script"
+call :checkFile "PORTING.md" "porting guide"
+call :checkFile "docs\ai\portable\project-template-pack.md" "project template pack"
+call :checkFile "docs\ai\portable\feature-porting-sheet.md" "feature porting sheet"
+call :checkFile "docs\ai\portable\test-porting-sheet.md" "test porting sheet"
+call :checkFile "docs\ai\portable\ai-porting-request.md" "AI porting request guide"
 rem 테스트 DB 격리: Boot는 properties 오버라이드, 클래식은 테스트용 XML 중 하나만 있으면 된다.
 set DBISO=0
 if exist "src\test\resources\application-test.properties" set DBISO=1
@@ -63,6 +69,7 @@ if exist "docs\ai\boot\test-stack-boot.md" set GUIDE=1
 if exist "docs\ai\classic\test-stack-classic.md" set GUIDE=1
 if %GUIDE%==1 (echo [APPLIED] porting guide ^(boot/classic^)) else (echo [MISSING] porting guide ^(docs\ai\boot or docs\ai\classic^) & set FAIL=1)
 call :checkContent "pom.xml" "jacoco-maven-plugin" "JaCoCo plugin in pom"
+call :checkContent "pom.xml" "<goal>check</goal>" "JaCoCo coverage gate"
 rem 테스트 starter: Boot는 starter-test, 클래식은 spring-test 중 하나만 있으면 된다.
 set STARTER=0
 findstr /c:"spring-boot-starter-test" "pom.xml" >nul 2>&1 && set STARTER=1

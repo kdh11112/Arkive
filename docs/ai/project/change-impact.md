@@ -1,6 +1,6 @@
-# 변경 영향 분석 (가이드형 템플릿)
+# 변경 영향 분석 (Arkive 기록)
 
-> 이식 구분: 가이드형 템플릿. 새 프로젝트에 복사한 뒤 양식만 채운다. 아래 Arkive 예시는 참고용이다.
+> 이식 구분: **Arkive 기록**. 대상 프로젝트로 복사하지 않는다. 이식용 빈 양식은 [project-template-pack.md](../portable/project-template-pack.md), 기능별 절차는 [feature-porting-sheet.md](../portable/feature-porting-sheet.md)를 쓴다.
 
 <!--
 문서 상태: 부분 미완성
@@ -34,6 +34,7 @@
 | 파일 공통 처리 | `FileController` → `FileService` / 파일 유틸 → `File_SQL.xml` 및 파일 시스템 | 업로드 유형, 다운로드·삭제 호출처, 저장 경로, DB 메타데이터, 파일 접근 보안 |
 | 공통 화면 조각/정적 자원 | Thymeleaf `layout/`, `comm/`, `static/` | 이를 포함하거나 사용하는 각 화면 |
 | DB 초기화/예약 작업 | `application.properties`, `db/*.sql`, `QuartzConfig`, `DBJob` | 시작 시 초기화 동작, DB 변경, 덤프 경로·스케줄 |
+| 메뉴 시드·사이드바 | `db/versions/V3__message.sql` → `menu`, `MenuInterceptor` | 신규 메뉴 ID·상위 메뉴·순서, 기존 메뉴 ID 충돌 |
 
 위 표는 검색으로 확인된 일부 공유 지점이며 완전한 의존성 그래프가 아니다. 실제 변경별 호출처를 다시 검색한다.
 
@@ -41,4 +42,5 @@
 
 | 변경 파일/기능 | 직접 호출자 | 공통 사용처 | API/정책/권한 | DB/외부 영향 | 검증 근거 |
 | --- | --- | --- | --- | --- | --- |
-|  |  |  |  |  |  |
+| 게시글 댓글 (`BoardController`/`BoardService`/`BoardMapper`/`Board_SQL.xml`, `V2__board_comment.sql`) | `board/boardDetail.html` 댓글 AJAX | 게시판 상세·댓글 API | 로그인 사용자 작성, 작성자/관리자 삭제 | `BOARD_COMMENT` 신규, `BOARD` 삭제 시 cascade | `BoardMapperTest`·`BoardCommentControllerTest`, `verify.cmd` 33/33 |
+| 쪽지 (`MessageController`/`MessageService`/`MessageMapper`/`Message_SQL.xml`, `V3__message.sql`) | `templates/thymeleaf/message/*` | `/message/**`, 레이아웃 메뉴 | 로그인 사용자, 발신자/수신자 본인만 열람·삭제 | `MESSAGE` 신규, `menu` 4행 | `MessageMapperTest`·`MessageControllerTest`, `verify.cmd` 33/33 |

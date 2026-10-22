@@ -30,4 +30,14 @@ public interface BoardMapper {
 	void deleteBoard(String boardId) throws Exception;
 
 	void updateViewCnt(String boardId) throws Exception;
+
+	List<EgovMap> selectCommentList(String boardId) throws Exception;
+
+	int selectCommentCount(String boardId) throws Exception;
+
+	EgovMap selectCommentDetail(String commentId) throws Exception;
+
+	void insertComment(EgovMap egovMap) throws Exception;
+
+	void deleteComment(String commentId) throws Exception;
 }

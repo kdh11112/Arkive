@@ -21,6 +21,14 @@ Baseline, Snapshot, Verifier와 Runtime 검증의 공통 절차는 [verification
 
 화면에서 버튼을 숨기는 것만으로 권한 검증이 완료되었다고 판단하지 않는다. 가능한 경우 서버 측에서 직접 요청에 대한 접근 제한도 확인한다.
 
+## 이식 시 테스트 자산
+
+- 기능을 이식할 때 관련 테스트를 함께 가져간다. 테스트가 없으면 이식 전에 먼저 만든다.
+- 테스트 DB는 운영 DB와 분리하고, 대상 DB 제품이 HSQLDB와 다르면 같은 제품으로 Mapper/SQL을 검증한다.
+- 테스트 실행과 화면·API·DB 확인 결과는 [feature-porting-sheet.md](../portable/feature-porting-sheet.md)에 남긴다.
+- 다른 프로젝트로 테스트를 이식할 때는 [test-porting-sheet.md](../portable/test-porting-sheet.md)에 복사·수정·검증 결과를 남긴다.
+- 테스트를 삭제·skip하거나 빈 테스트로 커버리지 숫자만 맞추지 않는다.
+
 ## 변경 범위별 검증
 
 - 화면/JSP/Thymeleaf/CSS: 렌더링, 사용자 입력과 동작, 버튼 상태 및 브라우저 콘솔을 확인한다.

@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import arkive.admin.auth.web.LoginController;
 import arkive.admin.board.service.BoardService;
 import arkive.admin.board.service.BoardSseService;
 import arkive.admin.comm.service.FileService;
@@ -226,6 +227,8 @@ public class BoardController {
 			neighborParam.put("registDt", detail.get("registDt"));
 			model.put("prev", boardService.selectPrevOne(neighborParam));
 			model.put("next", boardService.selectNextOne(neighborParam));
+			model.put("commentList", boardService.selectCommentList(boardId));
+			model.put("commentCount", boardService.selectCommentCount(boardId));
 		}
 		if (detail != null && detail.get("atchFileGrpid") != null) {
 			model.put("fileList", fileService.getFileInfoList(String.valueOf(detail.get("atchFileGrpid"))));
@@ -360,6 +363,100 @@ public class BoardController {
 			result.put("success", true);
 		} catch (Exception e) {
 			logger.error("deleteBoard failed", e);
+			result.put("success", false);
+			result.put("message", e.getMessage());
+		}
+		return result;
+	}
+
+	/**
+	 * 세션 로그인 사용자. 없으면 null.
+	 */
+	private EgovMap getLoginUser(HttpServletRequest request) {
+		HttpSession session = request.getSession(false);
+		if (session == null) {
+			return null;
+		}
+		Object user = session.getAttribute(LoginController.SESSION_KEY);
+		return user instanceof EgovMap ? (EgovMap) user : null;
+	}
+
+	/**
+	 * 관리자 세션 여부. 댓글 삭제 권한 판단에만 쓴다.
+	 */
+	private boolean isAdmin(HttpServletRequest request) {
+		HttpSession session = request.getSession(false);
+		return session != null && session.getAttribute(LoginController.ADMIN_KEY) != null;
+	}
+
+	@Operation(summary = "댓글 등록 (로그인 사용자, 1단)")
+	@RequestMapping(value = "/insertComment.json", method = RequestMethod.POST)
+	@ResponseBody
+	public Map<String, Object> insertComment(HttpServletRequest request) {
+		Map<String, Object> result = new HashMap<>();
+		try {
+			EgovMap loginUser = getLoginUser(request);
+			if (loginUser == null) {
+				throw new IllegalStateException("로그인이 필요합니다.");
+			}
+			String boardId = cmmUtil.convertHtml(request, "boardId");
+			if (boardId == null || boardId.isEmpty() || boardService.selectBoardDetail(boardId) == null) {
+				throw new IllegalArgumentException("게시글이 없습니다.");
+			}
+			// 댓글은 평문으로 저장하고 화면에서 th:text로 이스케이프한다.
+			String content = cmmUtil.convertHtml(request, "content");
+			if (content == null || content.trim().isEmpty()) {
+				throw new IllegalArgumentException("댓글 내용을 입력하세요.");
+			}
+			content = content.trim();
+			if (content.length() > 1000) {
+				throw new IllegalArgumentException("댓글은 1000자 이내로 입력하세요.");
+			}
+			String userId = String.valueOf(loginUser.get("userId"));
+			String userNm = loginUser.get("userNm") == null ? userId : String.valueOf(loginUser.get("userNm"));
+			EgovMap param = new EgovMap();
+			param.put("commentId", "CM" + CommUtil.getFileId());
+			param.put("boardId", boardId);
+			param.put("content", content);
+			param.put("register", userId);
+			param.put("registerNm", userNm);
+			boardService.insertComment(param);
+			result.put("success", true);
+			result.put("commentId", param.get("commentId"));
+		} catch (Exception e) {
+			logger.error("insertComment failed", e);
+			result.put("success", false);
+			result.put("message", e.getMessage());
+		}
+		return result;
+	}
+
+	@Operation(summary = "댓글 삭제 (작성자 또는 관리자)")
+	@RequestMapping(value = "/deleteComment.json", method = RequestMethod.POST)
+	@ResponseBody
+	public Map<String, Object> deleteComment(HttpServletRequest request) {
+		Map<String, Object> result = new HashMap<>();
+		try {
+			EgovMap loginUser = getLoginUser(request);
+			if (loginUser == null) {
+				throw new IllegalStateException("로그인이 필요합니다.");
+			}
+			String commentId = cmmUtil.convertHtml(request, "commentId");
+			if (commentId == null || commentId.isEmpty()) {
+				throw new IllegalArgumentException("댓글 ID가 없습니다.");
+			}
+			EgovMap comment = boardService.selectCommentDetail(commentId);
+			if (comment == null) {
+				throw new IllegalArgumentException("댓글이 없습니다.");
+			}
+			boolean owner = String.valueOf(loginUser.get("userId")).equals(String.valueOf(comment.get("register")));
+			if (!owner && !isAdmin(request)) {
+				throw new IllegalStateException("삭제 권한이 없습니다.");
+			}
+			boardService.deleteComment(commentId);
+			result.put("success", true);
+		} catch (Exception e) {
+			logger.error("deleteComment failed", e);
 			result.put("success", false);
 			result.put("message", e.getMessage());
 		}

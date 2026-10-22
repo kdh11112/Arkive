@@ -4,39 +4,55 @@
 > 새 기능은 Arkive에 축적하고, 타 전자정부프레임워크·Spring·Spring Boot 프로젝트에서 복붙으로 가져간다.
 > 프로젝트명·패키지·테이블명·파일 위치·DB 제품(Oracle/PostgreSQL 등)은 이식 대상에 맞게 최소한으로 바꾸는 것을 전제로 한다.
 
-## 문서 구조
+> 이 문서는 Arkive 소개·실행·AI 이식 요청·기능 로드맵이다. **이식 절차는 [PORTING.md](PORTING.md)**, 전체 문서 체계는 [docs/ai/README.md](docs/ai/README.md)로 분리한다.
 
-문서 체계·이식 구분표는 [docs/ai/README.md](docs/ai/README.md)가 정본이다.
-요약: 1차(가이드형 5종 + 양식 4종) → Boot/클래식 트랙 → 2차(project 10종).
+## 실행
 
-## 가져가는 순서
+```cmd
+mvn spring-boot:run
+```
 
-1. `docs/ai/common/`은 그대로 복사한다. 이어서 대상이 Boot면 `docs/ai/boot/`, 클래식(전자정부 3.x/4.x)이면 `docs/ai/classic/`을 가져간다.
-2. `docs/ai/portable/`도 복사한다. `verify.cmd`·`doctor.cmd`가 없으면 `portable/scripts.md` 전문으로 생성한다.
-3. `docs/ai/project/`는 폴더째 복사한 뒤 각 문서 상단의 작성 가이드대로 양식만 채운다.
-4. 기능 코드는 화면 → Controller → Service → Mapper → XML → `db/versions` SQL → 설정·의존성 순서로 가져간다.
+- 기본 주소: `http://localhost:8080` (앱의 HSQLDB 서버는 9001)
+- 테스트 DB는 `target/test-db`, 포트 9002를 쓴다. 앱의 HSQLDB(9001)와 분리되어 앱 실행 중에도 `verify.cmd`를 돌릴 수 있다.
 
-## 기능 구현 기준
+## 이식과 문서
 
-기능별 참조 근거와 개선 결정은 [architecture.md](docs/ai/project/architecture.md)의 참조와 개선 결정을 본다.
-
-## 문서 안내
-
+- **이식 실행**: [PORTING.md](PORTING.md) — 복사 매트릭스, 5분 복사, 기능별 순서
+- **기능별 실행·복사 시트**: [feature-porting-sheet.md](docs/ai/portable/feature-porting-sheet.md)
+- **테스트 이식 시트**: [test-porting-sheet.md](docs/ai/portable/test-porting-sheet.md)
+- **AI 이식 요청 방법**: [ai-porting-request.md](docs/ai/portable/ai-porting-request.md)
+- **전체 문서 체계**: [docs/ai/README.md](docs/ai/README.md) — common/portable/Boot/Classic/Arkive 기록 구분
+- **공통 방법**: [docs/ai/common/](docs/ai/common/)
+- **이식 양식**: [docs/ai/portable/](docs/ai/portable/)
+- **Arkive 기록 (복사 금지)**: [docs/ai/project/](docs/ai/project/)
 - AI 작업 지침: [AGENTS.md](AGENTS.md)
-- 전체 체계·이식 구분: [docs/ai/README.md](docs/ai/README.md)
-- 공통 방법: [docs/ai/common/](docs/ai/common/)
-- 프로젝트 지식 (가이드형): [docs/ai/project/](docs/ai/project/)
 
-## 운영 메모
+핵심 원칙: `docs/ai/project/`는 Arkive의 현재 지식 기록이므로 대상 프로젝트로 복사하지 않고,
+대상의 프로젝트 지식은 [project-template-pack.md](docs/ai/portable/project-template-pack.md)로 새로 채운다.
 
-- actuator (운영 모니터링): `health/info/metrics`를 노출한다. 서버 생존·DB 상태·요청 수·JVM 메모리를 본다. 민감 엔드포인트는 내부망으로 제한이 원칙이다.
+## AI 이식 요청 (복사용)
 
-## 새 글 알림 (SSE) 화면 설정
+아래 프롬프트를 복사해서 `<기능명>`과 경로만 바꾼다. 전체를 한 번에 요청하지 말고 **기능 하나씩** 요청한다.
+자세한 절차와 체크리스트는 [ai-porting-request.md](docs/ai/portable/ai-porting-request.md)에 있다.
 
-- 목록·상세·메뉴 등 전 화면에서 `GET /board/subscribe`로 새 글 알림을 받는다 (`layout.html`).
-- 화면별 조절은 해당 페이지 inline 스크립트에 선언한다 (`layout` 스크립트보다 먼저 실행되어야 한다).
-- `window.ARKIVE_SSE = { banner: false };` — 이 화면에서는 배너 숨김.
-- `window.ARKIVE_SSE = { hideAfterMs: 30000 };` — 30초 뒤 자동 숨김. 기본 0(계속 표시).
+```text
+Arkive 레퍼런스: C:\Users\kdh\Documents\workspace-egov\Arkive
+대상 프로젝트: 현재 작업 디렉터리
+
+이번 이식 기능: <기능명>
+범위: 화면 + Controller + Service + Mapper/XML + SQL + 테스트
+
+1. Arkive의 PORTING.md, feature-porting-sheet.md, test-porting-sheet.md, ai-porting-request.md를 먼저 읽어라.
+2. Arkive를 실행해 기능 동작을 확인하고, 대상 프로젝트와 다른 점을 표로 정리해라.
+3. 대상의 패키지·테이블·DB·URL·세션 방식에 맞게 화면·Controller·Service·Mapper/XML·SQL을 옮겨라.
+4. 테스트도 함께 옮기고, 대상 기준으로 URL·메시지·세션·seed·스키마를 수정해라.
+5. 확인되지 않은 업무 규칙·권한·DB 의미는 추측하지 말고 "미확인"으로 남기고 질문해라.
+6. 단독 테스트와 verify.cmd를 실행하고, 수정 파일·검증 결과·남은 위험을 보고해라.
+```
+
+- Arkive 경로가 다르면 첫 줄만 수정한다.
+- AI가 Arkive를 읽을 수 없으면 [PORTING.md](PORTING.md)의 `1. 5분 복사`를 먼저 실행한다.
+- `docs/ai/project/`는 Arkive 기록이므로 대상 프로젝트로 복사하지 않는다.
 
 ## 만들어야 하는 기능 (로드맵)
 
@@ -50,7 +66,7 @@
 - [x] 공통코드 관리
 - [x] 파일 업로드 (멀티파트·TUS·드롭존, temp→확정 2단계)
 - [x] 글쓰기 본문 sanitize (Lucy core 직접 사용. 서블릿 필터는 jakarta 미지원이라 제외) — 위험 해소됨. script·비디오외 iframe·이벤트 속성 제거, 표·이미지·style 유지
-- [x] 실시간 알림 SSE (새 글 등록 시 목록 배너. SseEmitter, 별도 의존성 없음, ALL 단일 연결, 역할 필터 구조 포함) — 위험: 통로 2개면 브라우저 연결 상한 점유로 메뉴 이동 정체. 역할 필터는 로그인·권한관리 이후 활성화
+- [x] 실시간 알림 SSE (새 글 등록 시 목록 배너. SseEmitter, 별도 의존성 없음, ALL 단일 연결, 역할 필터 구조 포함) — 현재 `layout.html`의 `ARKIVE_SSE_ENABLED=false`로 기본 비활성. 켜려면 `true`로 바꾸고 화면별 설정·연결 상태를 확인. 위험: 통로 2개면 브라우저 연결 상한 점유로 메뉴 이동 정체. 역할 필터는 로그인·권한관리 이후 활성화
 - [x] Swagger (springdoc API 문서: /swagger-ui.html) — 위험: 운영 공개 시 민감 API 노출. 내부망 제한 또는 비활성화 검토
 
 ### 1단계 — 로그인 없이 가능 (쉬운 순)
@@ -82,10 +98,10 @@
 
 - [x] 로그인 (세션 기반, 실패 잠금, 단일 진입) — ADMIN_YN으로 관리자/일반 분기. 관리자면 ADMIN 세션 추가+대시보드, 일반이면 사용자메인. 별도 관리자 로그인 페이지 없음. 위험: 비밀번호 평문·무솔트 저장 금지(bcrypt), 실패 잠금 미적용 시 무차별 대입 노출
 - [x] 아이디 저장 체크 (localStorage, 서버 미전송)
-- [ ] 댓글 (로그인 이후. 1단, 대댓글 없음)
+- [x] 댓글 (로그인 이후. 1단, 대댓글 없음. BOARD_COMMENT, 작성자·관리자 삭제)
 - [x] 사용자 관리 (등록·수정·삭제·비밀번호 초기화) — 위험: 초기화 규칙(아이디+1234 같은 고정값) 금지, 변경 이력 남기기
 - [x] 관리자 로그인은 단일 로그인으로 통합됨 (위 로그인 항목 참조, 별도 진입 없음)
-- [ ] 쪽지관리 (eGov v5.0 uss, 받은·보낸, 이후) — 위험: 로그인·사용자관리 선행, 발송·수신함 분리
+- [x] 쪽지관리 (eGov v5.0 uss, 받은·보낸, 발송·읽음·함별 삭제) — 위험: 로그인·사용자관리 선행, 발송·수신함 분리
 - [ ] 중복로그인방지 (eGov v5.0 cmm, 이후) — 위험: 로그인 이후 단계, 세션 무효화 정책 선행
 - [ ] 사이트맵 (eGov v5.0 sym:mnu:stm, 이후) — 위험: 메뉴생성관리 선행, 로그인 사용자 권한별 표시
 - [ ] 권한관리 (메뉴별 조회·등록·수정·삭제 + SSE 역할 필터 활성화) — 위험: 화면 숨김만으로 끝내지 말고 서버(인터셉터)에서 강제. ADTM처럼 컨트롤러마다 분기 박기 금지. SSE는 구독 시 세션 역할 저장 → broadcast(targetRoles)로 서버에서 필터

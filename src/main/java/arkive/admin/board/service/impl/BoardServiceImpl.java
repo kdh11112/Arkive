@@ -85,4 +85,29 @@ public class BoardServiceImpl extends EgovAbstractServiceImpl implements BoardSe
 	public EgovMap selectNextOne(EgovMap egovMap) throws Exception {
 		return boardMapper.selectNextOne(egovMap);
 	}
+
+	@Override
+	public List<EgovMap> selectCommentList(String boardId) throws Exception {
+		return boardMapper.selectCommentList(boardId);
+	}
+
+	@Override
+	public int selectCommentCount(String boardId) throws Exception {
+		return boardMapper.selectCommentCount(boardId);
+	}
+
+	@Override
+	public EgovMap selectCommentDetail(String commentId) throws Exception {
+		return boardMapper.selectCommentDetail(commentId);
+	}
+
+	@Override
+	public void insertComment(EgovMap egovMap) throws Exception {
+		boardMapper.insertComment(egovMap);
+	}
+
+	@Override
+	public void deleteComment(String commentId) throws Exception {
+		boardMapper.deleteComment(commentId);
+	}
 }

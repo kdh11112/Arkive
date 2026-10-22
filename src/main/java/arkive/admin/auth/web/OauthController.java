@@ -145,6 +145,9 @@ public class OauthController {
 			EgovMap loginUser = new EgovMap();
 			loginUser.put("userId", String.valueOf(user.get("userId")));
 			loginUser.put("userNm", String.valueOf(user.get("userNm")));
+			// 세션 고정 공격 방어: 인증 성공 시 세션 ID를 새로 발급한다.
+			request.getSession(true);
+			request.changeSessionId();
 			request.getSession().setAttribute(LoginController.SESSION_KEY, loginUser);
 			if ("Y".equals(String.valueOf(user.get("adminYn")))) {
 				EgovMap adminUser = new EgovMap();
@@ -286,6 +289,9 @@ public class OauthController {
 			EgovMap loginUser = new EgovMap();
 			loginUser.put("userId", String.valueOf(user.get("userId")));
 			loginUser.put("userNm", String.valueOf(user.get("userNm")));
+			// 세션 고정 공격 방어: 인증 성공 시 세션 ID를 새로 발급한다.
+			request.getSession(true);
+			request.changeSessionId();
 			request.getSession().setAttribute(LoginController.SESSION_KEY, loginUser);
 			boolean isAdmin = "Y".equals(String.valueOf(user.get("adminYn")));
 			if (isAdmin) {

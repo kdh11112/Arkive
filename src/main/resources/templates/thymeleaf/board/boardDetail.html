@@ -15,6 +15,16 @@
         .board-content figure.table { overflow-x: auto; max-width: 100%; }
         .board-content table { max-width: 100%; }
         .board-content * { overflow-wrap: anywhere; }
+        /* 댓글: 1단, 로그인 사용자만 작성. 본문은 th:text로 이스케이프한다. */
+        .comment-wrap { margin-top: 8px; }
+        .comment-list { list-style: none; padding: 0; margin: 0; }
+        .comment-item { padding: 12px 0; border-bottom: 1px solid #ddd; }
+        .comment-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .comment-head span { color: #666; font-size: 13px; }
+        .comment-body { white-space: pre-wrap; overflow-wrap: anywhere; }
+        .comment-empty { padding: 16px 0; color: #666; }
+        .comment-write { display: flex; gap: 8px; margin-top: 12px; align-items: flex-start; }
+        .comment-write textarea { flex: 1; min-height: 70px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; }
     </style>
     <h2 class="heading-large" th:text="${detail != null ? detail['title'] : '게시글'}">게시글</h2>
     <div class="conts-wrap">
@@ -69,6 +79,27 @@
                 </tbody>
             </table>
         </div>
+        <div class="comment-wrap" th:if="${detail != null}">
+            <h3 class="heading-medium">댓글 <span th:text="${commentCount != null ? commentCount : 0}">0</span></h3>
+            <ul class="comment-list" th:if="${commentList != null and !commentList.isEmpty()}">
+                <li class="comment-item" th:each="c : ${commentList}">
+                    <div class="comment-head">
+                        <strong th:text="${c['registerNm']}">작성자</strong>
+                        <span th:text="${c['registDt'] != null ? #dates.format(c['registDt'], 'yyyy-MM-dd HH:mm') : ''}">2026-01-01 00:00</span>
+                        <button type="button" class="krds-btn small tertiary"
+                                th:if="${session.ADMIN_USER != null or (session.LOGIN_USER != null and #strings.equals(session.LOGIN_USER['userId'], c['register']))}"
+                                th:attr="data-comment-id=${c['commentId']}"
+                                onclick="fnDeleteComment(this)">삭제</button>
+                    </div>
+                    <div class="comment-body" th:text="${c['content']}">댓글 내용</div>
+                </li>
+            </ul>
+            <p class="comment-empty" th:if="${commentList == null or commentList.isEmpty()}">등록된 댓글이 없습니다.</p>
+            <div class="comment-write">
+                <textarea id="commentContent" maxlength="1000" rows="3" placeholder="댓글을 입력하세요. (1000자 이내)"></textarea>
+                <button type="button" id="commentSubmit" class="krds-btn medium primary" onclick="fnInsertComment()">등록</button>
+            </div>
+        </div>
         <hr>
         <div style="display: flex; justify-content: center; gap: 8px; margin-top: 12px;">
             <a th:if="${detail != null and detail['boardType'] == 'CK'}" th:href="@{/board/ckeditorList}" class="krds-btn medium secondary">목록</a>
@@ -103,6 +134,47 @@
                 var isCk = /*[[${detail != null and detail['boardType'] == 'CK'}]]*/ false;
                 location.href = isCk ? '/board/ckeditorList' : '/board/toastList';
             } else { alert(res.message || '삭제에 실패했습니다.'); }
+        });
+    }
+    // 댓글 등록. 성공 시 새로고침해 목록·건수를 서버 값으로 다시 그린다.
+    function fnInsertComment() {
+        var content = $('#commentContent').val();
+        if (!content || !content.trim()) {
+            alert('댓글 내용을 입력하세요.');
+            return;
+        }
+        var boardId = /*[[${detail != null ? detail['boardId'] : ''}]]*/ '';
+        var $btn = $('#commentSubmit');
+        if ($btn.prop('disabled')) return;
+        $btn.prop('disabled', true);
+        $.post('/board/insertComment.json', { boardId: boardId, content: content }, function(res) {
+            if (res.success) {
+                location.reload();
+            } else {
+                $btn.prop('disabled', false);
+                alert(res.message || '댓글 등록에 실패했습니다.');
+            }
+        }).fail(function() {
+            $btn.prop('disabled', false);
+            alert('댓글 등록에 실패했습니다.');
+        });
+    }
+    // 댓글 삭제. 작성자 또는 관리자에게만 버튼이 보인다.
+    function fnDeleteComment(btn) {
+        if (!confirm('댓글을 삭제하시겠습니까?')) return;
+        var commentId = btn.getAttribute('data-comment-id');
+        if (!commentId) return;
+        $(btn).prop('disabled', true);
+        $.post('/board/deleteComment.json', { commentId: commentId }, function(res) {
+            if (res.success) {
+                location.reload();
+            } else {
+                $(btn).prop('disabled', false);
+                alert(res.message || '댓글 삭제에 실패했습니다.');
+            }
+        }).fail(function() {
+            $(btn).prop('disabled', false);
+            alert('댓글 삭제에 실패했습니다.');
         });
     }
 </script>

@@ -1,0 +1,7 @@
+# 테스트 전용 템플릿. 복사 후 application-test.properties로 이름을 바꾼다.
+# main application.properties를 덮어쓰므로 테스트에 필요한 키만 둔다.
+# 대상 프로젝트의 DB 제품에 맞게 URL·드라이버·경로를 바꾼다.
+# 아래는 HSQLDB 예시다. Oracle/PostgreSQL이면 대상 datasource 키로 교체한다.
+Globals.hsql_server.DatabasePath=./target/test-db/CHANGE_ME
+Globals.hsql_server.Port=9002
+Globals.hsql_server.Url=jdbc:log4jdbc:hsqldb:hsql://127.0.0.1:9002/CHANGE_ME

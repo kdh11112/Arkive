@@ -1,15 +1,15 @@
-# 아키텍처 (가이드형 템플릿)
+# 아키텍처 (Arkive 기록)
 
-> 이식 구분: 가이드형 템플릿. 새 프로젝트에 복사한 뒤 양식만 채운다. 아래 Arkive 예시는 참고용이다.
+> 이식 구분: **Arkive 기록**. 대상 프로젝트로 복사하지 않는다. 이식용 빈 양식은 [project-template-pack.md](../portable/project-template-pack.md), 기능별 절차는 [feature-porting-sheet.md](../portable/feature-porting-sheet.md)를 쓴다.
 
-## 작성 가이드 (새 프로젝트에서 이렇게 채우기)
+## 작성 가이드 (Arkive 기록 참고)
 
 1. 진입 클래스(BootApplication), 패키지 경계(업무·공통·설정)를 적는다.
 2. 대표 1개 기능의 `Controller → Service → Mapper → XML` 흐름을 추적해 적는다.
 3. 화면 경로(Thymeleaf/JSP), Mapper XML 경로, 설정 클래스 위치를 적는다.
 4. 예약작업·외부연계가 있으면 주기·경로·소유자와 함께 적는다. 없으면 미확인으로 둔다.
 
-## 양식 (복사해서 채우기)
+## 양식 (Arkive 기록 참고)
 
 | 항목 | 내용 | 근거 (파일·확인일) |
 | --- | --- | --- |
@@ -41,6 +41,8 @@
 - Thymeleaf 화면은 `src/main/resources/templates/thymeleaf/` 아래에 있으며 레이아웃·공통 조각은 같은 디렉터리의 `layout/` 등에서 관리한다.
 - 템플릿에서 `th:replace` 조각 사용과 화면 JavaScript의 jQuery `$.ajax` 호출이 확인된다. 요청·오류 표시의 세부 동작은 대상 화면과 호출 API에서 확인한다.
 - 공통 파일 기능은 `arkive.admin.comm` 아래 Controller, Service, Mapper, 업로드/다운로드 유틸리티로 구성되어 있다.
+- 게시글 댓글: `BoardController`의 상세 조회가 `BoardService.selectCommentList/selectCommentCount`를 호출하고, `/board/insertComment.json`·`/board/deleteComment.json`이 `BoardService` → `BoardMapper` → `Board_SQL.xml`로 이어진다. 화면은 `templates/thymeleaf/board/boardDetail.html`이다.
+- 쪽지: `MessageController`(`/message`) → `MessageService`/`MessageServiceImpl` → `MessageMapper` → `Message_SQL.xml`. 화면은 `templates/thymeleaf/message/`의 목록·작성·상세이며, 수신자가 상세를 열 때 읽음 처리한다.
 - DB, Mapper, 트랜잭션 및 웹 설정은 `egovframework.example.config`에 Java Config로 존재한다.
 - Controller에 `@Valid`와 `BindingResult`를 사용하는 입력 검증 예제가 있다. 실제 변경은 해당 기능의 서버 검증 패턴을 확인한다.
 - 로깅은 Lombok `@Slf4j`와 SLF4J `LoggerFactory` 직접 사용이 함께 확인된다. 수정 시 대상 모듈의 기존 방식을 따른다.
@@ -49,6 +51,14 @@
 
 - `arkive.com.config.QuartzConfig`에서 `DBJob`을 10분 간격으로 실행하는 Trigger를 구성한다.
 - `DBJob`은 DB 덤프를 파일로 기록하는 코드를 포함한다. 스케줄 활성화, 경로, 보존 및 복구 정책은 [project-overview.md](project-overview.md)와 운영 담당자 확인을 참조한다.
+
+## 새 글 알림(SSE)
+
+- `BoardController`의 `GET /board/subscribe`가 `BoardSseService.subscribe(boardType)`를 호출하고, `SseEmitter` 연결을 30분간 유지한다.
+- 새 글 등록 성공 후 `BoardSseService.broadcast`가 해당 게시판과 `ALL` 통로로 `{boardId,title,boardType}`을 보낸다. 통로는 메모리에만 있으므로 단일 서버 기준이며, 서버 재시작 시 브라우저가 재구독한다.
+- `layout.html`은 전역 배너와 SSE 구독 스크립트를 포함하지만, 현재 `ARKIVE_SSE_ENABLED=false`라 기본 화면에서는 구독하지 않는다. 활성화하려면 `true`로 바꾸고, 페이지별 `window.ARKIVE_SSE` 선언이 layout 스크립트보다 먼저 실행되는지 확인한다.
+- 화면별 설정: `window.ARKIVE_SSE = { banner: false };`는 해당 화면에서 구독·배너를 끄고, `window.ARKIVE_SSE = { hideAfterMs: 30000 };`은 30초 뒤 배너를 자동으로 숨긴다. 기본값은 계속 표시다.
+- 역할별 발송 구조(`broadcast(..., targetRoles)`)는 있으나, 로그인·권한관리 전까지는 전체 발송만 사용한다.
 
 ## 참조와 개선 결정 (Arkive 예시)
 
@@ -70,6 +80,8 @@
 | 메인이미지 | eGov 별도 컴포넌트 | `BANNER`+`POSITION` 통합 |
 | 파일 실형식 검증 | 로드맵 Tika案 | `FileTypeUtil` 매직바이트 검사 (의존성 추가 없음) |
 | 온라인POLL 중복투표 | 로그인 전제 방식 | 세션 집합 차단 |
+| 게시글 댓글 | eGov cop/cmt 세트 | 기존 `BOARD`에 종속된 1단 댓글로 단순화(별도 게시판 마스터 미도입), 작성자/관리자 삭제 |
+| 쪽지 | eGov uss 쪽지 | `MESSAGE` 단일 테이블 + 발신/수신 삭제 플래그로 함별 소프트 삭제 |
 
 ## 확인이 필요한 점
 

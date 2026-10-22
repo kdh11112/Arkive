@@ -25,13 +25,19 @@ Arkive는 다른 프로젝트에 기능 이식을 편하게 만들기 위해 만
 - 변경 완료 증거 양식: [evidence-report-template.md](docs/ai/portable/evidence-report-template.md)
 - Verifier, Guard, Baseline, Snapshot, Runtime 확인 방법: [verification-standard.md](docs/ai/common/verification-standard.md)
 - DB 마이그레이션 공통 절차: [migration-standard.md](docs/ai/common/migration-standard.md)
+- 이식 실행 매뉴얼: [PORTING.md](PORTING.md)
+- 기능별 실행·복사 시트: [feature-porting-sheet.md](docs/ai/portable/feature-porting-sheet.md)
+- 테스트 이식 시트: [test-porting-sheet.md](docs/ai/portable/test-porting-sheet.md)
+- AI 이식 요청 방법: [ai-porting-request.md](docs/ai/portable/ai-porting-request.md)
+- 대상 프로젝트 지식 빈 양식: [project-template-pack.md](docs/ai/portable/project-template-pack.md)
 - Boot 트랙(복붙 가능): [boot-apply.md](docs/ai/boot/boot-apply.md), [test-stack-boot.md](docs/ai/boot/test-stack-boot.md)
 - 클래식 트랙(가이드형, 대상 확인): [classic-apply.md](docs/ai/classic/classic-apply.md), [test-stack-classic.md](docs/ai/classic/test-stack-classic.md)
 - 이식 시 스크립트: `verify.cmd`·`doctor.cmd`가 없으면 [scripts.md](docs/ai/portable/scripts.md) 전문으로 생성한다
 
 ### 2. 프로젝트 지식
 
-아래 문서는 Arkive에서 확인된 사실 및 미확인 항목을 관리한다. 기능 소유자, 업무 정책, 계약, 오류 코드, 환경별 운영 값은 근거가 확인될 때 갱신한다.
+아래 문서는 Arkive에서 확인된 현재 구현·분석 기록이다. **대상 프로젝트로 복사하지 않는다.**
+대상 프로젝트의 지식은 [project-template-pack.md](docs/ai/portable/project-template-pack.md)의 빈 양식으로 새로 작성한다.
 
 - 개요와 확인된 설정: [project-overview.md](docs/ai/project/project-overview.md)
 - 아키텍처와 코드 흐름: [architecture.md](docs/ai/project/architecture.md)
@@ -70,7 +76,7 @@ Arkive는 다른 프로젝트에 기능 이식을 편하게 만들기 위해 만
 별도 지시가 없어도 아래를 수행한다.
 
 1. `doctor.cmd`로 빠진 항목을 확인한다. `verify.cmd`·`doctor.cmd`가 없으면 `docs/ai/portable/scripts.md` 전문으로 생성한다.
-2. `project/` 문서의 Arkive 예시를 대상 코드 실측값으로 교체한다 (패키지·테이블·URL·메뉴·DB 제품·Globals 키).
+2. `docs/ai/project/`는 복사하지 않는다. `docs/ai/portable/project-template-pack.md`를 대상 프로젝트의 `docs/ai/project/`로 나눠 저장하고, 패키지·테이블·URL·메뉴·DB 제품·Globals 키를 실제 값으로 채운다.
 3. Boot·클래식 중 대상에 맞는 트랙만 남기고, 반대 트랙은 지운다.
 4. 코드에서 확인 안 되는 값은 `미확인`으로 두고 추측하지 않는다. 확인자는 대상 담당자로 지정한다.
 5. `verify.cmd`로 검증하고 실패하면 고친다.
@@ -84,7 +90,7 @@ Arkive는 다른 프로젝트에 기능 이식을 편하게 만들기 위해 만
 5. DB나 운영 설정을 바꾸기 전 대상 환경, 영향 범위, 데이터 보존, 복구 방법을 확인한다. 비밀값과 운영 데이터를 문서·로그·증거에 노출하지 않는다.
 6. 완료 보고에는 변경 파일, 핵심 변경, 실제 검증 결과, 사용한 버전 식별자(SHA, SVN Revision 등)와 남은 제약을 기록한다.
 7. 기존 기능을 이관할 때 Arkive의 공통 기능, 의존성, 설정, 보안 및 DB 구조를 확인한 뒤 필요한 부분만 통합한다.
-8. Arkive에서 타 프로젝트로 기능을 이식할 때는 기능별 화면·Controller·Service·Mapper/XML·SQL·의존성·설정(Globals 키 등)·DB 객체를 함께 확인하고, 대상 프로젝트의 패키지·테이블·DB 문법에 맞게 최소한만 조정한다.
+8. Arkive에서 타 프로젝트로 기능을 이식할 때는 기능별 화면·Controller·Service·Mapper/XML·SQL·의존성·설정(Globals 키 등)·DB 객체를 함께 확인하고, 대상 프로젝트의 패키지·테이블·DB 문법에 맞게 최소한만 조정한다. 기능별 실행·복사 기록은 [feature-porting-sheet.md](docs/ai/portable/feature-porting-sheet.md)에, 테스트 이식 기록은 [test-porting-sheet.md](docs/ai/portable/test-porting-sheet.md)에 남긴다.
 
 ## 품질 관문 (Quality Gates)
 

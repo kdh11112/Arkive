@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>쪽지관리</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">쪽지관리</h2>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div style="display: flex; gap: 8px;">
+            <a th:href="@{/message/inbox}" class="krds-btn medium"
+               th:classappend="${folder == 'sent'} ? ' secondary' : ' primary'">받은쪽지</a>
+            <a th:href="@{/message/sent}" class="krds-btn medium"
+               th:classappend="${folder == 'sent'} ? ' primary' : ' secondary'">보낸쪽지</a>
+        </div>
+        <a th:href="@{/message/write}" class="krds-btn medium primary">쪽지쓰기</a>
+    </div>
+
+    <form id="listForm" method="post"
+          th:action="${folder == 'sent'} ? @{/message/sent} : @{/message/inbox}">
+        <input type="hidden" id="pageIndex" name="pageIndex" th:value="${pageIndex}">
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <input type="text" name="searchKeyword" class="krds-input" style="flex: 1;"
+                   placeholder="제목·보낸사람·받는사람 검색" th:value="${searchKeyword}">
+            <button type="submit" class="krds-btn medium secondary"
+                    onclick="document.getElementById('pageIndex').value=1;">검색</button>
+        </div>
+    </form>
+
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>쪽지 목록</caption>
+            <colgroup>
+                <col style="width: 8%;">
+                <col style="width: 16%;">
+                <col>
+                <col style="width: 12%;">
+                <col style="width: 8%;">
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">번호</th>
+                <th scope="col" th:text="${folder == 'sent' ? '받는사람' : '보낸사람'}">상대방</th>
+                <th scope="col">제목</th>
+                <th scope="col">보낸일</th>
+                <th scope="col">읽음</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item, stat : ${resultList}">
+                <td th:text="${paginationInfo.totalRecordCount + 1 - ((pageIndex - 1) * paginationInfo.recordCountPerPage + stat.count)}"></td>
+                <td th:text="${folder == 'sent' ? item['receiverNm'] : item['senderNm']}"></td>
+                <td>
+                    <a th:href="@{/message/detail}" data-post
+                       th:attr="data-name='msgId',data-value=${item['msgId']}"
+                       th:text="${item['title']}"></a>
+                </td>
+                <td th:text="${item['sentDt'] != null ? #dates.format(item['sentDt'], 'yyyy-MM-dd HH:mm') : ''}"></td>
+                <td th:text="${item['readYn'] == 'Y' ? '읽음' : '안읽음'}"></td>
+            </tr>
+            <tr th:if="${resultList == null or resultList.isEmpty()}">
+                <td colspan="5">쪽지가 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="paging" class="krds-pagination w-page"
+         th:utext="${#egovKrdsPaginationRenderer.renderPagination(paginationInfo, 'messagePaging')}"></div>
+    <script>
+        function messagePaging(pageIndex) {
+            document.getElementById('pageIndex').value = pageIndex;
+            document.getElementById('listForm').submit();
+        }
+    </script>
+</div>
+</body>
+</html>

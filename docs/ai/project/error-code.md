@@ -1,6 +1,6 @@
-# 오류 처리 및 코드 체계 (가이드형 템플릿)
+# 오류 처리 및 코드 체계 (Arkive 기록)
 
-> 이식 구분: 가이드형 템플릿. 새 프로젝트에 복사한 뒤 양식만 채운다. 중앙 코드체계 없으면 없다고 명시한다.
+> 이식 구분: **Arkive 기록**. 대상 프로젝트로 복사하지 않는다. 이식용 빈 양식은 [project-template-pack.md](../portable/project-template-pack.md), 기능별 절차는 [feature-porting-sheet.md](../portable/feature-porting-sheet.md)를 쓴다.
 
 <!--
 문서 상태: 부분 미완성
@@ -14,20 +14,23 @@
 
 ## 작성 예시 (Arkive) — 아래는 참고용
 
-## 확인된 처리 구성 (Arkive 예시, 2026-10-11 코드 기준)
+## 확인된 처리 구성 (Arkive 예시, 2026-10-11·2026-10-22 코드 기준)
 
-- 중앙 레지스트리 없음. `@ControllerAdvice` 전역 처리 없음 (`SystemController.java:12`의 import는 미사용).
+- 중앙 레지스트리 없음. `@ControllerAdvice` 전역 처리 없음.
 - eGovFrame 예외 핸들러 2종(`EgovSampleExcepHndlr`, `EgovSampleOthersExcepHndlr`)은 로그(`debug`)만 남긴다.
 - `SimpleMappingExceptionResolver`는 샘플 전용 뷰(`sample/egovSampleError`)로 보낸다 (`EgovConfigWeb.java:221-232`).
 - JSON 오류 규약이 2종 혼재한다. `.json` 실패의 HTTP 상태 명시 코드는 확인되지 않았다 (기본 200으로 보이지만 선언 근거 없음).
 
 | 규약 | 형태 | 사용처 |
 | --- | --- | --- |
-| 신 | `success: true/false` + `message: e.getMessage()` | `UserManageController`, `OauthController`, `user/qna·poll·counsel` 등 |
+| 신 | `success: true/false` + `message: e.getMessage()` | `UserManageController`, `OauthController`, `BoardController`(댓글), `MessageController`, `user/qna·poll·counsel` 등 |
 | 구 | `result: "success"/"fail"` + `message` | `SystemController`, `CommCodeController` |
 
-- 예외 메시지가 그대로 `message`로 전달된다. 스택은 주지 않는다 (`ApiController.java:105` 주석 확인).
+- 예외 메시지가 그대로 `message`로 전달된다. 스택은 주지 않는다 (`ApiController.java:105` 주석 확인). 댓글·쪽지 JSON 실패는 Controller에서 HTTP 상태를 명시하지 않아 200 + `success:false`로 보이며, 인증 실패는 `AuthInterceptor`가 401 JSON을 반환한다.
+- 댓글·쪽지의 예상 검증 실패(로그인·권한·길이·중복)도 `BoardController`·`MessageController`에서 `logger.error`로 스택을 남긴다. 운영 로그에서 예상 오류와 장애를 구분하려면 로그 수준 조정이 필요하다(정책 미확인).
 - 확인된 도메인 오류 메시지: 로그인 5회 잠금 (`LoginController.java:85`), OAuth 토큰·프로필 실패 (`OauthController.java:189,221`), NICE 미계약 차단 (`NiceVerifyController.java:30`), JWT·인터셉터 401 직접 응답 (`JwtAuthFilter.java:73`, `AuthInterceptor.java:61`), 파일 다운로드 404 (`FileController.java:212` 등).
+- 게시글 댓글 메시지 예: "로그인이 필요합니다.", "게시글이 없습니다.", "댓글 내용을 입력하세요.", "댓글은 1000자 이내로 입력하세요.", "삭제 권한이 없습니다."
+- 쪽지 메시지 예: "받는 사람 아이디를 입력하세요.", "제목을 입력하세요.", "내용을 입력하세요.", "제목은 200자 이내로 입력하세요.", "내용은 4000자 이내로 입력하세요.", "자신에게는 쪽지를 보낼 수 없습니다.", "받는 사람을 찾을 수 없습니다.", "중복 제출이 감지되었습니다. 보낸쪽지함에서 발송 여부를 확인하세요.", "삭제 권한이 없습니다.", "이미 삭제된 쪽지입니다."
 - 화면 오류: `templates/thymeleaf/error/error.html` (`fail.common.msg`), `static/error/403.html`. 메시지는 `message-common*.properties` 3종(기본·ko·en).
 - 로그 상관 ID, 재시도 기준, 알림: 미확인.
 

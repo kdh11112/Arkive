@@ -69,12 +69,13 @@ public class EgovConfigDatasource implements ApplicationRunner {
             }
             hsqlDatabasePath = databaseFile.getAbsolutePath().replace('\\', '/');
 
+            int port = env.getProperty("Globals.hsql_server.Port", Integer.class, 9001);
             hsqldbServer = new Server();
             hsqldbServer.setLogWriter(null);
             hsqldbServer.setSilent(true);
             hsqldbServer.setDatabaseName(0, "ArkiveDB");
             hsqldbServer.setDatabasePath(0, hsqlDatabasePath);
-            hsqldbServer.setPort(9001); // 서버 포트 설정
+            hsqldbServer.setPort(port); // 서버 포트 설정 (Url의 포트와 일치해야 함)
             hsqldbServer.start(); // HSQLDB 시작
 
             try {
@@ -86,7 +87,7 @@ public class EgovConfigDatasource implements ApplicationRunner {
                 System.err.println("HSQLDB server startup delay interrupted.");
             }
 
-            System.out.println("HSQLDB file server started at " + hsqlDatabasePath + " on port 9001");
+            System.out.println("HSQLDB file server started at " + hsqlDatabasePath + " on port " + port);
         }
     }
 

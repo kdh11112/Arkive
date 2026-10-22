@@ -5,6 +5,8 @@ import java.util.Date;
 
 import javax.crypto.SecretKey;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -25,13 +27,22 @@ import io.jsonwebtoken.security.Keys;
 @Component
 public class JwtUtil {
 
+	protected final Logger logger = LoggerFactory.getLogger(getClass());
+
 	private final SecretKey key;
 	private final long expireSeconds;
 
-	public JwtUtil(@Value("${Globals.jwt.secret}") String secret,
+	public JwtUtil(@Value("${Globals.jwt.secret:}") String secret,
 			@Value("${Globals.jwt.expireSeconds:3600}") long expireSeconds) {
-		// 시크릿 문자열을 서명용 키로 바꾼다. 짧으면 Keys가 예외를 던진다(256비트 이상 필요).
-		this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+		if (secret == null || secret.isBlank()) {
+			// 시크릿 미설정. 기동할 때마다 임의 키를 만든다(토큰은 재기동 시 무효). 운영은 JWT_SECRET을 설정한다.
+			this.key = Jwts.SIG.HS256.key().build();
+			logger.warn("Globals.jwt.secret is empty. Generated a random key; API tokens are invalidated on restart. "
+					+ "Set JWT_SECRET in production.");
+		} else {
+			// 시크릿 문자열을 서명용 키로 바꾼다. 짧으면 Keys가 예외를 던진다(256비트 이상 필요).
+			this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+		}
 		// 토큰 유효시간(초). 없으면 3600(1시간)이 기본값이다.
 		this.expireSeconds = expireSeconds;
 	}

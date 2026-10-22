@@ -138,4 +138,62 @@
 		WHERE BOARD_ID = #{boardId}
 	</update>
 
+	<!-- 댓글 목록. 오래된 순(등록순)으로 보여준다. -->
+	<select id="selectCommentList" parameterType="string" resultType="egovMap">
+		SELECT
+			COMMENT_ID,
+			BOARD_ID,
+			CONTENT,
+			REGISTER,
+			REGISTER_NM,
+			REGIST_DT
+		FROM BOARD_COMMENT
+		WHERE BOARD_ID = #{boardId}
+		ORDER BY REGIST_DT ASC, COMMENT_ID ASC
+	</select>
+
+	<!-- 댓글 건수 -->
+	<select id="selectCommentCount" parameterType="string" resultType="int">
+		SELECT COUNT(*)
+		FROM BOARD_COMMENT
+		WHERE BOARD_ID = #{boardId}
+	</select>
+
+	<!-- 댓글 단건. 삭제 권한 확인용 -->
+	<select id="selectCommentDetail" parameterType="string" resultType="egovMap">
+		SELECT
+			COMMENT_ID,
+			BOARD_ID,
+			CONTENT,
+			REGISTER,
+			REGISTER_NM
+		FROM BOARD_COMMENT
+		WHERE COMMENT_ID = #{commentId}
+	</select>
+
+	<!-- 댓글 등록 -->
+	<insert id="insertComment" parameterType="egovMap">
+		INSERT INTO BOARD_COMMENT (
+			COMMENT_ID,
+			BOARD_ID,
+			CONTENT,
+			REGISTER,
+			REGISTER_NM,
+			REGIST_DT
+		) VALUES (
+			#{commentId},
+			#{boardId},
+			#{content},
+			#{register},
+			#{registerNm},
+			CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<!-- 댓글 삭제 -->
+	<delete id="deleteComment" parameterType="string">
+		DELETE FROM BOARD_COMMENT
+		WHERE COMMENT_ID = #{commentId}
+	</delete>
+
 </mapper>

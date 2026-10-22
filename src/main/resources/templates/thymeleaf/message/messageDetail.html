@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>쪽지 상세</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">쪽지 상세</h2>
+    <div class="conts-wrap" th:if="${detail != null}">
+        <div class="krds-table-wrap">
+            <table class="tbl row data">
+                <caption>쪽지 정보</caption>
+                <colgroup>
+                    <col style="width: 15%;">
+                    <col>
+                    <col style="width: 15%;">
+                    <col>
+                </colgroup>
+                <tbody>
+                <tr>
+                    <th scope="row">제목</th>
+                    <td colspan="3" th:text="${detail['title']}"></td>
+                </tr>
+                <tr>
+                    <th scope="row">보낸사람</th>
+                    <td th:text="${detail['senderNm']}"></td>
+                    <th scope="row">받는사람</th>
+                    <td th:text="${detail['receiverNm']}"></td>
+                </tr>
+                <tr>
+                    <th scope="row">보낸일</th>
+                    <td th:text="${detail['sentDt'] != null ? #dates.format(detail['sentDt'], 'yyyy-MM-dd HH:mm') : ''}"></td>
+                    <th scope="row">읽음</th>
+                    <td th:text="${detail['readYn'] == 'Y' ? '읽음' : '안읽음'}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="fieldset input-form" style="margin-top: 12px;">
+            <div class="form-group">
+                <div class="form-tit">내용</div>
+                <div class="form-conts">
+                    <p th:text="${detail['content']}" style="white-space: pre-wrap; overflow-wrap: anywhere;"></p>
+                </div>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
+            <a th:href="${folder == 'sent'} ? @{/message/sent} : @{/message/inbox}"
+               class="krds-btn medium secondary">목록</a>
+            <a th:href="@{/message/write}" data-post
+               th:attr="data-name='receiverId',data-value=${folder == 'inbox' ? detail['senderId'] : detail['receiverId']}"
+               class="krds-btn medium secondary">답장</a>
+            <button type="button" class="krds-btn medium tertiary" onclick="fnDeleteMessage()">삭제</button>
+        </div>
+    </div>
+    <div class="conts-wrap" th:if="${detail == null}">
+        <p>쪽지를 열람할 권한이 없거나 이미 삭제된 쪽지입니다.</p>
+        <a th:href="@{/message/inbox}" class="krds-btn medium secondary">받은쪽지함으로</a>
+    </div>
+    <script th:inline="javascript">
+        function fnDeleteMessage() {
+            if (!confirm('쪽지를 삭제하시겠습니까?')) { return; }
+            var msgId = /*[[${detail != null ? detail['msgId'] : ''}]]*/ '';
+            var folder = /*[[${folder != null ? folder : ''}]]*/ '';
+            $.ajax({
+                type: 'post',
+                url: '/message/deleteMessage.json',
+                data: { msgId: msgId, folder: folder },
+                success: function(res) {
+                    if (res.success) {
+                        location.href = folder === 'sent' ? '/message/sent' : '/message/inbox';
+                    } else {
+                        alert(res.message || '삭제에 실패했습니다.');
+                    }
+                },
+                error: function() { alert('삭제 중 오류가 발생했습니다.'); }
+            });
+        }
+    </script>
+</div>
+</body>
+</html>

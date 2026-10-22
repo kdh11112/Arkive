@@ -87,6 +87,9 @@ public class LoginController {
 				throw new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다.");
 			}
 			authService.resetFailCount(userId.trim());
+			// 세션 고정 공격 방어: 인증 성공 시 세션 ID를 새로 발급한다.
+			request.getSession(true);
+			request.changeSessionId();
 			EgovMap loginUser = new EgovMap();
 			loginUser.put("userId", String.valueOf(user.get("userId")));
 			loginUser.put("userNm", String.valueOf(user.get("userNm")));

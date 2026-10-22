@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.message.service.impl.MessageMapper">
+
+	<!-- 받은/보낸 쪽지 목록. folder=inbox|sent, 삭제 플래그가 N인 것만 보인다. -->
+	<select id="selectMessageList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			MSG_ID,
+			SENDER_ID,
+			SENDER_NM,
+			RECEIVER_ID,
+			RECEIVER_NM,
+			TITLE,
+			READ_YN,
+			READ_DT,
+			SENT_DT
+		FROM MESSAGE
+		<where>
+			<choose>
+				<when test="folder == 'sent'">
+					SENDER_ID = #{userId} AND SENDER_DEL_YN = 'N'
+				</when>
+				<otherwise>
+					RECEIVER_ID = #{userId} AND RECEIVER_DEL_YN = 'N'
+				</otherwise>
+			</choose>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR SENDER_NM LIKE '%' || #{searchKeyword} || '%'
+					OR RECEIVER_NM LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+		ORDER BY SENT_DT DESC, MSG_ID DESC
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<!-- 받은/보낸 쪽지 전체 건수 -->
+	<select id="selectMessageListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM MESSAGE
+		<where>
+			<choose>
+				<when test="folder == 'sent'">
+					SENDER_ID = #{userId} AND SENDER_DEL_YN = 'N'
+				</when>
+				<otherwise>
+					RECEIVER_ID = #{userId} AND RECEIVER_DEL_YN = 'N'
+				</otherwise>
+			</choose>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR SENDER_NM LIKE '%' || #{searchKeyword} || '%'
+					OR RECEIVER_NM LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+	</select>
+
+	<!-- 쪽지 상세. 열람 권한(발신자/수신자)은 Controller에서 확인한다. -->
+	<select id="selectMessageDetail" parameterType="string" resultType="egovMap">
+		SELECT
+			MSG_ID,
+			SENDER_ID,
+			SENDER_NM,
+			RECEIVER_ID,
+			RECEIVER_NM,
+			TITLE,
+			CONTENT,
+			READ_YN,
+			READ_DT,
+			SENT_DT,
+			SENDER_DEL_YN,
+			RECEIVER_DEL_YN
+		FROM MESSAGE
+		WHERE MSG_ID = #{msgId}
+	</select>
+
+	<!-- 수신자 조회. 존재·사용여부 확인용 -->
+	<select id="selectUser" parameterType="string" resultType="egovMap">
+		SELECT
+			USER_ID,
+			USER_NM,
+			USE_YN
+		FROM APP_USER
+		WHERE USER_ID = #{userId}
+	</select>
+
+	<!-- 쪽지 등록. 읽음·삭제 플래그는 기본값으로 시작한다. -->
+	<insert id="insertMessage" parameterType="egovMap">
+		INSERT INTO MESSAGE (
+			MSG_ID,
+			SENDER_ID,
+			SENDER_NM,
+			RECEIVER_ID,
+			RECEIVER_NM,
+			TITLE,
+			CONTENT,
+			READ_YN,
+			SENT_DT,
+			SENDER_DEL_YN,
+			RECEIVER_DEL_YN
+		) VALUES (
+			#{msgId},
+			#{senderId},
+			#{senderNm},
+			#{receiverId},
+			#{receiverNm},
+			#{title},
+			#{content},
+			'N',
+			CURRENT_TIMESTAMP,
+			'N',
+			'N'
+		)
+	</insert>
+
+	<!-- 수신자가 처음 열 때만 읽음 처리한다. -->
+	<update id="updateMessageRead" parameterType="string">
+		UPDATE MESSAGE
+		SET
+			READ_YN = 'Y',
+			READ_DT = CURRENT_TIMESTAMP
+		WHERE MSG_ID = #{msgId}
+			AND READ_YN = 'N'
+	</update>
+
+	<!-- 수신자 함에서만 삭제(소프트 삭제). 발신자 함은 유지된다. -->
+	<update id="deleteReceiverMessage" parameterType="egovMap">
+		UPDATE MESSAGE
+		SET RECEIVER_DEL_YN = 'Y'
+		WHERE MSG_ID = #{msgId}
+			AND RECEIVER_ID = #{userId}
+			AND RECEIVER_DEL_YN = 'N'
+	</update>
+
+	<!-- 발신자 함에서만 삭제(소프트 삭제). 수신자 함은 유지된다. -->
+	<update id="deleteSenderMessage" parameterType="egovMap">
+		UPDATE MESSAGE
+		SET SENDER_DEL_YN = 'Y'
+		WHERE MSG_ID = #{msgId}
+			AND SENDER_ID = #{userId}
+			AND SENDER_DEL_YN = 'N'
+	</update>
+
+</mapper>
