@@ -23,6 +23,7 @@
 | 순수 단위 | `JwtUtilTest`, `FileTypeUtilTest`, `HtmlSanitizerTest`, `MailServiceImplTest`, `BoardNotificationEventListenerTest`, `SearchServiceImplTest` | 거의 그대로 | 패키지·import·클래스명, 메일 본문·제목·URL, 이벤트 필드, 검색 요약 규칙 |
 | 인증 인터셉터 | `AuthInterceptorTest` | 수정 복사 | 세션 키, 공개 경로, 리다이렉트 URL |
 | Controller/API | `BoardCommentControllerTest`, `BoardNotificationControllerTest`, `SitemapControllerTest`, `SearchControllerTest`, `MessageControllerTest`, `PasswordResetControllerTest` | 기능과 함께 수정 복사 | URL, 응답 메시지, 세션, seed 데이터, 토큰 테이블, `@RecordApplicationEvents`, `MenuInterceptor` 모델, 검색 결과 링크 |
+| 전역 오류·헬스 | `ErrorResponseTest` | 수정 복사 | 오류 view, 상태 코드, 예외 resolver 등록, Actuator·메일 헬스 설정 |
 | Mapper/DB | `BoardMapperTest`, `MessageMapperTest`, `SearchMapperTest` | 기능과 함께 수정 복사 | 테이블·컬럼·PK, SQL 문법, seed 데이터, `BOARD_TYPE`·페이징 문법 |
 | 스모크 | `ArkiveSmokeTest` | 복사하지 않음 | 대상 앱 클래스로 새로 작성 |
 

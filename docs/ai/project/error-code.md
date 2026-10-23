@@ -14,11 +14,12 @@
 
 ## 작성 예시 (Arkive) — 아래는 참고용
 
-## 확인된 처리 구성 (Arkive 예시, 2026-10-11·2026-10-22 코드 기준)
+## 확인된 처리 구성 (Arkive 예시, 2026-10-11·2026-10-22·2026-10-24 코드 기준)
 
 - 중앙 레지스트리 없음. `@ControllerAdvice` 전역 처리 없음.
 - eGovFrame 예외 핸들러 2종(`EgovSampleExcepHndlr`, `EgovSampleOthersExcepHndlr`)은 로그(`debug`)만 남긴다.
-- `SimpleMappingExceptionResolver`는 샘플 전용 뷰(`sample/egovSampleError`)로 보낸다 (`EgovConfigWeb.java:221-232`).
+- `SimpleMappingExceptionResolver`는 `NoResourceFoundException`·`NoHandlerFoundException`을 `error/error`(404)로, 나머지 `Throwable`은 샘플 전용 뷰(`sample/egovSampleError`, 500)로 보낸다 (`EgovConfigWeb.java`).
+- 미매핑 `.json` 경로도 현재 HTML 404 뷰로 응답한다. JSON 오류 규약은 별도로 확정되지 않았다.
 - JSON 오류 규약이 2종 혼재한다. `.json` 실패의 HTTP 상태 명시 코드는 확인되지 않았다 (기본 200으로 보이지만 선언 근거 없음).
 
 | 규약 | 형태 | 사용처 |

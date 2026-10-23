@@ -25,7 +25,7 @@
 
 ## Arkive 작성 예시
 
-> 2026-10-11, 2026-10-22, 2026-10-23(메일·비밀번호 재설정·사이트맵·통합검색 포함) 저장소 검색으로 확인한 주요 코드 영역의 목록이다. 전체 기능 목록이나 조직별 소유권을 확정한 문서가 아니다. 소유자는 근거가 없어 미확인으로 둔다.
+> 2026-10-11, 2026-10-22, 2026-10-23(메일·비밀번호 재설정·사이트맵·통합검색 포함), 2026-10-24(공통 오류 응답·헬스 설정) 저장소 검색으로 확인한 주요 코드 영역의 목록이다. 전체 기능 목록이나 조직별 소유권을 확정한 문서가 아니다. 소유자는 근거가 없어 미확인으로 둔다.
 
 | 기능/영역 | 확인된 구현 위치 | 확인된 범위 | 책임자/소유권 |
 | --- | --- | --- | --- |
@@ -46,13 +46,14 @@
 | 외부포털 (사용자) | `arkive.user.board/faq/qna/poll/counsel/main.*` | 공지·자료·FAQ·Q&A·POLL·상담·메인 (`/user/**`) | 미확인 |
 | 샘플 기능 | `egovframework.example.sample.*`, `EgovSample_Sample_SQL.xml` | eGovFrame 샘플 CRUD 및 페이징 코드가 있음 | 샘플 코드, 업무 소유권 해당 없음 |
 | 시스템 설정·예약 DB 작업 | `egovframework.example.config.*`, `arkive.com.config.*` | DB·Mapper 설정, 10분 Trigger와 덤프 작업 코드가 있음 | 운영 책임자 미확인 |
+| 공통 오류·헬스 | `egovframework.example.config.EgovConfigWeb`, `application.properties` | 미매핑 URL·정적 리소스 404, `Throwable` 500, Actuator health, 메일 헬스 기본 비활성 | 미확인 |
 | 게시글 댓글 | `arkive.admin.board.web.BoardController`(댓글 API), `BoardService`/`BoardServiceImpl`, `BoardMapper`, `Board_SQL.xml`, `templates/thymeleaf/board/boardDetail.html` | 로그인 사용자 1단 댓글 목록·등록·삭제, 작성자/관리자 삭제 (`/board/insertComment.json`, `/board/deleteComment.json`) | 미확인 |
 | 공지 고정 | `arkive.admin.board.web.BoardController`, `BoardService`/`BoardServiceImpl`, `BoardMapper`, `Board_SQL.xml`, `V4__board_notice.sql`, `board/boardList.html`, `board/boardDetail.html`, `user/board/noticeList.html`, `user/board/noticeDetail.html` | CK 공지 목록 상단 정렬, 관리자 고정/해제 (`/board/updateNotice.json`), 관리·사용자 화면 '공지' 배지 | 미확인 |
 | 쪽지관리 | `arkive.admin.message.*`, `Message_SQL.xml`, `templates/thymeleaf/message/` | 받은/보낸 목록·검색·페이징·발송·상세·읽음·함별 소프트 삭제 (`/message`) | 미확인 |
 
-## 테스트 자산 현황 (2026-10-23)
+## 테스트 자산 현황 (2026-10-24)
 
-전체 102개 테스트, instruction 16.7% / branch 15.1% / line 17.6% (2026-10-23 `verify.cmd` 기준). 숫자만으로 품질을 판단하지 않고 아래처럼 기능별 검증 범위와 공백을 함께 본다.
+전체 105개 테스트, instruction 16.5% / branch 15.0% / line 17.4% (2026-10-24 `verify.cmd` 기준). 숫자만으로 품질을 판단하지 않고 아래처럼 기능별 검증 범위와 공백을 함께 본다.
 
 | 기능/영역 | 자동 테스트 | 검증 범위 | 남은 공백 |
 | --- | --- | --- | --- |
@@ -66,6 +67,7 @@
 | 파일 실형식 | `FileTypeUtilTest` 5 | 매직바이트, 확장자 위조, 허용 목록 | 업로드 경로·다운로드 권한·TUS |
 | JWT | `JwtUtilTest` 4 | 발급·검증, 시크릿 불일치, 만료·형식 오류 | 키 회전·로그아웃 블랙리스트 |
 | 로그인 인터셉터 | `AuthInterceptorTest` 5 | 공개 경로, JSON 401, 화면 redirect, 관리자 경로 | CSRF·API 필터 |
+| 공통 오류·헬스 | `ErrorResponseTest` 3 | 미매핑 URL·정적 리소스 404, 메일 비활성 시 health UP | `.json` 미매핑 경로의 JSON 오류 규약, 실제 브라우저 오류 화면 |
 | 중복 로그인 방지 | `LoginSessionRegistryTest` 5, `LoginSessionControllerTest` 1 | 사용자별 세션 교체·만료, 동일 세션 재등록, 사용자 전환, 세션 소멸 정리, 실제 로그인 2회 | 다중 인스턴스·실제 컨테이너 세션 타임아웃 |
 | 메일 발송 | `MailServiceImplTest` 10 | 기본 비활성·발신자 없음, 수신 동의 필터, 환영/재설정/공지 메일, HTML escape, 게시글당 1회 선점, 수신자 없음, SMTP 실패 무시 | 실제 SMTP 발송·반송·수신거부, 메일 템플릿, 실패 재시도, 대량 발송 정책 |
 | 비밀번호 재설정 | `PasswordResetControllerTest` 5 | 일치 시에만 토큰 발급, 1회 사용·재사용 거부, 만료 토큰, 8자·확인 불일치 검증, 60초 쿨다운, 비밀번호 변경·잠금 초기화 | IP별 요청 제한, 감사 로그, 실제 메일 링크 E2E, 운영 SMTP |

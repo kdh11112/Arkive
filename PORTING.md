@@ -98,6 +98,7 @@ Arkive 실행 → 기능 동작 확인 → 화면/JS 복사 → Controller → S
 | `application-test.properties.template` | **예** | DB 제품·URL·경로·포트 |
 | `JwtUtilTest`, `FileTypeUtilTest`, `HtmlSanitizerTest` | **예** | 패키지·import 정도 |
 | `AuthInterceptorTest` | **수정 복사** | 세션 키, 공개 경로, 리다이렉트 URL |
+| `ErrorResponseTest` | **수정 복사** | 전역 예외 resolver·오류 view·health 설정, 미매핑 URL·정적 리소스 경로 |
 | `BoardCommentControllerTest`, `MessageControllerTest` | **기능과 함께** | URL, 응답 메시지, 세션, seed 데이터 |
 | `BoardNotificationEventListenerTest`, `BoardNotificationControllerTest` | **기능과 함께** | 이벤트 클래스·리스너, 게시판 메뉴 ID, API, `@RecordApplicationEvents` |
 | `SitemapControllerTest` | **기능과 함께** | `MenuInterceptor`의 `menuList`, 세션 키, 메뉴 seed, 사이트맵 URL |
@@ -127,6 +128,7 @@ Arkive 실행 → 기능 동작 확인 → 화면/JS 복사 → Controller → S
 | 파일 경로 | `Globals.FILE_*`, `Globals.FFMPEG_PATH` | 대상 서버 경로·권한 |
 | 메일 설정 | `spring.mail.*`, `arkive.mail.enabled/from/base-url`, `MAIL_*` 환경변수 | 대상 SMTP·발신자·base URL. 테스트는 `arkive.mail.enabled=false` |
 | 비동기 실행 | `EgovConfigAsync`의 `mailTaskExecutor` | 대상 Executor·스레드 풀·종료 정책 |
+| 전역 오류·헬스 | `EgovConfigWeb`의 404/500 예외 매핑, `management.health.mail.enabled` | 오류 view·상태 코드 계약, 메일 헬스 활성화 여부 |
 | DB 포트 | `Globals.hsql_server.Port=9001` | `Globals.hsql_server.Url`의 포트와 일치 |
 | 테스트 DB | `target/test-db`, 9002 | 앱 DB와 경로·포트 분리 |
 | 테스트 세션 | `LOGIN_USER`, `ADMIN_USER`, `EgovMap` | 대상 세션 키·사용자 모델 |

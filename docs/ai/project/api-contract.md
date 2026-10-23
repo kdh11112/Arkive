@@ -97,6 +97,7 @@
 - 댓글 삭제의 관리자 예외는 세션 `ADMIN_USER`로 판정한다. 쪽지는 관리자 예외 없이 발신자/수신자 본인만 열람·삭제한다. 공지 고정은 `ADMIN_USER`가 있어야 하며 CK 게시판만 허용한다.
 - `/login/login.json` 성공 시 `LoginSessionRegistry`가 사용자별 최신 세션을 유지하고 같은 계정의 이전 세션을 `invalidate()`한다. 폼 로그인·OAuth 콜백·계정연계 모두 동일하며, 다중 인스턴스에서는 공유 세션 저장소가 필요하다.
 - 로그인 사용자의 메뉴 조회·쓰기는 `MenuPermissionInterceptor`가 컨트롤러→메뉴 매핑으로 검사한다. 거부 시 `.json`은 HTTP 403 + `{"success":false,"message":"권한이 없습니다."}`, 화면은 403 오류 페이지다. `ADMIN_YN='Y'`는 슈퍼관리자로 통과하며, `/system`·`/auth`는 기존 `AuthInterceptor` 정책상 관리자만 접근한다.
+- 매핑되지 않은 URL과 존재하지 않는 정적 리소스는 HTTP 404 + `error/error` 화면으로 응답한다. 미매핑 `.json` 경로도 현재 HTML 404를 반환하며, JSON 오류 본문 규약은 아직 확정되지 않았다.
 - 댓글·쪽지·다운로드·SSE 구독은 메뉴 CRUD 권한과 분리해 로그인 사용자 공통 기능으로 둔다. SSE는 구독 시 역할을 저장하고, `BoardNotificationEventListener`가 발송 시 `selectRoleIdsWithMenuRead` 결과와 겹치는 역할에만 보낸다.
 - `/login/findPw.json`·`/login/resetPw.json`은 성공·실패 모두 HTTP 200과 `success` 필드로 응답한다. `findPw`는 계정 불일치·SMTP 비활성·발송 실패에서도 동일한 성공 메시지를 반환하므로, 클라이언트는 메일 도착 여부를 응답만으로 판단하지 않는다.
 - 메일 발송은 `arkive.mail.enabled=true`, 유효한 `arkive.mail.from`, SMTP 설정이 모두 있어야 한다. 기본값은 비활성이며, 비활성·수신 거부·이메일 없음이면 조용히 건너뛴다. 실제 SMTP 발송·반송·수신거부 계약은 미확인이다.

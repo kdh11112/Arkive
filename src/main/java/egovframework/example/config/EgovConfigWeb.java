@@ -310,11 +310,14 @@ public class EgovConfigWeb implements WebMvcConfigurer, ApplicationContextAware 
         prop.setProperty("org.springframework.transaction.TransactionException", "sample/egovSampleError");
         prop.setProperty("org.egovframe.rte.fdl.cmmn.exception.EgovBizException", "sample/egovSampleError");
         prop.setProperty("org.springframework.security.AccessDeniedException", "sample/egovSampleError");
+        // 구체 예외 매핑이 Throwable 기본 매핑보다 우선해 미존재 URL이 404로 응답한다.
+        prop.setProperty("org.springframework.web.servlet.resource.NoResourceFoundException", "error/error");
+        prop.setProperty("org.springframework.web.servlet.NoHandlerFoundException", "error/error");
         prop.setProperty("java.lang.Throwable", "sample/egovSampleError");
 
         Properties statusCode = new Properties();
-        statusCode.setProperty("sample/egovSampleError", "400");
         statusCode.setProperty("sample/egovSampleError", "500");
+        statusCode.setProperty("error/error", "404");
 
         SimpleMappingExceptionResolver smer = new SimpleMappingExceptionResolver();
         smer.setDefaultErrorView("sample/egovSampleError");
