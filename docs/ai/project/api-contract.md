@@ -42,6 +42,7 @@
 | `/login/nice` | `admin.auth.web.NiceVerifyController` | `/start`, `/callback`, `/status.json`, `/clear.json` | GET+POST 혼합, 해제 POST |
 | `/api` | `admin.auth.web.ApiController` | `/login.json`, `/noticeList.json`, `/noticeDetail.json`, `/faqList.json` | POST 또는 GET+POST |
 | `/board` | `admin.board.web.BoardController` | `/ckeditorList`, `/toastList`, `/toastList.json`, `/ckeditorWrite`, `/toastWrite`, `/detail`, `/insertBoard.json`, `/updateBoard.json`, `/deleteBoard.json`, `/updateNotice.json`, `/insertComment.json`, `/deleteComment.json`, `/subscribe`, `/editorImageUpload.json` | 화면 GET+POST, `.json` POST, 구독 GET |
+| `/sitemap` | `admin.comm.web.SitemapController` | `/sitemap` | 화면 GET, 로그인 사용자 권한별 메뉴 트리 |
 | `/message` | `admin.message.web.MessageController` | `/inbox`, `/sent`, `/write`, `/detail`, `/insertMessage.json`, `/deleteMessage.json` | 화면 GET+POST, `.json` POST |
 | `/popup` | `admin.popup.web.PopupController` | `/popupList`, `/popupWrite`, `/activePopup.json`, `/popupImageUpload.json`, `/insertPopup.json`, `/updatePopup.json`, `/deletePopup.json` | 화면 GET+POST, `.json` POST |
 | `/banner` | `admin.banner.web.BannerController` | `/bannerList`, `/bannerWrite`, `/activeBanner.json`, `/bannerImageUpload.json`, `/insertBanner.json`, `/updateBanner.json` | 화면 GET+POST, `.json` POST |
@@ -68,7 +69,7 @@
 
 ## 추가 인벤토리
 
-- 위 표가 전체다. 2026-10-11에 29개 Controller prefix를 대조했고, 2026-10-22에 `/message`를 추가해 30개가 되었다. 2026-10-23에 `/board/updateNotice.json`, `/auth/role*`, `/login/resetPw*` 경로를 추가했다. 선언 method는 각 Controller 코드에서 확인한다.
+- 위 표가 전체다. 2026-10-11에 29개 Controller prefix를 대조했고, 2026-10-22에 `/message`를 추가해 30개가 되었다. 2026-10-23에 `/board/updateNotice.json`, `/auth/role*`, `/login/resetPw*`, `/sitemap` 경로를 추가해 31개가 되었다. 선언 method는 각 Controller 코드에서 확인한다.
 - `NiceCheckController`(`/niceExt`) 외부 계약은 연계 명세를 확인한다.
 
 ## 2026-10-22~23 코드에서 확인한 로그인·댓글·쪽지·공지 고정·메일·재설정 JSON 동작
@@ -91,7 +92,7 @@
 | `/auth/saveRole.json` | POST | 로그인 + 관리자 세션 (`/auth` 기존 정책) | `mode`(`insert`\|`update`), `roleId`(수정), `roleNm`(1~100자), `description`(0~500자), `useYn`(Y/N), `readMenuIds[]`, `writeMenuIds[]`, `userIds[]` | `success:true`, `roleId` | `success:false`, `message`; 메뉴·사용자 매핑 전체 교체, 쓰기는 조회 포함 |
 | `/auth/deleteRole.json` | POST | 로그인 + 관리자 세션 | `roleId` | `success:true` | `success:false`, `message`; `ROLE_ADMIN`·`ROLE_USER` 삭제 거부 |
 
-- `/message/**`와 `/board/insertComment.json`·`/board/deleteComment.json`·`/board/updateNotice.json`은 `AuthInterceptor`의 공개 경로가 아니므로 세션 `LOGIN_USER`가 필요하다.
+- `/message/**`, `/sitemap`, `/board/insertComment.json`·`/board/deleteComment.json`·`/board/updateNotice.json`은 `AuthInterceptor`의 공개 경로가 아니므로 세션 `LOGIN_USER`가 필요하다. `/sitemap`은 추가 메뉴 권한 매핑 없이 `MenuInterceptor`가 만든 조회 권한 메뉴만 렌더한다.
 - 댓글 삭제의 관리자 예외는 세션 `ADMIN_USER`로 판정한다. 쪽지는 관리자 예외 없이 발신자/수신자 본인만 열람·삭제한다. 공지 고정은 `ADMIN_USER`가 있어야 하며 CK 게시판만 허용한다.
 - `/login/login.json` 성공 시 `LoginSessionRegistry`가 사용자별 최신 세션을 유지하고 같은 계정의 이전 세션을 `invalidate()`한다. 폼 로그인·OAuth 콜백·계정연계 모두 동일하며, 다중 인스턴스에서는 공유 세션 저장소가 필요하다.
 - 로그인 사용자의 메뉴 조회·쓰기는 `MenuPermissionInterceptor`가 컨트롤러→메뉴 매핑으로 검사한다. 거부 시 `.json`은 HTTP 403 + `{"success":false,"message":"권한이 없습니다."}`, 화면은 403 오류 페이지다. `ADMIN_YN='Y'`는 슈퍼관리자로 통과하며, `/system`·`/auth`는 기존 `AuthInterceptor` 정책상 관리자만 접근한다.

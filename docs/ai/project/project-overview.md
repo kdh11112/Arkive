@@ -51,7 +51,7 @@
 | 메일 발송 | `spring-boot-starter-mail`, `MailAsyncService`/`MailServiceImpl`, `EgovConfigAsync`의 `mailTaskExecutor`. 게시판 공지/중요글은 `BoardNotificationEvent`/`BoardNotificationEventListener`가 SSE·메일을 분리. 기본 `arkive.mail.enabled=false`; SMTP·발신자·base URL은 환경변수 | `pom.xml`, `application.properties`, `MailServiceImpl`, `EgovConfigAsync`, `BoardNotificationEvent`, `BoardNotificationEventListener` |
 | 운영 배포 / 실서비스 DB | 미확인. 현재 로컬 설정만으로 운영 구성을 추정하지 않는다. | 운영 설정 근거 미확인 |
 
-- 2026-10-22 기준 게시판 댓글(1단)과 쪽지관리(받은/보낸, 읽음, 함별 소프트 삭제)가 구현되어 있고, 2026-10-23에 공지 고정(CK 공지 목록 상단 정렬), 중복 로그인 방지(사용자별 최신 세션 유지), 역할 기반 메뉴 권한(서버 인터셉터 강제·SSE 역할 필터), 메일 발송·비밀번호 재설정 토큰, 게시판 알림 이벤트(Mail/SSE 채널 분리)를 추가했다. 메일은 기본 비활성이며 실제 SMTP 계약과 SMS 채널은 미확인이다. 상세 위치는 [function-inventory.md](function-inventory.md), [database-schema.md](database-schema.md), [api-contract.md](api-contract.md)를 참조한다.
+- 2026-10-22 기준 게시판 댓글(1단)과 쪽지관리(받은/보낸, 읽음, 함별 소프트 삭제)가 구현되어 있고, 2026-10-23에 공지 고정(CK 공지 목록 상단 정렬), 중복 로그인 방지(사용자별 최신 세션 유지), 역할 기반 메뉴 권한(서버 인터셉터 강제·SSE 역할 필터), 메일 발송·비밀번호 재설정 토큰, 게시판 알림 이벤트(Mail/SSE 채널 분리), 로그인 사용자 권한별 읽기 전용 사이트맵을 추가했다. 메일은 기본 비활성이며 실제 SMTP 계약과 SMS 채널은 미확인이다. 상세 위치는 [function-inventory.md](function-inventory.md), [database-schema.md](database-schema.md), [api-contract.md](api-contract.md)를 참조한다.
 
 ## 주의할 실행 동작
 

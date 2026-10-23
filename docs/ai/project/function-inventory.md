@@ -25,7 +25,7 @@
 
 ## Arkive 작성 예시
 
-> 2026-10-11, 2026-10-22, 2026-10-23(메일·비밀번호 재설정 포함) 저장소 검색으로 확인한 주요 코드 영역의 목록이다. 전체 기능 목록이나 조직별 소유권을 확정한 문서가 아니다. 소유자는 근거가 없어 미확인으로 둔다.
+> 2026-10-11, 2026-10-22, 2026-10-23(메일·비밀번호 재설정·사이트맵 포함) 저장소 검색으로 확인한 주요 코드 영역의 목록이다. 전체 기능 목록이나 조직별 소유권을 확정한 문서가 아니다. 소유자는 근거가 없어 미확인으로 둔다.
 
 | 기능/영역 | 확인된 구현 위치 | 확인된 범위 | 책임자/소유권 |
 | --- | --- | --- | --- |
@@ -36,6 +36,7 @@
 | 중복 로그인 방지 | `LoginController`, `OauthController`, `LoginSessionRegistry`, `EgovConfigWeb` | 폼·OAuth 로그인 성공 시 사용자별 최신 세션만 유지, 이전 세션 만료, 로그아웃·세션 만료 시 매핑 제거 | 미확인 |
 | 사용자관리 | `arkive.admin.auth.web.UserManageController`, `templates/thymeleaf/auth/` | 목록·등록·수정·삭제·잠금해제·비번초기화 (`/auth`). 메뉴 `ME02010400` | 미확인 |
 | 권한관리 | `arkive.admin.auth.web.RoleManageController`, `PermissionService`/`PermissionServiceImpl`, `PermissionMapper`, `Permission_SQL.xml`, `MenuPermissionInterceptor`, `auth/roleList.html`, `auth/roleWrite.html`, `V5__permission.sql` | 역할 목록·등록·수정·삭제, 메뉴별 조회/쓰기, 사용자 역할 배정 (`/auth/role*`). 서버 인터셉터로 메뉴 CRUD 강제, SSE 대상 역할 조회 | 미확인 |
+| 사이트맵 | `arkive.admin.comm.web.SitemapController`, `templates/thymeleaf/comm/sitemap.html`, `layout/layout.html`, `EgovConfigWeb.MenuInterceptor` | `/sitemap` 읽기 전용 메뉴 트리, 로그인 사용자의 조회 권한 메뉴만 표시, 빈 메뉴 안내 | 미확인 (메뉴 순서·표시명 소유자) |
 | 소셜 로그인 연계 | `arkive.admin.auth.web.OauthController`, `OAUTH_LINK` | 제공자 연결·콜백·연계 (`/login/oauth`) | 미확인 |
 | NICE 본인 확인 | `NiceCheckController`(`/niceExt`), `NiceVerifyController`(`/login/nice`) | 연계·시작·콜백·상태 | 미확인 (외부 계약은 연계 명세 확인) |
 | 공통 파일 처리 | `arkive.admin.comm.web.FileController`, `FileService*`, `File_SQL.xml` | 멀티파트·TUS·드롭존 업로드, 다운로드, 삭제 (`/system`, `/file`) | 미확인 |
@@ -50,7 +51,7 @@
 
 ## 테스트 자산 현황 (2026-10-23)
 
-전체 89개 테스트, instruction 16.0% / branch 14.5% / line 16.8% (2026-10-23 `verify.cmd` 기준). 숫자만으로 품질을 판단하지 않고 아래처럼 기능별 검증 범위와 공백을 함께 본다.
+전체 92개 테스트, instruction 16.2% / branch 14.7% / line 17.1% (2026-10-23 `verify.cmd` 기준). 숫자만으로 품질을 판단하지 않고 아래처럼 기능별 검증 범위와 공백을 함께 본다.
 
 | 기능/영역 | 자동 테스트 | 검증 범위 | 남은 공백 |
 | --- | --- | --- | --- |
@@ -68,6 +69,7 @@
 | 메일 발송 | `MailServiceImplTest` 10 | 기본 비활성·발신자 없음, 수신 동의 필터, 환영/재설정/공지 메일, HTML escape, 게시글당 1회 선점, 수신자 없음, SMTP 실패 무시 | 실제 SMTP 발송·반송·수신거부, 메일 템플릿, 실패 재시도, 대량 발송 정책 |
 | 비밀번호 재설정 | `PasswordResetControllerTest` 5 | 일치 시에만 토큰 발급, 1회 사용·재사용 거부, 만료 토큰, 8자·확인 불일치 검증, 60초 쿨다운, 비밀번호 변경·잠금 초기화 | IP별 요청 제한, 감사 로그, 실제 메일 링크 E2E, 운영 SMTP |
 | 권한관리 | `PermissionMapperTest` 4, `RoleManageControllerTest` 7, `MenuPermissionControllerTest` 5 | V5 시드·기본 사용자 역할의 시스템·업로드 메뉴 제외·메뉴 권한 OR 집계·SSE 역할 조회, 역할 CRUD/저장, 잘못된 사용자 배정 거부, 사용자 삭제 시 역할 매핑 정리, 조회 전용·쓰기·역할 없음·관리자 우회·사이드바 필터 | 화면 수동 확인, 시스템관리 메뉴의 관리자 전용 정책, 다중 역할 조합, 역할 변경 즉시 반영(세션 캐시 없음), 새 Controller는 `MenuPermissionInterceptor` 매핑 필수(누락 시 검사 제외), `/user`·`/api` 공개 경로는 기존 정책 유지 |
+| 사이트맵 | `SitemapControllerTest` 3 | 로그인 필요, 관리자 메뉴 트리 렌더, 역할 없는 사용자의 빈 메뉴 안내 | 메뉴명·순서 변경, 권한별 실제 화면 수동 확인, 외부 사용자 전용 사이트맵 |
 | 나머지 기능 | 없음 | - | 로그인·잠금·OAuth·NICE, 파일, 엑셀, POLL 중복, 상담 비밀번호, Q&A 상태 등 |
 
 기능을 추가하거나 이식할 때는 [feature-porting-sheet.md](../portable/feature-porting-sheet.md)에 실행·복사·검증 결과를 남기고, 이 표의 테스트 자산도 함께 갱신한다.

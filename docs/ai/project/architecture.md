@@ -45,6 +45,7 @@
 - 쪽지: `MessageController`(`/message`) → `MessageService`/`MessageServiceImpl` → `MessageMapper` → `Message_SQL.xml`. 화면은 `templates/thymeleaf/message/`의 목록·작성·상세이며, 수신자가 상세를 열 때 읽음 처리한다.
 - 로그인 세션: `LoginSessionRegistry`가 사용자별 최신 세션 1개를 유지한다. `LoginController`·`OauthController`가 로그인 성공 시 등록하고, 같은 사용자의 새 로그인은 이전 세션을 만료시킨다. `EgovConfigWeb`이 `HttpSessionListener`로 등록해 세션 만료 시 매핑을 지운다. 단일 인스턴스 메모리 기준이다.
 - 권한: `APP_USER_ROLE`로 사용자에 역할을 배정하고 `APP_ROLE_MENU`가 역할별 메뉴 조회·쓰기를 정의한다. `PermissionServiceImpl`이 여러 역할을 메뉴별 OR로 합치고, `MenuPermissionInterceptor`가 컨트롤러→메뉴 매핑으로 READ/WRITE를 서버에서 강제한다. `MenuInterceptor`는 같은 조회 권한으로 사이드바를 필터링한다. `ADMIN_YN='Y'`는 슈퍼관리자로 통과하며 `/system`·`/auth`는 기존 `AuthInterceptor` 정책상 관리자만 접근한다.
+- 사이트맵: `SitemapController`(`/sitemap`)가 `MenuInterceptor`의 `menuList`를 화면에 넘겨 읽기 전용 메뉴 트리를 렌더한다. 별도 권한 필터를 다시 구현하지 않으므로 사이드바와 같은 메뉴만 보인다. 메뉴가 없는 컨트롤러라 `MenuPermissionInterceptor` 매핑에는 넣지 않으며, 로그인 검사만 `AuthInterceptor`가 담당한다.
 - 메일: `LoginController`·`OauthController`(환영), `UserManageController`(관리자 등록), `LoginController`(비밀번호 재설정)가 `MailAsyncService`를 호출한다. 게시판 공지/중요글은 `BoardController`가 `BoardNotificationEvent`를 발행하고 `BoardNotificationEventListener`가 `MailAsyncService`로 넘긴다. `EgovConfigAsync`의 `mailTaskExecutor`가 요청 스레드에서 분리하고, `MailServiceImpl`이 `arkive.mail.enabled`·발신자·수신 동의를 재검사한 뒤 `JavaMailSender`로 보낸다. 공지/중요글은 `BOARD.MAIL_SENT_YN` 선점으로 1회만 발송한다.
 - 비밀번호 재설정: `AuthServiceImpl.issuePasswordResetToken`이 32바이트 난수를 URL-safe Base64로 만들고 SHA-256 해시만 `PASSWORD_RESET_TOKEN`에 저장한다. `LoginController`의 `/login/resetPw`가 토큰 유효성(30분·1회)을 확인하고 `AuthServiceImpl.resetPasswordByToken`이 비밀번호 변경·잠금 해제·세션 만료를 처리한다.
 - DB, Mapper, 트랜잭션 및 웹 설정은 `egovframework.example.config`에 Java Config로 존재한다.
@@ -108,6 +109,7 @@
 
 - 기능 단위 복사: 화면(Thymeleaf+JS) → Controller → Service/Impl → Mapper 인터페이스 → Mapper XML → `db/versions` SQL → `application.properties`·Globals 키 → `pom.xml` 의존성 순서로 가져간다.
 - 메일·비밀번호 재설정을 복사할 때는 `spring-boot-starter-mail`, `EgovConfigAsync`, `MailService`/`MailAsyncService`/`MailServiceImpl`, `AuthServiceImpl`의 토큰 메서드, `LoginController`의 화면·API, `V6__mail_notification.sql`, `spring.mail.*`·`arkive.mail.*` 설정을 함께 가져간다. 게시판 알림은 `BoardNotificationEvent`·`BoardNotificationEventListener`와 해당 테스트도 함께 복사한다. 실제 SMTP 값은 대상 환경변수로 주입한다.
+- 사이트맵을 복사할 때는 `SitemapController`, `templates/thymeleaf/comm/sitemap.html`, `layout/layout.html`의 링크, `MenuInterceptor`의 `menuList` 모델, `SitemapControllerTest`를 함께 가져간다. 메뉴 테이블과 권한 필터가 없는 프로젝트에서는 먼저 메뉴·권한 구조를 준비한다.
 - 프로젝트명·패키지(`arkive.*`)·테이블명·파일 경로·DB 문법은 대상 프로젝트에 맞게 최소한만 바꾼다.
 
 수정 전 실제 관련 호출 흐름과 설정을 검색한다. 이 요약만으로 보안 적용이나 기능 소유권을 단정하지 않는다.

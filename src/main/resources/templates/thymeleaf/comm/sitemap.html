@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>사이트맵</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">사이트맵</h2>
+    <p class="text">로그인 사용자가 조회 권한을 가진 메뉴만 표시됩니다.</p>
+
+    <div class="krds-table-wrap" th:if="${menuList != null and !menuList.isEmpty()}">
+        <table class="tbl col">
+            <caption>사이트맵</caption>
+            <colgroup>
+                <col style="width: 20%;">
+                <col>
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">대메뉴</th>
+                <th scope="col">하위 메뉴</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="menu : ${menuList}" th:if="${menu['grad'] == 2}">
+                <th scope="row" th:text="${menu['menuNm']}">대메뉴</th>
+                <td>
+                    <ul class="sitemap-list">
+                        <li th:each="subMenu : ${menuList}"
+                            th:if="${subMenu['grad'] == 3 and subMenu['parent'] == menu['menuId']}">
+                            <a th:href="${subMenu['menuCours']}" th:text="${subMenu['menuNm']}">하위 메뉴</a>
+                        </li>
+                    </ul>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p th:if="${menuList == null or menuList.isEmpty()}">표시할 메뉴가 없습니다.</p>
+</div>
+</body>
+</html>

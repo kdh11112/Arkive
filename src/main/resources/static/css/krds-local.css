@@ -511,3 +511,16 @@
   .user-main-bottom { grid-template-columns: 1fr; }
   .user-main-bottom-panel { padding: 20px; }
 }
+
+/* [추가] 사이트맵 하위 메뉴 목록. [기본] 사이트맵 전용 목록 규격 없음. */
+.sitemap-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sitemap-list a {
+  text-decoration: underline;
+}
