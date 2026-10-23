@@ -26,6 +26,16 @@
                 <div class="form-tit"><label for="password">비밀번호</label></div>
                 <div class="form-conts"><input type="password" id="password" class="krds-input" maxlength="50" autocomplete="new-password"></div>
             </div>
+            <div class="form-group">
+                <div class="form-tit">메일 수신</div>
+                <div class="form-conts">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 14px;">
+                        <input type="checkbox" id="mailYn">
+                        <span>공지·중요글 알림 메일 수신에 동의합니다. (신규 생성 시, 선택)</span>
+                    </label>
+                    <p style="font-size: 12px; color: #666; margin-top: 4px;">소셜 계정의 이메일이 없으면 동의할 수 없습니다.</p>
+                </div>
+            </div>
         </div>
         <div style="display: flex; gap: 8px; margin-top: 12px;">
             <button type="button" class="krds-btn medium secondary" style="flex: 1;" onclick="fnLink('link')">기존 계정 연결</button>
@@ -38,7 +48,7 @@
         $.ajax({
             type: 'post',
             url: '/login/oauth/link.json',
-            data: { mode: mode, userId: $('#userId').val(), userNm: $('#userNm').val(), password: $('#password').val() },
+            data: { mode: mode, userId: $('#userId').val(), userNm: $('#userNm').val(), password: $('#password').val(), mailYn: $('#mailYn').is(':checked') ? 'Y' : 'N' },
             success: function(res) {
                 if (res.success) { location.href = res.isAdmin ? '/dashboard' : '/user/userMain'; }
                 else { alert(res.message || '연결에 실패했습니다.'); }

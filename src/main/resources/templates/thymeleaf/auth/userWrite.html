@@ -28,6 +28,15 @@
                 <div class="form-tit"><label for="email">이메일</label></div>
                 <div class="form-conts"><input type="text" id="email" class="krds-input" maxlength="100" th:value="${detail != null ? detail['email'] : ''}"></div>
             </div>
+            <div class="form-group">
+                <div class="form-tit">메일 수신</div>
+                <div class="form-conts">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 14px;">
+                        <input type="checkbox" id="mailYn" th:checked="${detail != null and detail['mailYn'] == 'Y'}">
+                        <span>공지·중요글 알림 메일 수신에 동의</span>
+                    </label>
+                </div>
+            </div>
             <div class="form-group" th:if="${detail != null}">
                 <div class="form-tit"><label for="useYn">사용여부</label></div>
                 <div class="form-conts">
@@ -73,10 +82,16 @@
             $('#userNm').focus();
             return;
         }
+        var mailYn = $('#mailYn').is(':checked') ? 'Y' : 'N';
+        if (mailYn === 'Y' && ($('#email').val() || '').trim() === '') {
+            alert('메일 수신에 동의하려면 이메일을 입력하세요.');
+            $('#email').focus();
+            return;
+        }
         $.ajax({
             type: 'post',
             url: isUpdate ? '/auth/updateUser.json' : '/auth/insertUser.json',
-            data: { userId: userId, password: $('#password').val(), userNm: $('#userNm').val(), email: $('#email').val(), useYn: $('#useYn').val(), adminYn: $('#adminYn').val(), 'egovframework.double.submit.preventer.parameter.name': $('#doubleSubmitToken').val() },
+            data: { userId: userId, password: $('#password').val(), userNm: $('#userNm').val(), email: $('#email').val(), mailYn: mailYn, useYn: $('#useYn').val(), adminYn: $('#adminYn').val(), 'egovframework.double.submit.preventer.parameter.name': $('#doubleSubmitToken').val() },
             beforeSend: function() { window._userSaving = true; $('#saveBtn').prop('disabled', true); },
             complete: function() { window._userSaving = false; $('#saveBtn').prop('disabled', false); },
             success: function(res) {

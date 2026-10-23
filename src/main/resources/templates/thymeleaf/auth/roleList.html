@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>권한관리</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">권한관리</h2>
+
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+        <a th:href="@{/auth/roleWrite}" class="krds-btn medium primary">역할 등록</a>
+    </div>
+
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>역할 목록</caption>
+            <colgroup>
+                <col style="width: 16%;">
+                <col style="width: 16%;">
+                <col>
+                <col style="width: 9%;">
+                <col style="width: 9%;">
+                <col style="width: 9%;">
+                <col style="width: 14%;">
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">역할 ID</th>
+                <th scope="col">역할명</th>
+                <th scope="col">설명</th>
+                <th scope="col">사용자</th>
+                <th scope="col">메뉴</th>
+                <th scope="col">사용</th>
+                <th scope="col">관리</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${resultList}">
+                <td>
+                    <a th:href="@{/auth/roleWrite(roleId=${item['roleId']})}" th:text="${item['roleId']}">ROLE</a>
+                </td>
+                <td th:text="${item['roleNm']}">역할명</td>
+                <td th:text="${item['description']}">설명</td>
+                <td th:text="${item['userCnt']}">0</td>
+                <td th:text="${item['menuCnt']}">0</td>
+                <td th:text="${item['useYn']}">Y</td>
+                <td>
+                    <a th:href="@{/auth/roleWrite(roleId=${item['roleId']})}" class="krds-btn xsmall secondary">수정</a>
+                    <button type="button" class="krds-btn xsmall danger"
+                            th:if="${item['roleId'] != 'ROLE_ADMIN' and item['roleId'] != 'ROLE_USER'}"
+                            th:attr="data-id=${item['roleId']}" onclick="fnDeleteRole(this)">삭제</button>
+                    <span th:if="${item['roleId'] == 'ROLE_ADMIN' or item['roleId'] == 'ROLE_USER'}"
+                          class="krds-btn xsmall text">기본</span>
+                </td>
+            </tr>
+            <tr th:if="${resultList == null or resultList.isEmpty()}">
+                <td colspan="7">등록된 역할이 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+<script>
+    function fnDeleteRole(btn) {
+        if (!confirm('역할을 삭제하시겠습니까?\n이 역할을 배정한 사용자는 다른 역할이 없으면 메뉴 접근이 제한됩니다.')) {
+            return;
+        }
+        $.ajax({
+            type: 'post',
+            url: '/auth/deleteRole.json',
+            data: { roleId: btn.getAttribute('data-id') },
+            success: function (res) {
+                if (res.success) {
+                    location.reload();
+                } else {
+                    alert(res.message || '삭제에 실패했습니다.');
+                }
+            },
+            error: function () {
+                alert('삭제 중 오류가 발생했습니다.');
+            }
+        });
+    }
+</script>
+</div>
+</body>
+</html>

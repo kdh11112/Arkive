@@ -28,6 +28,7 @@
             <caption>공지사항 목록</caption>
             <colgroup>
                 <col style="width: 10%;">
+                <col style="width: 8%;">
                 <col>
                 <col style="width: 15%;">
                 <col style="width: 10%;">
@@ -35,6 +36,7 @@
             <thead>
             <tr>
                 <th scope="col">번호</th>
+                <th scope="col">고정</th>
                 <th scope="col">제목</th>
                 <th scope="col">등록일</th>
                 <th scope="col">조회수</th>
@@ -43,12 +45,22 @@
             <tbody>
             <tr th:each="item, stat : ${resultList}">
                 <td th:text="${paginationInfo.totalRecordCount + 1 - ((pageIndex - 1) * paginationInfo.recordCountPerPage + stat.count)}"></td>
-                <td><a th:href="@{/board/detail}" data-post th:attr="data-name='boardId',data-value=${item['boardId']}" th:text="${item['title']}"></a></td>
+                <td>
+                    <button type="button" class="krds-btn small tertiary"
+                            th:attr="data-board-id=${item['boardId']},data-notice-yn=${item['noticeYn'] == 'Y' ? 'N' : 'Y'}"
+                            onclick="fnToggleNotice(this)"
+                            th:text="${item['noticeYn'] == 'Y' ? '해제' : '고정'}">고정</button>
+                </td>
+                <td>
+                    <span class="krds-badge" th:if="${item['noticeYn'] == 'Y'}">공지</span>
+                    <span class="krds-badge" th:if="${item['importantYn'] == 'Y'}">중요</span>
+                    <a th:href="@{/board/detail}" data-post th:attr="data-name='boardId',data-value=${item['boardId']}" th:text="${item['title']}"></a>
+                </td>
                 <td th:text="${item['registDt'] != null ? #dates.format(item['registDt'], 'yyyy-MM-dd') : ''}"></td>
                 <td th:text="${item['viewCnt']}"></td>
             </tr>
             <tr th:if="${resultList == null or resultList.isEmpty()}">
-                <td colspan="4">게시글이 없습니다.</td>
+                <td colspan="5">게시글이 없습니다.</td>
             </tr>
             </tbody>
         </table>
@@ -92,6 +104,26 @@
     function boardPaging(pageIndex) {
         document.getElementById('pageIndex').value = pageIndex;
         document.getElementById('listForm').submit();
+    }
+
+    // 공지 고정/해제. CK 목록에서만 버튼이 보인다. 서버에서 관리자·CK 여부를 다시 확인한다.
+    function fnToggleNotice(btn) {
+        var boardId = btn.getAttribute('data-board-id');
+        var noticeYn = btn.getAttribute('data-notice-yn');
+        if (!boardId) return;
+        if (!confirm(noticeYn === 'Y' ? '이 글을 공지로 고정하시겠습니까?' : '공지 고정을 해제하시겠습니까?')) return;
+        $(btn).prop('disabled', true);
+        $.post('/board/updateNotice.json', { boardId: boardId, noticeYn: noticeYn }, function(res) {
+            if (res.success) {
+                location.reload();
+            } else {
+                $(btn).prop('disabled', false);
+                alert(res.message || '고정 상태 변경에 실패했습니다.');
+            }
+        }).fail(function() {
+            $(btn).prop('disabled', false);
+            alert('고정 상태 변경에 실패했습니다.');
+        });
     }
 
     // 토스트 커서 목록. GTEMS AJAX 목록과 같은 결이다.
@@ -143,7 +175,7 @@
                     toastSeq++;
                     buffer.push('<tr>');
                     buffer.push('<td>' + toastSeq + '</td>');
-                    buffer.push('<td><a href="javascript:void(0)" onclick="toastGoDetail(\'' + item.boardId + '\')">' + escapeHtml(item.title) + '</a></td>');
+                    buffer.push('<td>' + (item.importantYn === 'Y' ? '<span class="krds-badge">중요</span> ' : '') + '<a href="javascript:void(0)" onclick="toastGoDetail(\'' + item.boardId + '\')">' + escapeHtml(item.title) + '</a></td>');
                     buffer.push('<td>' + escapeHtml(item.registDt) + '</td>');
                     buffer.push('<td>' + item.viewCnt + '</td>');
                     buffer.push('</tr>');

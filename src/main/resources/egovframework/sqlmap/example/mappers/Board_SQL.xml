@@ -3,12 +3,15 @@
 <mapper namespace="arkive.admin.board.service.impl.BoardMapper">
 
 	<!-- 게시판 목록. boardType(CK/TOAST)으로 분리한다. 페이징은 LIMIT/OFFSET(HSQLDB) 기준이다. -->
+	<!-- NOTICE_YN='Y'(공지 고정)를 먼저 보여준다. TOAST는 커서 쿼리를 쓰므로 이 정렬의 영향을 받지 않는다. -->
 	<select id="selectBoardList" parameterType="egovMap" resultType="egovMap">
 		SELECT
 			BOARD_ID,
 			BOARD_TYPE,
 			TITLE,
 			ATCH_FILE_GRPID,
+			NOTICE_YN,
+			IMPORTANT_YN,
 			VIEW_CNT,
 			REGIST_DT,
 			REGISTER
@@ -17,7 +20,7 @@
 		<if test="searchKeyword != null and searchKeyword != ''">
 			AND TITLE LIKE '%' || #{searchKeyword} || '%'
 		</if>
-		ORDER BY REGIST_DT DESC
+		ORDER BY NOTICE_YN DESC, IMPORTANT_YN DESC, REGIST_DT DESC, BOARD_ID DESC
 		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
 	</select>
 
@@ -28,6 +31,7 @@
 			BOARD_ID,
 			BOARD_TYPE,
 			TITLE,
+			IMPORTANT_YN,
 			VIEW_CNT,
 			REGIST_DT,
 			REGISTER
@@ -83,6 +87,10 @@
 			TITLE,
 			CONTENT,
 			ATCH_FILE_GRPID,
+			NOTICE_YN,
+			IMPORTANT_YN,
+			MAIL_SENT_YN,
+			MAIL_SENT_DT,
 			VIEW_CNT,
 			REGIST_DT,
 			REGISTER
@@ -98,6 +106,8 @@
 			TITLE,
 			CONTENT,
 			ATCH_FILE_GRPID,
+			NOTICE_YN,
+			IMPORTANT_YN,
 			VIEW_CNT,
 			REGIST_DT,
 			REGISTER
@@ -107,6 +117,8 @@
 			#{title},
 			#{content},
 			#{atchFileGrpid},
+			COALESCE(#{noticeYn}, 'N'),
+			COALESCE(#{importantYn}, 'N'),
 			0,
 			CURRENT_TIMESTAMP,
 			#{register}
@@ -120,6 +132,9 @@
 			TITLE = #{title},
 			CONTENT = #{content},
 			ATCH_FILE_GRPID = #{atchFileGrpid},
+			<if test="importantYn != null">
+				IMPORTANT_YN = #{importantYn},
+			</if>
 			UPDT_DT = CURRENT_TIMESTAMP,
 			UPDUSR = #{updusr}
 		WHERE BOARD_ID = #{boardId}
@@ -136,6 +151,25 @@
 		UPDATE BOARD
 		SET VIEW_CNT = COALESCE(VIEW_CNT, 0) + 1
 		WHERE BOARD_ID = #{boardId}
+	</update>
+
+	<!-- 공지 고정/해제. CK(공지사항)만 대상으로 한다. 조건에 BOARD_TYPE을 함께 두어 타 게시판 오변경을 막는다. -->
+	<update id="updateNoticeYn" parameterType="egovMap">
+		UPDATE BOARD
+		SET NOTICE_YN = #{noticeYn},
+			UPDT_DT = CURRENT_TIMESTAMP,
+			UPDUSR = #{updusr}
+		WHERE BOARD_ID = #{boardId}
+			AND BOARD_TYPE = 'CK'
+	</update>
+
+	<!-- 게시글 알림 1회 선점. 동시에 여러 요청이 와도 UPDATE에 성공한 한 요청만 발송한다. -->
+	<update id="claimBoardMail" parameterType="string">
+		UPDATE BOARD
+		SET MAIL_SENT_YN = 'Y',
+			MAIL_SENT_DT = CURRENT_TIMESTAMP
+		WHERE BOARD_ID = #{boardId}
+			AND MAIL_SENT_YN = 'N'
 	</update>
 
 	<!-- 댓글 목록. 오래된 순(등록순)으로 보여준다. -->

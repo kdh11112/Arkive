@@ -28,7 +28,8 @@
 
 - 예외 메시지가 그대로 `message`로 전달된다. 스택은 주지 않는다 (`ApiController.java:105` 주석 확인). 댓글·쪽지 JSON 실패는 Controller에서 HTTP 상태를 명시하지 않아 200 + `success:false`로 보이며, 인증 실패는 `AuthInterceptor`가 401 JSON을 반환한다.
 - 댓글·쪽지의 예상 검증 실패(로그인·권한·길이·중복)도 `BoardController`·`MessageController`에서 `logger.error`로 스택을 남긴다. 운영 로그에서 예상 오류와 장애를 구분하려면 로그 수준 조정이 필요하다(정책 미확인).
-- 확인된 도메인 오류 메시지: 로그인 5회 잠금 (`LoginController.java:85`), OAuth 토큰·프로필 실패 (`OauthController.java:189,221`), NICE 미계약 차단 (`NiceVerifyController.java:30`), JWT·인터셉터 401 직접 응답 (`JwtAuthFilter.java:73`, `AuthInterceptor.java:61`), 파일 다운로드 404 (`FileController.java:212` 등).
+- 확인된 도메인 오류 메시지: 로그인 5회 잠금 (`LoginController.java:85`), OAuth 토큰·프로필 실패 (`OauthController.java:189,221`), NICE 미계약 차단 (`NiceVerifyController.java:30`), JWT·인터셉터 401 직접 응답 (`JwtAuthFilter.java:73`, `AuthInterceptor.java:61`), 메뉴 권한 403 (`MenuPermissionInterceptor`), 파일 다운로드 404 (`FileController.java:212` 등).
+- 메뉴 권한 거부: `.json` 요청은 HTTP 403 + `{"success":false,"message":"권한이 없습니다."}`, 화면 요청은 `sendError(403)`으로 처리한다. 로그인하지 않은 요청은 `AuthInterceptor`가 401 JSON 또는 로그인 화면 redirect를 담당한다.
 - 게시글 댓글 메시지 예: "로그인이 필요합니다.", "게시글이 없습니다.", "댓글 내용을 입력하세요.", "댓글은 1000자 이내로 입력하세요.", "삭제 권한이 없습니다."
 - 쪽지 메시지 예: "받는 사람 아이디를 입력하세요.", "제목을 입력하세요.", "내용을 입력하세요.", "제목은 200자 이내로 입력하세요.", "내용은 4000자 이내로 입력하세요.", "자신에게는 쪽지를 보낼 수 없습니다.", "받는 사람을 찾을 수 없습니다.", "중복 제출이 감지되었습니다. 보낸쪽지함에서 발송 여부를 확인하세요.", "삭제 권한이 없습니다.", "이미 삭제된 쪽지입니다."
 - 화면 오류: `templates/thymeleaf/error/error.html` (`fail.common.msg`), `static/error/403.html`. 메시지는 `message-common*.properties` 3종(기본·ko·en).

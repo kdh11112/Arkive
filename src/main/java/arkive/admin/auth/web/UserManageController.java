@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import arkive.admin.auth.service.AuthService;
+import arkive.admin.auth.service.PermissionService;
 import arkive.admin.comm.web.CommUtil;
+import arkive.admin.mail.service.MailAsyncService;
 import egovframework.com.cmm.util.EgovDoubleSubmitHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,7 +42,16 @@ public class UserManageController {
 	@Resource
 	private PasswordEncoder passwordEncoder;
 
+	@Resource(name = "permissionService")
+	private PermissionService permissionService;
+
+	@Resource(name = "mailAsyncService")
+	private MailAsyncService mailAsyncService;
+
 	private CommUtil cmmUtil = new CommUtil();
+
+	private static final java.util.regex.Pattern EMAIL_PATTERN =
+			java.util.regex.Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
 	private static final String TEMP_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
 
@@ -99,6 +110,20 @@ public class UserManageController {
 		}
 	}
 
+	private String checkEmail(String email, String mailYn) {
+		String value = email == null ? "" : email.trim();
+		if ("Y".equals(mailYn) && value.isEmpty()) {
+			throw new IllegalArgumentException("메일 수신에 동의하려면 이메일을 입력하세요.");
+		}
+		if (!value.isEmpty() && !EMAIL_PATTERN.matcher(value).matches()) {
+			throw new IllegalArgumentException("이메일 형식이 올바르지 않습니다.");
+		}
+		if (value.length() > 100) {
+			throw new IllegalArgumentException("이메일은 100자 이내로 입력하세요.");
+		}
+		return value.isEmpty() ? null : value;
+	}
+
 	@Operation(summary = "사용자 등록")
 	@RequestMapping(value = "/insertUser.json", method = RequestMethod.POST)
 	@ResponseBody
@@ -127,12 +152,19 @@ public class UserManageController {
 			if (authService.selectLoginUser(userId) != null) {
 				throw new IllegalArgumentException("이미 등록된 아이디입니다.");
 			}
+			String mailYn = "Y".equals(cmmUtil.convertHtml(request, "mailYn")) ? "Y" : "N";
 			EgovMap param = new EgovMap();
 			param.put("userId", userId);
 			param.put("password", passwordEncoder.encode(password));
 			param.put("userNm", userNm.trim());
-			param.put("email", cmmUtil.convertHtml(request, "email"));
+			param.put("email", checkEmail(cmmUtil.convertHtml(request, "email"), mailYn));
+			param.put("mailYn", mailYn);
 			authService.insertUser(param);
+			// 관리자가 역할을 따로 배정하지 않아도 최소 기본 역할은 갖게 한다.
+			permissionService.assignDefaultRole(userId);
+			if ("Y".equals(mailYn)) {
+				mailAsyncService.sendWelcome(userId);
+			}
 			result.put("success", true);
 		} catch (Exception e) {
 			logger.error("insertUser failed", e);
@@ -155,7 +187,9 @@ public class UserManageController {
 				throw new IllegalArgumentException("이름을 입력하세요.");
 			}
 			param.put("userNm", userNm.trim());
-			param.put("email", cmmUtil.convertHtml(request, "email"));
+			String mailYn = "Y".equals(cmmUtil.convertHtml(request, "mailYn")) ? "Y" : "N";
+			param.put("email", checkEmail(cmmUtil.convertHtml(request, "email"), mailYn));
+			param.put("mailYn", mailYn);
 			String useYn = cmmUtil.convertHtml(request, "useYn");
 			param.put("useYn", "N".equals(useYn) ? "N" : "Y");
 			String adminYn = cmmUtil.convertHtml(request, "adminYn");

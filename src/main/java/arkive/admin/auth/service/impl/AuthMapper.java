@@ -38,4 +38,14 @@ public interface AuthMapper {
 	EgovMap selectOauthLink(EgovMap egovMap) throws Exception;
 
 	void insertOauthLink(EgovMap egovMap) throws Exception;
+
+	java.sql.Timestamp selectLatestPasswordResetDt(String userId) throws Exception;
+
+	void deleteUnusedPasswordResetTokens(String userId) throws Exception;
+
+	void insertPasswordResetToken(EgovMap egovMap) throws Exception;
+
+	EgovMap selectValidPasswordResetToken(String tokenHash) throws Exception;
+
+	int markPasswordResetTokenUsed(String tokenHash) throws Exception;
 }

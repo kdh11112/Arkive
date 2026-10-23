@@ -88,7 +88,7 @@
                     archiveSeq++;
                     buffer.push('<tr>');
                     buffer.push('<td>' + archiveSeq + '</td>');
-                    buffer.push('<td><a href="javascript:void(0)" onclick="archiveGoDetail(\'' + item.boardId + '\')">' + escapeHtml(item.title) + '</a></td>');
+                    buffer.push('<td>' + (item.importantYn === 'Y' ? '<span class="krds-badge">중요</span> ' : '') + '<a href="javascript:void(0)" onclick="archiveGoDetail(\'' + item.boardId + '\')">' + escapeHtml(item.title) + '</a></td>');
                     buffer.push('<td>' + escapeHtml(item.registDt) + '</td>');
                     buffer.push('<td>' + item.viewCnt + '</td>');
                     buffer.push('</tr>');

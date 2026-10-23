@@ -46,14 +46,21 @@ main 설정을 덮어쓰므로 테스트에 필요한 키만 둔다.
 | `ArkiveSmokeTest` | 1 | 컨텍스트·MyBatis 배선 | 대상에서 새로 작성 |
 | `BoardMapperTest` | 3 | 게시판 CRUD, 댓글, cascade | 높음(스키마·SQL) |
 | `BoardCommentControllerTest` | 3 | 댓글 인증·검증·삭제 권한 | 중간(URL·메시지·세션) |
+| `BoardNoticeMapperTest` | 2 | 공지 고정 정렬·해제·CK 외 거부 | 높음(스키마·SQL) |
+| `BoardNoticeControllerTest` | 4 | 공지 고정 인증·관리자 권한·입력 검증·목록 렌더링 | 중간(URL·메시지·세션) |
 | `MessageMapperTest` | 2 | 받은/보낸함, 읽음, 소프트 삭제, 검색 | 높음(스키마·SQL) |
 | `MessageControllerTest` | 4 | 쪽지 인증·중복제출·검증·권한 | 중간(URL·메시지·세션) |
 | `HtmlSanitizerTest` | 6 | XSS 허용/차단 | 낮음(거의 그대로) |
 | `FileTypeUtilTest` | 5 | 매직바이트·확장자 위조 | 낮음(거의 그대로) |
 | `JwtUtilTest` | 4 | JWT 발급·검증, 시크릿 불일치·만료·형식 오류 | 낮음(거의 그대로) |
+| `LoginSessionRegistryTest` | 5 | 사용자별 세션 교체·만료, 사용자 전환, 세션 소멸 정리 | 낮음(세션 키만 변경) |
+| `LoginSessionControllerTest` | 1 | 실제 로그인 2회 시 이전 세션 만료 | 중간(로그인 URL·seed 계정) |
 | `AuthInterceptorTest` | 5 | 공개 경로, JSON 401, 화면 redirect, 관리자 경로 | 중간(세션·경로) |
+| `PermissionMapperTest` | 4 | V5 역할 시드, 사용자 메뉴 권한 집계, 기본 사용자 역할의 시스템·업로드 메뉴 제외, SSE 대상 역할 조회 | 높음(스키마·SQL) |
+| `RoleManageControllerTest` | 7 | 권한관리 화면, 역할·메뉴·사용자 저장, 필수값, 잘못된 사용자 배정 거부, 기본 역할 삭제 거부, 사용자 삭제 시 역할 매핑 정리 | 중간(URL·메시지·세션) |
+| `MenuPermissionControllerTest` | 5 | 조회 전용/쓰기 역할, 역할 없음 거부, 관리자 우회, 사이드바 필터 | 중간(URL·메시지·세션) |
 
-합계 33개. 전체 커버리지는 instruction 9.1%, branch 6.4%, line 10.0%로 아직 낮다.
+합계 61개. 전체 커버리지는 instruction 13.3%, branch 11.2%, line 14.0%로 아직 낮다.
 JaCoCo 게이트는 검증된 일부 클래스만 강제한다.
 
 ## 5. 실행

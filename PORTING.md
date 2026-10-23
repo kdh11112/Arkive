@@ -100,6 +100,8 @@ Arkive 실행 → 기능 동작 확인 → 화면/JS 복사 → Controller → S
 | `AuthInterceptorTest` | **수정 복사** | 세션 키, 공개 경로, 리다이렉트 URL |
 | `BoardCommentControllerTest`, `MessageControllerTest` | **기능과 함께** | URL, 응답 메시지, 세션, seed 데이터 |
 | `BoardMapperTest`, `MessageMapperTest` | **기능과 함께** | 테이블·컬럼·PK, SQL 문법, seed 데이터 |
+| `LoginSessionRegistryTest`, `LoginSessionControllerTest` | **기능과 함께** | 세션 키, 로그인 URL, seed 계정, 단일/다중 인스턴스 세션 정책 |
+| `PermissionMapperTest`, `RoleManageControllerTest`, `MenuPermissionControllerTest` | **기능과 함께** | 역할·메뉴 ID, 관리자 판정, 403 응답, 사이드바 메뉴, seed 역할 |
 | `ArkiveSmokeTest` | **아니오** | 대상에서 새로 작성 |
 | `pom.xml` JaCoCo `includes` | **예** | 대상 클래스명으로 교체 |
 

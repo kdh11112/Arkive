@@ -77,6 +77,16 @@ public class BoardServiceImpl extends EgovAbstractServiceImpl implements BoardSe
 	}
 
 	@Override
+	public int updateNoticeYn(EgovMap egovMap) throws Exception {
+		return boardMapper.updateNoticeYn(egovMap);
+	}
+
+	@Override
+	public int claimBoardMail(String boardId) throws Exception {
+		return boardMapper.claimBoardMail(boardId);
+	}
+
+	@Override
 	public EgovMap selectPrevOne(EgovMap egovMap) throws Exception {
 		return boardMapper.selectPrevOne(egovMap);
 	}

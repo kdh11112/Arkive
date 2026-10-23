@@ -22,6 +22,16 @@
                 <div class="form-tit"><label for="title">제목</label></div>
                 <div class="form-conts"><input type="text" id="title" class="krds-input" th:value="${detail != null ? detail['title'] : ''}"></div>
             </div>
+            <div class="form-group" th:if="${isAdmin}">
+                <div class="form-tit">중요글</div>
+                <div class="form-conts">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 14px;">
+                        <input type="checkbox" id="importantYn" th:checked="${detail != null and detail['importantYn'] == 'Y'}">
+                        <span>중요글로 지정하고 메일 알림을 보냅니다. (게시글당 1회)</span>
+                    </label>
+                    <p style="font-size: 12px; color: #666; margin-top: 4px;">메일 수신에 동의한 사용자에게만 발송되며, 이후 수정해도 다시 발송되지 않습니다.</p>
+                </div>
+            </div>
             <div class="form-group">
                 <div class="form-tit"><label for="editor">내용 (HWP에서 복사 후 Ctrl+V, 이미지는 에디터에 바로 붙여넣기)</label></div>
                 <div class="form-conts">
@@ -129,7 +139,7 @@
         $.ajax({
             type: 'post',
             url: isUpdate ? '/board/updateBoard.json' : '/board/insertBoard.json',
-            data: { boardId: boardId, boardType: 'CK', title: title, content: ckEditor ? ckEditor.getData() : '', atchFileGrpid: '', 'egovframework.double.submit.preventer.parameter.name': $('#doubleSubmitToken').val() },
+            data: { boardId: boardId, boardType: 'CK', title: title, content: ckEditor ? ckEditor.getData() : '', atchFileGrpid: '', importantYn: $('#importantYn').is(':checked') ? 'Y' : 'N', 'egovframework.double.submit.preventer.parameter.name': $('#doubleSubmitToken').val() },
             beforeSend: function() { window._boardSaving = true; $('#saveBtn').prop('disabled', true); },
             complete: function() { window._boardSaving = false; $('#saveBtn').prop('disabled', false); },
             success: function(res) {

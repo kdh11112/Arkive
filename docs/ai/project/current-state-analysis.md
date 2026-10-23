@@ -15,7 +15,7 @@
 완료 기준: 분석 범위의 각 기능에 호출자·사전조건·처리·결과·오류·근거가 작성되고 미확인 동작이 별도 표시되어 있다.
 -->
 
-> 이 문서는 현재 저장소 구현에서 관찰한 동작 흐름을 기록한다. 과거 운영 시스템의 동작, 업무 의도 또는 승인된 정책을 뜻하지 않는다. 저장소 분석 시점: 2026-09-25, 2026-10-22 보강.
+> 이 문서는 현재 저장소 구현에서 관찰한 동작 흐름을 기록한다. 과거 운영 시스템의 동작, 업무 의도 또는 승인된 정책을 뜻하지 않는다. 저장소 분석 시점: 2026-09-25, 2026-10-22, 2026-10-23 보강.
 
 ## 작성 예시 (Arkive) — 아래는 참고용
 
@@ -23,11 +23,15 @@
 
 | 영역 | 코드에서 확인한 흐름 | 확인된 출처 | 추가 확인 필요 |
 | --- | --- | --- | --- |
+| 로그인·세션 | `/login/login.json` 성공 시 세션 ID를 새로 발급하고 `LOGIN_USER`·`ADMIN_USER`를 저장한 뒤 `LoginSessionRegistry`에 등록한다. 같은 사용자로 다시 로그인하면 이전 세션이 만료된다. OAuth 콜백·계정연계도 같은 레지스트리를 사용한다. | `LoginController`, `OauthController`, `LoginSessionRegistry`, `EgovConfigWeb` | 기존 로그인 거부 방식, 다중 인스턴스 공유 세션, 세션 타임아웃 실제 동작 |
 | 메뉴 관리 | `/system/menuList` 화면에서 Controller가 Service를 호출하고 Mapper/XML로 조회·등록·수정·삭제를 연결한다. | `SystemController`, `SystemServiceImpl`, `SystemMapper`, `System_SQL.xml` | 화면 호출 상세, 인증/권한, 메뉴 정책, 오류 계약 |
 | 파일 처리 | 공통 FileController가 업로드·목록·다운로드·삭제 및 TUS 경로를 제공하고 파일 Service/Mapper 및 파일 저장 경로 설정을 사용한다. | `FileController`, `FileServiceImpl`, `File_SQL.xml`, `application.properties` | 화면별 호출 관계, 파일 접근 권한, 보존·삭제 정책, 외부 연계 |
-| DB 초기화/마이그레이션 | Spring SQL 초기화는 꺼져 있다. 애플리케이션 시작 시 `SCHEMA_MIGRATION`에 없는 `db/versions/V1__baseline.sql`, `V2__board_comment.sql`, `V3__message.sql`을 숫자 순으로 실행한다. 2026-10-11에 구 체인을 단일 V1으로 합쳤고, 2026-10-22에 V2·V3을 추가했다. | `application.properties`, `EgovConfigDatasource`, `src/main/resources/db/versions/*.sql` | 운영 DB 제품·버전과 백업/복구 절차 |
+| DB 초기화/마이그레이션 | Spring SQL 초기화는 꺼져 있다. 애플리케이션 시작 시 `SCHEMA_MIGRATION`에 없는 `db/versions/V1__baseline.sql`, `V2__board_comment.sql`, `V3__message.sql`, `V4__board_notice.sql`, `V5__permission.sql`을 숫자 순으로 실행한다. 2026-10-11에 구 체인을 단일 V1으로 합쳤고, 2026-10-22에 V2·V3, 2026-10-23에 V4·V5를 추가했다. | `application.properties`, `EgovConfigDatasource`, `src/main/resources/db/versions/*.sql` | 운영 DB 제품·버전과 백업/복구 절차 |
 | 게시글 댓글 | 게시글 상세에서 댓글 목록·건수를 조회한다. 로그인 사용자는 `/board/insertComment.json`으로 등록하고, 작성자 또는 관리자만 `/board/deleteComment.json`으로 삭제한다. 댓글은 1단 평문 저장 후 `th:text`로 출력하며 게시글 삭제 시 cascade된다. | `BoardController`, `BoardServiceImpl`, `BoardMapper`, `Board_SQL.xml`, `V2__board_comment.sql`, `board/boardDetail.html` | 댓글 수정·신고·차단 정책, 관리자 판정 범위, 알림 연계 |
 | 쪽지관리 | `/message/inbox`·`/sent`에서 로그인 사용자 기준 목록·검색·페이징, `/message/write`에서 수신자 존재·사용여부 확인 후 발송, `/message/detail`에서 발신자/수신자 본인 확인 후 수신자 읽음 처리, `/message/deleteMessage.json`에서 함별 소프트 삭제. | `MessageController`, `MessageServiceImpl`, `MessageMapper`, `Message_SQL.xml`, `V3__message.sql`, `templates/thymeleaf/message/*` | 쪽지 보존·파기 정책, 수신자 삭제 후 발신자 표시 정책, 메일·알림 연계 |
+| 공지 고정 | CK 목록은 `NOTICE_YN DESC, REGIST_DT DESC, BOARD_ID DESC`로 정렬한다. 관리자 화면에서 `/board/updateNotice.json`으로 고정/해제하며, 서버가 관리자 세션과 CK 여부를 다시 확인한다. 관리·사용자 목록과 상세는 `NOTICE_YN='Y'`일 때 '공지' 배지를 보여준다. | `BoardController`, `BoardServiceImpl`, `BoardMapper`, `Board_SQL.xml`, `V4__board_notice.sql`, `board/boardList.html`, `user/board/noticeList.html` | 고정 개수 제한·우선순위 정책, TOAST 확장 여부, 수동 화면 확인 |
+| 메뉴 권한 | `PermissionServiceImpl.selectUserMenuPermissions`가 `APP_USER_ROLE`→`APP_ROLE_MENU`를 사용자별로 조회해 여러 역할을 메뉴별 OR로 합친다. `MenuPermissionInterceptor`는 컨트롤러→메뉴 매핑으로 GET/조회성 POST는 READ, 쓰기성 POST는 READ+WRITE를 검사하고, `ADMIN_YN` 세션은 통과시킨다. 거부 시 `.json`은 403 JSON, 화면은 403 오류다. `MenuInterceptor`는 같은 READ 권한으로 사이드바를 필터링한다. | `PermissionServiceImpl`, `Permission_SQL.xml`, `MenuPermissionInterceptor`, `EgovConfigWeb`, `V5__permission.sql` | `/system`·`/auth` 관리자 전용 정책과 역할 부여의 관계, 메뉴 매핑 누락, 역할 변경 즉시 반영 여부(캐시 없음), 수동 화면 확인 |
+| SSE 역할 필터 | `/board/subscribe`가 로그인 세션의 역할을 저장하고, 새 글 등록 시 `selectRoleIdsWithMenuRead`로 해당 게시판 메뉴의 조회 역할을 구해 `broadcast(..., targetRoles)`로 겹치는 통로에만 보낸다. 역할이 없거나 대상 역할이 비면 발송하지 않는다. | `BoardController`, `BoardSseService`, `Permission_SQL.xml`, `layout.html` | SSE 기본 비활성(`ARKIVE_SSE_ENABLED=false`), 다중 인스턴스 브로커, 화면 수동 확인 |
 | 레거시 초기화 SQL | `sampledb.sql`, `baseline_schema.sql`은 2026-10-11에 삭제했다. `db/data.sql`은 DBJob 덤프 대상 표시용 주석 파일로 남았다. | `application.properties`, `src/main/resources/db/data.sql` | 실제 서버 파일 권한·출력 위치, 백업 보관/복구 정책 |
 | 예약 DB 작업 | Quartz 설정이 `DBJob`을 10분마다 실행하도록 Trigger를 선언하고, Job은 HSQLDB `SCRIPT` 명령에 `/db/data.sql` 경로를 전달한다. 이 절대 경로가 저장소의 `src/main/resources/db/data.sql`을 뜻한다고 보장되지 않는다. | `QuartzConfig`, `DBJob`, `src/main/resources/db/data.sql` | 실제 서버 파일 권한·출력 위치, 백업 보관/복구 정책 |
 | eGovFrame 샘플 | Controller, Service, Mapper/XML, 샘플 CRUD 및 페이지 처리 코드가 있다. V1 baseline이 `SAMPLE`, `IDS`와 기본 레코드를 준비한다. | `egovframework.example.sample.*`, `EgovSample_Sample_SQL.xml`, `db/versions/V1__baseline.sql` | 실제 업무 사용 여부 |

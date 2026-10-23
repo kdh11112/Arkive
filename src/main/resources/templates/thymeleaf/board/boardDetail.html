@@ -26,7 +26,11 @@
         .comment-write { display: flex; gap: 8px; margin-top: 12px; align-items: flex-start; }
         .comment-write textarea { flex: 1; min-height: 70px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; }
     </style>
-    <h2 class="heading-large" th:text="${detail != null ? detail['title'] : '게시글'}">게시글</h2>
+    <h2 class="heading-large">
+        <span class="krds-badge" th:if="${detail != null and detail['noticeYn'] == 'Y'}">공지</span>
+        <span class="krds-badge" th:if="${detail != null and detail['importantYn'] == 'Y'}">중요</span>
+        <span th:text="${detail != null ? detail['title'] : '게시글'}">게시글</span>
+    </h2>
     <div class="conts-wrap">
         <div class="krds-table-wrap" th:if="${detail != null}">
             <table class="tbl row data">

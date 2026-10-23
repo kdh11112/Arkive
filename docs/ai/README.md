@@ -91,13 +91,13 @@
 | 1차 공통 규칙 | common 5 + portable 6. 기술·작업 방식이 바뀌면 갱신 |
 | Boot/클래식 트랙 | Boot 2종 적용됨(코드 실측). 클래식 2종은 관례 기준, 대상에서 확인 |
 | Arkive 기록 | project 9종. 복사 금지, 구현·분석 근거로 유지 |
-| 테스트 | JUnit5 33개 통과, JaCoCo 게이트는 검증된 일부 클래스만 강제, GitHub Actions `verify` 추가 |
+| 테스트 | JUnit5 61개 통과, JaCoCo 게이트는 검증된 일부 클래스만 강제, GitHub Actions `verify` 추가 |
 | 3차·4차 | 도구·Runbook은 대상 프로젝트에서 필요할 때 작성 |
 
 ## 테스트 현황
 
-- 전체: 33개 테스트 통과 (`ArkiveSmokeTest`, `BoardMapperTest`, `BoardCommentControllerTest`, `MessageMapperTest`, `MessageControllerTest`, `HtmlSanitizerTest`, `FileTypeUtilTest`, `JwtUtilTest`, `AuthInterceptorTest`)
-- 커버리지: instruction 9.1%, branch 6.4% (전체 19k LOC 기준). **아직 낮다.**
+- 전체: 61개 테스트 통과 (`ArkiveSmokeTest`, `BoardMapperTest`, `BoardCommentControllerTest`, `BoardNoticeMapperTest`, `BoardNoticeControllerTest`, `MessageMapperTest`, `MessageControllerTest`, `HtmlSanitizerTest`, `FileTypeUtilTest`, `JwtUtilTest`, `LoginSessionRegistryTest`, `LoginSessionControllerTest`, `AuthInterceptorTest`, `PermissionMapperTest`, `RoleManageControllerTest`, `MenuPermissionControllerTest`)
+- 커버리지: instruction 13.3%, branch 11.2% (전체 19k LOC 기준). **아직 낮다.**
 - JaCoCo `check`는 `HtmlSanitizer`, `FileTypeUtil`, `JwtUtil`, `AuthInterceptor`, `MessageController`, `MessageServiceImpl`, `BoardServiceImpl`만 검사한다.
 - 테스트 DB는 `target/test-db`, 포트 9002를 써서 앱(9001) 실행 중에도 돈다.
 - 상세: [test-stack-boot.md](boot/test-stack-boot.md)

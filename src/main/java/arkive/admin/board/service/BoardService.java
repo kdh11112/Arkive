@@ -30,6 +30,10 @@ public interface BoardService {
 
 	void updateViewCnt(String boardId) throws Exception;
 
+	int updateNoticeYn(EgovMap egovMap) throws Exception;
+
+	int claimBoardMail(String boardId) throws Exception;
+
 	List<EgovMap> selectCommentList(String boardId) throws Exception;
 
 	int selectCommentCount(String boardId) throws Exception;

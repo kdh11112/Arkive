@@ -1,6 +1,7 @@
 package arkive.admin.board.web;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,12 +26,14 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import arkive.admin.auth.service.PermissionService;
 import arkive.admin.auth.web.LoginController;
 import arkive.admin.board.service.BoardService;
 import arkive.admin.board.service.BoardSseService;
 import arkive.admin.comm.service.FileService;
 import arkive.admin.comm.web.CommUtil;
 import arkive.admin.comm.web.HtmlSanitizer;
+import arkive.admin.mail.service.MailAsyncService;
 import egovframework.com.cmm.util.EgovDoubleSubmitHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -61,6 +64,12 @@ public class BoardController {
 
 	@Resource
 	private BoardSseService boardSseService;
+
+	@Resource(name = "permissionService")
+	private PermissionService permissionService;
+
+	@Resource(name = "mailAsyncService")
+	private MailAsyncService mailAsyncService;
 
 	private CommUtil cmmUtil = new CommUtil();
 
@@ -155,6 +164,7 @@ public class BoardController {
 				Map<String, Object> item = new HashMap<>();
 				item.put("boardId", String.valueOf(r.get("boardId")));
 				item.put("title", String.valueOf(r.get("title")));
+				item.put("importantYn", "Y".equals(String.valueOf(r.get("importantYn"))) ? "Y" : "N");
 				item.put("viewCnt", r.get("viewCnt"));
 				Object dt = r.get("registDt");
 				item.put("registDt", dt instanceof Date ? fmt.format((Date) dt) : "");
@@ -184,6 +194,8 @@ public class BoardController {
 			}
 		}
 		model.put("boardType", "CK");
+		// 중요글 지정은 메일 알림을 유발하므로 관리자에게만 노출한다. 서버에서도 다시 검사한다.
+		model.put("isAdmin", isAdmin(request));
 		// 이중등록방지 토큰 발급. CK/TOAST 화면 동시 사용 대비 key 분리.
 		model.put("doubleSubmitToken", EgovDoubleSubmitHelper.setToken(request.getSession(), "BOARD_CK"));
 		return "board/boardWriteCk";
@@ -201,6 +213,8 @@ public class BoardController {
 			}
 		}
 		model.put("boardType", "TOAST");
+		// 중요글 지정은 메일 알림을 유발하므로 관리자에게만 노출한다. 서버에서도 다시 검사한다.
+		model.put("isAdmin", isAdmin(request));
 		// 이중등록방지 토큰 발급. CK/TOAST 화면 동시 사용 대비 key 분리.
 		model.put("doubleSubmitToken", EgovDoubleSubmitHelper.setToken(request.getSession(), "BOARD_TOAST"));
 		return "board/boardWriteToast";
@@ -267,6 +281,11 @@ public class BoardController {
 				throw new IllegalArgumentException("제목을 입력하세요.");
 			}
 			param.put("title", title.trim());
+			String importantYn = cmmUtil.convertHtml(request, "importantYn");
+			if ("Y".equals(importantYn) && !isAdmin(request)) {
+				throw new IllegalStateException("관리자만 중요글을 지정할 수 있습니다.");
+			}
+			param.put("importantYn", "Y".equals(importantYn) ? "Y" : "N");
 			// XSS 정제. 에디터 HTML은 살리되 script·비디오외 iframe·이벤트 속성을 제거한다.
 			String content = request.getParameter("content") == null ? "" : request.getParameter("content");
 			param.put("content", htmlSanitizer.sanitizeBoardContent(content));
@@ -284,8 +303,23 @@ public class BoardController {
 			result.put("success", true);
 			result.put("boardId", param.get("boardId"));
 			result.put("boardType", boardType);
-			// 새 글 알림. 구독 중인 목록 화면에 {boardId,title}을 쏜다.
-			boardSseService.broadcast(boardType, String.valueOf(param.get("boardId")), String.valueOf(param.get("title")));
+			// 새 글 알림. 해당 게시판 메뉴를 조회할 수 있는 역할의 구독자에게만 서버에서 필터해 보낸다.
+			try {
+				String menuId = "CK".equals(boardType) ? "ME02030100" : "ME02030200";
+				Set<String> targetRoles = permissionService.selectRoleIdsWithMenuRead(menuId);
+				boardSseService.broadcast(boardType, String.valueOf(param.get("boardId")),
+						String.valueOf(param.get("title")), targetRoles);
+			} catch (Exception e) {
+				// 알림 실패가 게시글 등록 실패로 번지지 않게 분리한다.
+				logger.warn("board SSE broadcast skipped", e);
+			}
+			if ("Y".equals(importantYn)) {
+				try {
+					mailAsyncService.sendBoardNotification(String.valueOf(param.get("boardId")));
+				} catch (Exception e) {
+					logger.warn("board mail dispatch skipped", e);
+				}
+			}
 		} catch (Exception e) {
 			logger.error("insertBoard failed", e);
 			result.put("success", false);
@@ -301,27 +335,94 @@ public class BoardController {
 		Map<String, Object> result = new HashMap<>();
 		try {
 			EgovMap param = new EgovMap();
-			param.put("boardId", cmmUtil.convertHtml(request, "boardId"));
+			String boardId = cmmUtil.convertHtml(request, "boardId");
+			EgovMap before = boardService.selectBoardDetail(boardId);
+			if (before == null) {
+				throw new IllegalArgumentException("게시글이 없습니다.");
+			}
+			param.put("boardId", boardId);
 			String title = cmmUtil.convertHtml(request, "title");
 			if (title == null || title.trim().isEmpty()) {
 				throw new IllegalArgumentException("제목을 입력하세요.");
 			}
 			param.put("title", title.trim());
+			// 중요글은 메일 알림을 유발하므로 관리자만 변경한다. 일반 사용자의 수정 요청은
+			// 기존 값을 그대로 보존해 권한 상승을 막는다.
+			String importantYn = isAdmin(request)
+					? ("Y".equals(cmmUtil.convertHtml(request, "importantYn")) ? "Y" : "N")
+					: ("Y".equals(String.valueOf(before.get("importantYn"))) ? "Y" : "N");
+			param.put("importantYn", importantYn);
 			// XSS 정제. 에디터 HTML은 살리되 script·비디오외 iframe·이벤트 속성을 제거한다.
 			String content = request.getParameter("content") == null ? "" : request.getParameter("content");
 			param.put("content", htmlSanitizer.sanitizeBoardContent(content));
 			String grpid = cmmUtil.convertHtml(request, "atchFileGrpid");
 			if (grpid == null || grpid.isEmpty()) {
-				EgovMap detail = boardService.selectBoardDetail(String.valueOf(param.get("boardId")));
-				grpid = detail == null || detail.get("atchFileGrpid") == null ? null
-						: String.valueOf(detail.get("atchFileGrpid"));
+				grpid = before.get("atchFileGrpid") == null ? null
+						: String.valueOf(before.get("atchFileGrpid"));
 			}
 			param.put("atchFileGrpid", grpid);
 			param.put("updusr", "SYSTEM");
 			boardService.updateBoard(param);
+			if ("Y".equals(importantYn) && !"Y".equals(String.valueOf(before.get("importantYn")))) {
+				try {
+					mailAsyncService.sendBoardNotification(boardId);
+				} catch (Exception e) {
+					logger.warn("board mail dispatch skipped", e);
+				}
+			}
 			result.put("success", true);
 		} catch (Exception e) {
 			logger.error("updateBoard failed", e);
+			result.put("success", false);
+			result.put("message", e.getMessage());
+		}
+		return result;
+	}
+
+	@Operation(summary = "공지 고정/해제 (관리자, CK 공지사항만)")
+	@RequestMapping(value = "/updateNotice.json", method = RequestMethod.POST)
+	@ResponseBody
+	public Map<String, Object> updateNotice(HttpServletRequest request) {
+		Map<String, Object> result = new HashMap<>();
+		try {
+			// 목록 버튼은 관리자 화면에서만 보이지만, 서버에서 권한을 다시 확인한다.
+			if (!isAdmin(request)) {
+				throw new IllegalStateException("관리자만 고정할 수 있습니다.");
+			}
+			String boardId = cmmUtil.convertHtml(request, "boardId");
+			String noticeYn = cmmUtil.convertHtml(request, "noticeYn");
+			if (boardId == null || boardId.isEmpty()) {
+				throw new IllegalArgumentException("게시글 ID가 없습니다.");
+			}
+			if (!"Y".equals(noticeYn) && !"N".equals(noticeYn)) {
+				throw new IllegalArgumentException("고정 값이 올바르지 않습니다.");
+			}
+			EgovMap detail = boardService.selectBoardDetail(boardId);
+			if (detail == null) {
+				throw new IllegalArgumentException("게시글이 없습니다.");
+			}
+			// 공지 고정은 CK(공지사항) 목록에만 적용한다. 자료실(TOAST)은 커서 목록이라 제외한다.
+			if (!"CK".equals(String.valueOf(detail.get("boardType")))) {
+				throw new IllegalArgumentException("공지사항만 고정할 수 있습니다.");
+			}
+			EgovMap param = new EgovMap();
+			param.put("boardId", boardId);
+			param.put("noticeYn", noticeYn);
+			param.put("updusr", "SYSTEM");
+			if (boardService.updateNoticeYn(param) == 0) {
+				throw new IllegalStateException("고정 상태를 변경하지 못했습니다.");
+			}
+			if ("Y".equals(noticeYn)) {
+				try {
+					mailAsyncService.sendBoardNotification(boardId);
+				} catch (Exception e) {
+					logger.warn("board mail dispatch skipped", e);
+				}
+			}
+			result.put("success", true);
+			result.put("noticeYn", noticeYn);
+		} catch (Exception e) {
+			logger.error("updateNotice failed", e);
 			result.put("success", false);
 			result.put("message", e.getMessage());
 		}
@@ -467,7 +568,18 @@ public class BoardController {
 	@RequestMapping(value = "/subscribe", method = RequestMethod.GET)
 	@ResponseBody
 	public SseEmitter subscribe(HttpServletRequest request) {
-		return boardSseService.subscribe(cmmUtil.convertHtml(request, "boardType"));
+		String boardType = cmmUtil.convertHtml(request, "boardType");
+		Set<String> roles = Collections.emptySet();
+		EgovMap loginUser = getLoginUser(request);
+		if (loginUser != null) {
+			try {
+				roles = new HashSet<>(
+						permissionService.selectUserRoleIds(String.valueOf(loginUser.get("userId"))));
+			} catch (Exception e) {
+				logger.warn("board SSE role lookup failed", e);
+			}
+		}
+		return boardSseService.subscribe(boardType, roles);
 	}
 
 	/**

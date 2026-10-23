@@ -43,6 +43,8 @@
 - 공통 파일 기능은 `arkive.admin.comm` 아래 Controller, Service, Mapper, 업로드/다운로드 유틸리티로 구성되어 있다.
 - 게시글 댓글: `BoardController`의 상세 조회가 `BoardService.selectCommentList/selectCommentCount`를 호출하고, `/board/insertComment.json`·`/board/deleteComment.json`이 `BoardService` → `BoardMapper` → `Board_SQL.xml`로 이어진다. 화면은 `templates/thymeleaf/board/boardDetail.html`이다.
 - 쪽지: `MessageController`(`/message`) → `MessageService`/`MessageServiceImpl` → `MessageMapper` → `Message_SQL.xml`. 화면은 `templates/thymeleaf/message/`의 목록·작성·상세이며, 수신자가 상세를 열 때 읽음 처리한다.
+- 로그인 세션: `LoginSessionRegistry`가 사용자별 최신 세션 1개를 유지한다. `LoginController`·`OauthController`가 로그인 성공 시 등록하고, 같은 사용자의 새 로그인은 이전 세션을 만료시킨다. `EgovConfigWeb`이 `HttpSessionListener`로 등록해 세션 만료 시 매핑을 지운다. 단일 인스턴스 메모리 기준이다.
+- 권한: `APP_USER_ROLE`로 사용자에 역할을 배정하고 `APP_ROLE_MENU`가 역할별 메뉴 조회·쓰기를 정의한다. `PermissionServiceImpl`이 여러 역할을 메뉴별 OR로 합치고, `MenuPermissionInterceptor`가 컨트롤러→메뉴 매핑으로 READ/WRITE를 서버에서 강제한다. `MenuInterceptor`는 같은 조회 권한으로 사이드바를 필터링한다. `ADMIN_YN='Y'`는 슈퍼관리자로 통과하며 `/system`·`/auth`는 기존 `AuthInterceptor` 정책상 관리자만 접근한다.
 - DB, Mapper, 트랜잭션 및 웹 설정은 `egovframework.example.config`에 Java Config로 존재한다.
 - Controller에 `@Valid`와 `BindingResult`를 사용하는 입력 검증 예제가 있다. 실제 변경은 해당 기능의 서버 검증 패턴을 확인한다.
 - 로깅은 Lombok `@Slf4j`와 SLF4J `LoggerFactory` 직접 사용이 함께 확인된다. 수정 시 대상 모듈의 기존 방식을 따른다.
@@ -54,11 +56,11 @@
 
 ## 새 글 알림(SSE)
 
-- `BoardController`의 `GET /board/subscribe`가 `BoardSseService.subscribe(boardType)`를 호출하고, `SseEmitter` 연결을 30분간 유지한다.
-- 새 글 등록 성공 후 `BoardSseService.broadcast`가 해당 게시판과 `ALL` 통로로 `{boardId,title,boardType}`을 보낸다. 통로는 메모리에만 있으므로 단일 서버 기준이며, 서버 재시작 시 브라우저가 재구독한다.
+- `BoardController`의 `GET /board/subscribe`가 로그인 세션의 역할을 조회해 `BoardSseService.subscribe(boardType, roles)`를 호출하고, `SseEmitter` 연결을 30분간 유지한다.
+- 새 글 등록 성공 후 `BoardSseService.broadcast(..., targetRoles)`가 해당 게시판과 `ALL` 통로로 `{boardId,title,boardType}`을 보낸다. `targetRoles`는 해당 메뉴의 조회 권한이 있는 역할(`selectRoleIdsWithMenuRead`)이며, 역할이 겹치는 구독자에게만 보낸다. 대상 역할이 비면 발송하지 않는다. 통로는 메모리에만 있으므로 단일 서버 기준이며, 서버 재시작 시 브라우저가 재구독한다.
 - `layout.html`은 전역 배너와 SSE 구독 스크립트를 포함하지만, 현재 `ARKIVE_SSE_ENABLED=false`라 기본 화면에서는 구독하지 않는다. 활성화하려면 `true`로 바꾸고, 페이지별 `window.ARKIVE_SSE` 선언이 layout 스크립트보다 먼저 실행되는지 확인한다.
 - 화면별 설정: `window.ARKIVE_SSE = { banner: false };`는 해당 화면에서 구독·배너를 끄고, `window.ARKIVE_SSE = { hideAfterMs: 30000 };`은 30초 뒤 배너를 자동으로 숨긴다. 기본값은 계속 표시다.
-- 역할별 발송 구조(`broadcast(..., targetRoles)`)는 있으나, 로그인·권한관리 전까지는 전체 발송만 사용한다.
+- 역할 필터는 활성화되어 있다. 댓글·쪽지·다운로드·SSE 구독은 메뉴 CRUD 권한과 분리해 로그인 사용자 공통 기능으로 둔다.
 
 ## 참조와 개선 결정 (Arkive 예시)
 
@@ -85,7 +87,7 @@
 
 ## 확인이 필요한 점
 
-- 인증·인가 필터/인터셉터 적용 범위와 실제 역할 매핑
+- 인증·인가 필터/인터셉터 적용 범위는 코드에서 확인했으나, 운영 역할·메뉴 매핑과 `/system`·`/auth` 관리자 전용 정책의 최종 승인은 미확인
 - 외부 시스템 연계별 호출 흐름, 소유자, 타임아웃 및 오류 처리 계약
 - 프로파일별 구성과 운영 배포 토폴로지
 - 전체 모듈 경계 및 기능 소유 조직

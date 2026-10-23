@@ -30,7 +30,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import arkive.admin.auth.service.AuthService;
+import arkive.admin.auth.service.PermissionService;
 import arkive.admin.comm.web.CommUtil;
+import arkive.admin.mail.service.MailAsyncService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -57,7 +59,19 @@ public class OauthController {
 	@Resource
 	private Environment env;
 
+	@Resource(name = "loginSessionRegistry")
+	private LoginSessionRegistry loginSessionRegistry;
+
+	@Resource(name = "permissionService")
+	private PermissionService permissionService;
+
+	@Resource(name = "mailAsyncService")
+	private MailAsyncService mailAsyncService;
+
 	private CommUtil cmmUtil = new CommUtil();
+
+	private static final java.util.regex.Pattern EMAIL_PATTERN =
+			java.util.regex.Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
 	private final RestTemplate restTemplate = new RestTemplate();
 	private final ObjectMapper objectMapper = new ObjectMapper();
@@ -142,6 +156,7 @@ public class OauthController {
 			if (user == null) {
 				throw new IllegalStateException("연계된 계정을 찾을 수 없습니다. 관리자에게 문의하세요.");
 			}
+			permissionService.assignDefaultRole(String.valueOf(user.get("userId")));
 			EgovMap loginUser = new EgovMap();
 			loginUser.put("userId", String.valueOf(user.get("userId")));
 			loginUser.put("userNm", String.valueOf(user.get("userNm")));
@@ -149,14 +164,15 @@ public class OauthController {
 			request.getSession(true);
 			request.changeSessionId();
 			request.getSession().setAttribute(LoginController.SESSION_KEY, loginUser);
-			if ("Y".equals(String.valueOf(user.get("adminYn")))) {
+			boolean isAdmin = "Y".equals(String.valueOf(user.get("adminYn")));
+			if (isAdmin) {
 				EgovMap adminUser = new EgovMap();
 				adminUser.put("userId", String.valueOf(user.get("userId")));
 				adminUser.put("userNm", String.valueOf(user.get("userNm")));
 				request.getSession().setAttribute(LoginController.ADMIN_KEY, adminUser);
-				return "redirect:/dashboard";
 			}
-			return "redirect:/user/userMain";
+			loginSessionRegistry.register(String.valueOf(user.get("userId")), request.getSession());
+			return isAdmin ? "redirect:/dashboard" : "redirect:/user/userMain";
 		}
 		profile.put("provider", provider);
 		profile.put("providerId", providerId);
@@ -250,7 +266,20 @@ public class OauthController {
 				if (password == null || password.length() < 8) {
 					throw new IllegalArgumentException("비밀번호는 8자 이상 입력하세요.");
 				}
-				String email = String.valueOf(profile.get("email"));
+				String email = profile.get("email") == null ? "" : String.valueOf(profile.get("email")).trim();
+				if ("null".equalsIgnoreCase(email)) {
+					email = "";
+				}
+				String mailYn = "Y".equals(cmmUtil.convertHtml(request, "mailYn")) ? "Y" : "N";
+				if ("Y".equals(mailYn) && email.isEmpty()) {
+					throw new IllegalArgumentException("메일 수신에 동의하려면 소셜 계정의 이메일 제공에 동의해야 합니다.");
+				}
+				if (!email.isEmpty() && !EMAIL_PATTERN.matcher(email).matches()) {
+					throw new IllegalArgumentException("소셜 계정의 이메일 형식이 올바르지 않습니다.");
+				}
+				if (email.length() > 100) {
+					throw new IllegalArgumentException("이메일은 100자 이내여야 합니다.");
+				}
 				userId = ("sns_" + provider + "_" + providerId).toLowerCase();
 				if (userId.length() > 20) {
 					userId = userId.substring(0, 20);
@@ -262,8 +291,13 @@ public class OauthController {
 				param.put("userId", userId);
 				param.put("password", passwordEncoder.encode(password));
 				param.put("userNm", userNm.trim());
-				param.put("email", email);
+				param.put("email", email.isEmpty() ? null : email);
+				param.put("mailYn", mailYn);
 				authService.insertUser(param);
+				permissionService.assignDefaultRole(userId);
+				if ("Y".equals(mailYn)) {
+					mailAsyncService.sendWelcome(userId);
+				}
 			} else if ("link".equals(mode)) {
 				userId = cmmUtil.convertHtml(request, "userId");
 				String password = cmmUtil.convertHtml(request, "password");
@@ -286,6 +320,7 @@ public class OauthController {
 				throw new IllegalStateException("이미 연결된 소셜 계정입니다.");
 			}
 			EgovMap user = authService.selectLoginUser(userId);
+			permissionService.assignDefaultRole(userId);
 			EgovMap loginUser = new EgovMap();
 			loginUser.put("userId", String.valueOf(user.get("userId")));
 			loginUser.put("userNm", String.valueOf(user.get("userNm")));
@@ -300,6 +335,7 @@ public class OauthController {
 				adminUser.put("userNm", String.valueOf(user.get("userNm")));
 				request.getSession().setAttribute(LoginController.ADMIN_KEY, adminUser);
 			}
+			loginSessionRegistry.register(String.valueOf(user.get("userId")), request.getSession());
 			request.getSession().removeAttribute(SESSION_PROFILE);
 			result.put("success", true);
 			result.put("isAdmin", isAdmin);

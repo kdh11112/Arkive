@@ -23,12 +23,12 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
  *
  * 동작:
  * 전역 알림은 GET /board/subscribe?boardType=ALL 로 통로 1개만 연다.
- * insertBoard 성공 뒤 broadcast()가 해당 게시판 + ALL 통로로 {boardId,title,boardType}을 쏜다.
+ * insertBoard 성공 뒤 broadcast(..., targetRoles)가 해당 게시판 + ALL 통로로 {boardId,title,boardType}을 쏜다.
  * 끊긴 통로는 다음 방송 때 정리한다(보내다 IOException 나면 제거).
  *
- * 권한별 발송(2단계 이후): 구독 때 역할도 함께 저장한다.
+ * 권한별 발송: 구독 때 세션의 역할을 함께 저장한다.
  * broadcast(..., targetRoles)는 역할이 겹치는 통로에만 쏜다. 클라이언트에서 숨기는 게 아니라 서버에서 안 쏜다.
- * 1단계(비로그인)에는 역할이 없어 전체 발송만 동작한다. 역할 필터는 로그인·권한관리 이후 활성화한다.
+ * 역할 필터는 활성화되어 있으며, 대상 역할이 비어 있으면 아무에게도 보내지 않는다.
  *
  * 주의: 통로는 메모리에만 있다. 서버를 재시작하면 구독이 끊기고
  * 브라우저가 자동 재구독한다. 다중 서버(스케일아웃)면 Redis Pub/Sub 등으로
@@ -47,7 +47,7 @@ public class BoardSseService {
 	/** 게시판 타입별 구독 통로 목록. 멀티스레드에서 같이 쓰므로 동시성 컬렉션이다. */
 	private final Map<String, List<Subscription>> emitters = new ConcurrentHashMap<>();
 
-	/** 구독 1건. roles가 비면 전체 공개 채널이다. */
+	/** 구독 1건. roles가 비면 역할 없는 구독자이며 역할 지정 발송의 대상이 아니다. */
 	private static final class Subscription {
 		final SseEmitter emitter;
 		final Set<String> roles;
@@ -59,15 +59,9 @@ public class BoardSseService {
 	}
 
 	/**
-	 * 구독 통로를 하나 만든다. 컨트롤러가 그대로 반환하면 스프링이 연결을 열어 둔다.
-	 */
-	public SseEmitter subscribe(String boardType) {
-		return subscribe(boardType, Collections.emptySet());
-	}
-
-	/**
-	 * 역할 포함 구독. 2단계 로그인 이후 Controller에서 세션 역할을 넘긴다.
-	 * 1단계에는 빈 집합으로 호출한다(전체 공개와 동일).
+	 * 구독 통로를 하나 만든다. Controller가 세션에서 조회한 역할을 넘긴다.
+	 * 비로그인은 빈 집합으로 호출하며 역할 지정 발송의 대상이 되지 않는다.
+	 * 컨트롤러가 그대로 반환하면 스프링이 연결을 열어 둔다.
 	 */
 	public SseEmitter subscribe(String boardType, Set<String> roles) {
 		SseEmitter emitter = new SseEmitter(TIMEOUT_MS);
@@ -82,20 +76,9 @@ public class BoardSseService {
 	}
 
 	/**
-	 * 새 글을 해당 게시판 + 전체(ALL) 구독자들에게 뿌린다.
+	 * 새 글을 해당 게시판 + 전체(ALL) 구독자 중 targetRoles와 겹치는 역할의 통로에만 뿌린다.
+	 * 대상 역할이 비어 있으면 대상자가 없는 것으로 보고 아무에게도 보내지 않는다.
 	 * 죽은 통로는 보내다 실패하면 그 자리에서 제거한다.
-	 */
-	public void broadcast(String boardType, String boardId, String title) {
-		String key = normalize(boardType);
-		sendTo(key, key, boardId, title, null);
-		if (!"ALL".equals(key)) {
-			sendTo("ALL", key, boardId, title, null);
-		}
-	}
-
-	/**
-	 * 역할 지정 발송. targetRoles와 겹치는 역할의 통로에만 쏜다.
-	 * 2단계 로그인·권한관리 이후 사용한다. 1단계에는 호출하지 않는다.
 	 */
 	public void broadcast(String boardType, String boardId, String title, Set<String> targetRoles) {
 		String key = normalize(boardType);
@@ -107,12 +90,11 @@ public class BoardSseService {
 
 	private void sendTo(String listKey, String boardType, String boardId, String title, Set<String> targetRoles) {
 		List<Subscription> list = emitters.get(listKey);
-		if (list == null || list.isEmpty()) {
+		if (list == null || list.isEmpty() || targetRoles == null || targetRoles.isEmpty()) {
 			return;
 		}
 		for (Subscription sub : list) {
-			if (targetRoles != null && !targetRoles.isEmpty()
-					&& sub.roles.stream().noneMatch(targetRoles::contains)) {
+			if (sub.roles.stream().noneMatch(targetRoles::contains)) {
 				continue;
 			}
 			try {

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.auth.service.impl.PermissionMapper">
+
+	<!-- 역할 목록 + 사용자/메뉴 건수 -->
+	<select id="selectRoleList" resultType="egovMap">
+		SELECT
+			R.ROLE_ID,
+			R.ROLE_NM,
+			R.DESCRIPTION,
+			R.USE_YN,
+			R.REGIST_DT,
+			(SELECT COUNT(*) FROM APP_USER_ROLE UR WHERE UR.ROLE_ID = R.ROLE_ID) AS USER_CNT,
+			(SELECT COUNT(*) FROM APP_ROLE_MENU RM
+			  WHERE RM.ROLE_ID = R.ROLE_ID AND (RM.READ_YN = 'Y' OR RM.WRITE_YN = 'Y')) AS MENU_CNT
+		FROM APP_ROLE R
+		ORDER BY R.ROLE_ID
+	</select>
+
+	<select id="selectRoleDetail" parameterType="string" resultType="egovMap">
+		SELECT ROLE_ID, ROLE_NM, DESCRIPTION, USE_YN, REGIST_DT, UPDT_DT
+		FROM APP_ROLE
+		WHERE ROLE_ID = #{roleId}
+	</select>
+
+	<select id="countRoleId" parameterType="string" resultType="int">
+		SELECT COUNT(*) FROM APP_ROLE WHERE ROLE_ID = #{roleId}
+	</select>
+
+	<!-- 사용자 배정 시 존재하는 활성 사용자만 허용한다. -->
+	<select id="countActiveUser" parameterType="string" resultType="int">
+		SELECT COUNT(*) FROM APP_USER WHERE USER_ID = #{userId} AND USE_YN = 'Y'
+	</select>
+
+	<insert id="insertRole" parameterType="egovMap">
+		INSERT INTO APP_ROLE (ROLE_ID, ROLE_NM, DESCRIPTION, USE_YN, REGIST_DT)
+		VALUES (#{roleId}, #{roleNm}, #{description}, #{useYn}, CURRENT_TIMESTAMP)
+	</insert>
+
+	<update id="updateRole" parameterType="egovMap">
+		UPDATE APP_ROLE
+		SET ROLE_NM = #{roleNm},
+			DESCRIPTION = #{description},
+			USE_YN = #{useYn},
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE ROLE_ID = #{roleId}
+	</update>
+
+	<delete id="deleteRole" parameterType="string">
+		DELETE FROM APP_ROLE WHERE ROLE_ID = #{roleId}
+	</delete>
+
+	<delete id="deleteRoleMenus" parameterType="string">
+		DELETE FROM APP_ROLE_MENU WHERE ROLE_ID = #{roleId}
+	</delete>
+
+	<delete id="deleteRoleUsers" parameterType="string">
+		DELETE FROM APP_USER_ROLE WHERE ROLE_ID = #{roleId}
+	</delete>
+
+	<insert id="insertRoleMenu" parameterType="egovMap">
+		INSERT INTO APP_ROLE_MENU (ROLE_ID, MENU_ID, READ_YN, WRITE_YN, REGIST_DT)
+		VALUES (#{roleId}, #{menuId}, #{readYn}, #{writeYn}, CURRENT_TIMESTAMP)
+	</insert>
+
+	<insert id="insertRoleUser" parameterType="egovMap">
+		INSERT INTO APP_USER_ROLE (USER_ID, ROLE_ID, REGIST_DT)
+		VALUES (#{userId}, #{roleId}, CURRENT_TIMESTAMP)
+	</insert>
+
+	<!-- 역할 수정 화면: 전체 메뉴 + 역할의 현재 권한 -->
+	<select id="selectRoleMenuList" parameterType="string" resultType="egovMap">
+		SELECT
+			M.MENU_ID,
+			M.MENU_NM,
+			M.MENU_COURS,
+			M.GRAD,
+			M.UP_MENU_ID,
+			M.ORDR,
+			COALESCE(RM.READ_YN, 'N') AS READ_YN,
+			COALESCE(RM.WRITE_YN, 'N') AS WRITE_YN
+		FROM MENU M
+		LEFT JOIN APP_ROLE_MENU RM
+			ON RM.MENU_ID = M.MENU_ID AND RM.ROLE_ID = #{roleId}
+		WHERE M.USE_YN = 'Y'
+			AND M.GRAD &gt;= 2
+		ORDER BY M.GRAD, M.UP_MENU_ID, M.ORDR
+	</select>
+
+	<!-- 역할에 매핑된 사용자 -->
+	<select id="selectRoleUserList" parameterType="string" resultType="egovMap">
+		SELECT U.USER_ID, U.USER_NM, U.ADMIN_YN
+		FROM APP_USER U
+		JOIN APP_USER_ROLE UR ON UR.USER_ID = U.USER_ID
+		WHERE UR.ROLE_ID = #{roleId}
+		ORDER BY U.USER_ID
+	</select>
+
+	<!-- 역할 배정 화면: 사용 가능한 전체 사용자 -->
+	<select id="selectAllUserList" resultType="egovMap">
+		SELECT USER_ID, USER_NM, ADMIN_YN
+		FROM APP_USER
+		WHERE USE_YN = 'Y'
+		ORDER BY USER_ID
+	</select>
+
+	<select id="selectUserRoleIds" parameterType="string" resultType="string">
+		SELECT UR.ROLE_ID
+		FROM APP_USER_ROLE UR
+		JOIN APP_ROLE R ON R.ROLE_ID = UR.ROLE_ID
+		WHERE UR.USER_ID = #{userId}
+			AND R.USE_YN = 'Y'
+		ORDER BY UR.ROLE_ID
+	</select>
+
+	<delete id="deleteUserRoles" parameterType="string">
+		DELETE FROM APP_USER_ROLE WHERE USER_ID = #{userId}
+	</delete>
+
+	<insert id="insertUserRole" parameterType="egovMap">
+		INSERT INTO APP_USER_ROLE (USER_ID, ROLE_ID, REGIST_DT)
+		VALUES (#{userId}, #{roleId}, CURRENT_TIMESTAMP)
+	</insert>
+
+	<!-- 사용자의 유효 권한. 여러 역할이면 메뉴별로 OR 집계한다. -->
+	<select id="selectUserMenuPermissions" parameterType="string" resultType="egovMap">
+		SELECT
+			RM.MENU_ID,
+			MAX(CASE WHEN RM.READ_YN = 'Y' THEN 'Y' ELSE 'N' END) AS READ_YN,
+			MAX(CASE WHEN RM.WRITE_YN = 'Y' THEN 'Y' ELSE 'N' END) AS WRITE_YN
+		FROM APP_ROLE_MENU RM
+		JOIN APP_USER_ROLE UR ON UR.ROLE_ID = RM.ROLE_ID
+		JOIN APP_ROLE R ON R.ROLE_ID = RM.ROLE_ID AND R.USE_YN = 'Y'
+		WHERE UR.USER_ID = #{userId}
+		GROUP BY RM.MENU_ID
+	</select>
+
+	<!-- SSE 대상 역할: 해당 메뉴를 조회할 수 있는 역할 -->
+	<select id="selectRoleIdsWithMenuRead" parameterType="string" resultType="string">
+		SELECT DISTINCT RM.ROLE_ID
+		FROM APP_ROLE_MENU RM
+		JOIN APP_ROLE R ON R.ROLE_ID = RM.ROLE_ID
+		WHERE RM.MENU_ID = #{menuId}
+			AND RM.READ_YN = 'Y'
+			AND R.USE_YN = 'Y'
+		ORDER BY RM.ROLE_ID
+	</select>
+
+	<!-- 메일 알림 대상. 수신 동의 + 활성 사용자 + (관리자 또는 해당 메뉴 조회 권한) -->
+	<select id="selectBoardMailRecipients" parameterType="string" resultType="egovMap">
+		SELECT
+			U.USER_ID,
+			U.USER_NM,
+			U.EMAIL
+		FROM APP_USER U
+		WHERE U.USE_YN = 'Y'
+			AND U.MAIL_YN = 'Y'
+			AND U.EMAIL IS NOT NULL
+			AND U.EMAIL &lt;&gt; ''
+			AND (
+				U.ADMIN_YN = 'Y'
+				OR EXISTS (
+					SELECT 1
+					FROM APP_USER_ROLE UR
+					JOIN APP_ROLE R ON R.ROLE_ID = UR.ROLE_ID AND R.USE_YN = 'Y'
+					JOIN APP_ROLE_MENU RM ON RM.ROLE_ID = R.ROLE_ID
+					WHERE UR.USER_ID = U.USER_ID
+						AND RM.MENU_ID = #{menuId}
+						AND RM.READ_YN = 'Y'
+				)
+			)
+		ORDER BY U.USER_ID
+	</select>
+
+</mapper>

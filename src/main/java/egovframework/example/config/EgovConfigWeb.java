@@ -1,10 +1,14 @@
 package egovframework.example.config;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.boot.web.servlet.ServletListenerRegistrationBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
@@ -24,11 +28,21 @@ import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import org.thymeleaf.templatemode.TemplateMode;
 
+import arkive.admin.auth.service.MenuPermission;
+import arkive.admin.auth.service.PermissionService;
 import arkive.admin.auth.web.AuthInterceptor;
-import arkive.admin.system.service.SystemService;import egovframework.example.pagination.EgovKrdsPaginationRenderer;
+import arkive.admin.auth.web.LoginController;
+import arkive.admin.auth.web.LoginSessionRegistry;
+import arkive.admin.auth.web.MenuPermissionInterceptor;
+import arkive.admin.board.service.BoardService;
+import arkive.admin.system.service.SystemService;
+import egovframework.example.pagination.EgovKrdsPaginationRenderer;
+import jakarta.annotation.Resource;
 import egovframework.example.pagination.EgovPaginationDialect;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSessionListener;
 import nz.net.ultraq.thymeleaf.layoutdialect.LayoutDialect;
 
 @Configuration
@@ -45,6 +59,12 @@ import nz.net.ultraq.thymeleaf.layoutdialect.LayoutDialect;
 public class EgovConfigWeb implements WebMvcConfigurer, ApplicationContextAware {
 
     private ApplicationContext applicationContext;
+
+    @Resource
+    private PermissionService permissionService;
+
+    @Resource
+    private BoardService boardService;
 
     public void setApplicationContext(final ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
@@ -179,6 +199,49 @@ public class EgovConfigWeb implements WebMvcConfigurer, ApplicationContextAware 
                             normalizedList.add(newMap);
                         }
 
+                        // 로그인 사용자는 역할의 조회 권한이 있는 메뉴만 노출한다.
+                        // 관리자는 전체 메뉴를 본다. 비로그인은 메뉴를 노출하지 않는다.
+                        HttpSession session = request.getSession(false);
+                        if (session == null) {
+                            normalizedList.clear();
+                        } else {
+                            Object loginUser = session.getAttribute(LoginController.SESSION_KEY);
+                            if (!(loginUser instanceof EgovMap)) {
+                                normalizedList.clear();
+                            } else if (session.getAttribute(LoginController.ADMIN_KEY) == null) {
+                                PermissionService permissionService = WebApplicationContextUtils
+                                        .getWebApplicationContext(request.getServletContext())
+                                        .getBean(PermissionService.class);
+                                String userId = String.valueOf(((EgovMap) loginUser).get("userId"));
+                                Map<String, MenuPermission> permissions = permissionService
+                                        .selectUserMenuPermissions(userId);
+                                Set<String> visible = new HashSet<>();
+                                for (EgovMap menu : normalizedList) {
+                                    String menuId = String.valueOf(menu.get("menuId"));
+                                    MenuPermission permission = permissions.get(menuId);
+                                    if (permission != null && permission.read()) {
+                                        visible.add(menuId);
+                                    }
+                                }
+                                // 하위 메뉴 권한만 있어도 상위 트리가 보이도록 조상을 포함한다.
+                                List<String> queue = new ArrayList<>(visible);
+                                for (int i = 0; i < queue.size(); i++) {
+                                    String id = queue.get(i);
+                                    for (EgovMap menu : normalizedList) {
+                                        if (id.equals(String.valueOf(menu.get("menuId")))) {
+                                            String parent = menu.get("parent") == null ? null
+                                                    : String.valueOf(menu.get("parent"));
+                                            if (parent != null && !"#".equals(parent) && visible.add(parent)) {
+                                                queue.add(parent);
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                                normalizedList.removeIf(menu -> !visible.contains(String.valueOf(menu.get("menuId"))));
+                            }
+                        }
+
                         request.setAttribute(
                                 "menuList",
                                 normalizedList);
@@ -208,11 +271,36 @@ public class EgovConfigWeb implements WebMvcConfigurer, ApplicationContextAware 
                         "/actuator/**");
         // 로그인 검사는 AuthInterceptor 빈으로 둔다(공개 경로는 클래스 안에서 제외).
         registry.addInterceptor(authInterceptor());
+        // 메뉴 조회·쓰기 권한은 로그인 검사 뒤에 서버에서 강제한다.
+        registry.addInterceptor(menuPermissionInterceptor(permissionService, boardService))
+                .addPathPatterns("/**")
+                .excludePathPatterns(
+                        "/css/**", "/js/**", "/images/**", "/img/**", "/vendor/**",
+                        "/favicon.ico", "/error",
+                        "/swagger-ui/**", "/v3/api-docs/**",
+                        "/actuator/**");
     }
 
     @Bean
     public AuthInterceptor authInterceptor() {
         return new AuthInterceptor();
+    }
+
+    @Bean
+    public MenuPermissionInterceptor menuPermissionInterceptor(PermissionService permissionService,
+            BoardService boardService) {
+        return new MenuPermissionInterceptor(permissionService, boardService);
+    }
+
+    /**
+     * 세션 만료 시 중복 로그인 레지스트리의 사용자 매핑을 지운다.
+     * LoginSessionRegistry는 @Component이지만 HttpSessionListener는 자동 등록되지 않으므로
+     * ServletListenerRegistrationBean으로 서블릿 컨테이너에 연결한다.
+     */
+    @Bean
+    public ServletListenerRegistrationBean<HttpSessionListener> loginSessionListener(
+            LoginSessionRegistry loginSessionRegistry) {
+        return new ServletListenerRegistrationBean<>(loginSessionRegistry);
     }
 
     @Override

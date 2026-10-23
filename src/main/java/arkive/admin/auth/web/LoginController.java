@@ -14,7 +14,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import arkive.admin.auth.service.AuthService;
+import arkive.admin.auth.service.PermissionService;
 import arkive.admin.comm.web.CommUtil;
+import arkive.admin.mail.service.MailAsyncService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -44,7 +46,19 @@ public class LoginController {
 	@Resource
 	private PasswordEncoder passwordEncoder;
 
+	@Resource(name = "loginSessionRegistry")
+	private LoginSessionRegistry loginSessionRegistry;
+
+	@Resource(name = "permissionService")
+	private PermissionService permissionService;
+
+	@Resource(name = "mailAsyncService")
+	private MailAsyncService mailAsyncService;
+
 	private CommUtil cmmUtil = new CommUtil();
+
+	private static final java.util.regex.Pattern EMAIL_PATTERN =
+			java.util.regex.Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
 	@Operation(summary = "로그인 화면")
 	@RequestMapping(value = "/login", method = { RequestMethod.GET, RequestMethod.POST })
@@ -102,6 +116,8 @@ public class LoginController {
 				adminUser.put("userNm", String.valueOf(user.get("userNm")));
 				request.getSession().setAttribute(ADMIN_KEY, adminUser);
 			}
+			// 중복 로그인 방지: 같은 사용자의 이전 세션을 만료시킨다.
+			loginSessionRegistry.register(String.valueOf(user.get("userId")), request.getSession());
 			result.put("success", true);
 			result.put("userNm", loginUser.get("userNm"));
 			result.put("isAdmin", isAdmin);
@@ -140,12 +156,29 @@ public class LoginController {
 			if (authService.selectLoginUser(userId) != null) {
 				throw new IllegalArgumentException("이미 등록된 아이디입니다.");
 			}
+			String email = trim(cmmUtil.convertHtml(request, "email"));
+			String mailYn = "Y".equals(cmmUtil.convertHtml(request, "mailYn")) ? "Y" : "N";
+			if ("Y".equals(mailYn) && (email == null || email.isEmpty())) {
+				throw new IllegalArgumentException("메일 수신에 동의하려면 이메일을 입력하세요.");
+			}
+			if (email != null && !email.isEmpty() && !EMAIL_PATTERN.matcher(email).matches()) {
+				throw new IllegalArgumentException("이메일 형식이 올바르지 않습니다.");
+			}
+			if (email != null && email.length() > 100) {
+				throw new IllegalArgumentException("이메일은 100자 이내로 입력하세요.");
+			}
 			EgovMap param = new EgovMap();
 			param.put("userId", userId);
 			param.put("password", passwordEncoder.encode(password));
 			param.put("userNm", userNm.trim());
-			param.put("email", cmmUtil.convertHtml(request, "email"));
+			param.put("email", email);
+			param.put("mailYn", mailYn);
 			authService.insertUser(param);
+			// 신규 가입자는 기본 역할을 받아야 권한관리 대상이 된다.
+			permissionService.assignDefaultRole(userId);
+			if ("Y".equals(mailYn)) {
+				mailAsyncService.sendWelcome(userId);
+			}
 			result.put("success", true);
 		} catch (Exception e) {
 			logger.error("signup failed", e);
@@ -200,7 +233,7 @@ public class LoginController {
 		return "login/findPw";
 	}
 
-	@Operation(summary = "비밀번호 찾기 (임시 비밀번호 1회 발급, 잠금도 함께 해제)")
+	@Operation(summary = "비밀번호 재설정 메일 요청 (가입 정보가 일치할 때만 1회용 링크 발급)")
 	@RequestMapping(value = "/findPw.json", method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> findPwAction(HttpServletRequest request) {
@@ -215,27 +248,59 @@ public class LoginController {
 				throw new IllegalArgumentException("아이디·이름·이메일을 입력하세요.");
 			}
 			EgovMap user = authService.selectLoginUser(userId.trim());
-			if (user == null
-					|| !userNm.trim().equals(String.valueOf(user.get("userNm")))
-					|| !email.trim().equalsIgnoreCase(String.valueOf(user.get("email")))) {
-				throw new IllegalArgumentException("일치하는 회원 정보가 없습니다.");
+			// 가입 여부·이메일 존재 여부를 응답으로 노출하지 않는다.
+			if (user != null
+					&& userNm.trim().equals(String.valueOf(user.get("userNm")))
+					&& email.trim().equalsIgnoreCase(String.valueOf(user.get("email")))) {
+				String token = authService.issuePasswordResetToken(userId.trim());
+				if (token != null) {
+					mailAsyncService.sendPasswordReset(userId.trim(), token);
+				}
 			}
-			// 영문·숫자 10자리 임시 비밀번호. 화면에 1회만 보여준다.
-			String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-			java.security.SecureRandom random = new java.security.SecureRandom();
-			StringBuilder tempPw = new StringBuilder();
-			for (int i = 0; i < 10; i++) {
-				tempPw.append(chars.charAt(random.nextInt(chars.length())));
-			}
-			EgovMap param = new EgovMap();
-			param.put("userId", userId.trim());
-			param.put("password", passwordEncoder.encode(tempPw.toString()));
-			authService.updatePassword(param);
-			authService.resetFailCount(userId.trim());
 			result.put("success", true);
-			result.put("tempPw", tempPw.toString());
+			result.put("message", "입력한 정보가 일치하면 비밀번호 재설정 링크를 이메일로 보냅니다.");
 		} catch (Exception e) {
 			logger.error("findPw failed", e);
+			result.put("success", false);
+			result.put("message", e.getMessage());
+		}
+		return result;
+	}
+
+	@Operation(summary = "비밀번호 재설정 화면 (메일 링크의 token 사용)")
+	@RequestMapping(value = "/resetPw", method = { RequestMethod.GET, RequestMethod.POST })
+	public String resetPw(HttpServletRequest request, ModelMap model) throws Exception {
+		String token = trim(cmmUtil.convertHtml(request, "token"));
+		model.put("token", token == null ? "" : token);
+		model.put("valid", token != null && authService.isValidPasswordResetToken(token));
+		return "login/resetPw";
+	}
+
+	@Operation(summary = "비밀번호 재설정 처리 (1회용 token, 성공 시 기존 세션 만료)")
+	@RequestMapping(value = "/resetPw.json", method = RequestMethod.POST)
+	@ResponseBody
+	public Map<String, Object> resetPwAction(HttpServletRequest request) {
+		Map<String, Object> result = new HashMap<>();
+		try {
+			String token = trim(cmmUtil.convertHtml(request, "token"));
+			String password = cmmUtil.convertHtml(request, "password");
+			String passwordConfirm = cmmUtil.convertHtml(request, "passwordConfirm");
+			if (token == null || token.isEmpty()) {
+				throw new IllegalArgumentException("재설정 링크가 올바르지 않습니다.");
+			}
+			if (password == null || password.length() < 8) {
+				throw new IllegalArgumentException("비밀번호는 8자 이상 입력하세요.");
+			}
+			if (!password.equals(passwordConfirm)) {
+				throw new IllegalArgumentException("비밀번호 확인이 일치하지 않습니다.");
+			}
+			String userId = authService.resetPasswordByToken(token, passwordEncoder.encode(password));
+			// 비밀번호가 바뀌면 기존 로그인 세션을 즉시 끊는다.
+			loginSessionRegistry.invalidate(userId);
+			result.put("success", true);
+			result.put("message", "비밀번호가 변경되었습니다. 새 비밀번호로 로그인하세요.");
+		} catch (Exception e) {
+			logger.error("resetPw failed", e);
 			result.put("success", false);
 			result.put("message", e.getMessage());
 		}
@@ -247,6 +312,10 @@ public class LoginController {
 	public String logout(HttpServletRequest request) {
 		HttpSession session = request.getSession(false);
 		if (session != null) {
+			Object loginUser = session.getAttribute(SESSION_KEY);
+			if (loginUser instanceof EgovMap) {
+				loginSessionRegistry.remove(String.valueOf(((EgovMap) loginUser).get("userId")), session);
+			}
 			session.invalidate();
 		}
 		return "redirect:/";
@@ -256,5 +325,9 @@ public class LoginController {
 	@RequestMapping(value = "/apiDemo", method = { RequestMethod.GET, RequestMethod.POST })
 	public String apiDemo() {
 		return "login/apiDemo";
+	}
+
+	private String trim(String value) {
+		return value == null ? null : value.trim();
 	}
 }

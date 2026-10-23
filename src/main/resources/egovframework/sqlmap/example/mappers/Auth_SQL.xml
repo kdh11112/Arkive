@@ -12,7 +12,8 @@
 			FAILED_CNT,
 			LOCK_YN,
 			USE_YN,
-			ADMIN_YN
+			ADMIN_YN,
+			MAIL_YN
 		FROM APP_USER
 		WHERE USER_ID = #{userId}
 			AND USE_YN = 'Y'
@@ -28,6 +29,7 @@
 			LOCK_YN,
 			USE_YN,
 			ADMIN_YN,
+			MAIL_YN,
 			REGIST_DT
 		FROM APP_USER
 		<where>
@@ -62,6 +64,7 @@
 			LOCK_YN,
 			USE_YN,
 			ADMIN_YN,
+			MAIL_YN,
 			REGIST_DT
 		FROM APP_USER
 		WHERE USER_ID = #{userId}
@@ -78,6 +81,7 @@
 			LOCK_YN,
 			USE_YN,
 			ADMIN_YN,
+			MAIL_YN,
 			REGIST_DT
 		) VALUES (
 			#{userId},
@@ -88,6 +92,7 @@
 			'N',
 			'Y',
 			'N',
+			COALESCE(#{mailYn}, 'N'),
 			CURRENT_TIMESTAMP
 		)
 	</insert>
@@ -100,6 +105,7 @@
 			EMAIL = #{email},
 			USE_YN = #{useYn},
 			ADMIN_YN = #{adminYn},
+			MAIL_YN = COALESCE(#{mailYn}, MAIL_YN),
 			UPDT_DT = CURRENT_TIMESTAMP
 		WHERE USER_ID = #{userId}
 	</update>
@@ -180,5 +186,49 @@
 			CURRENT_TIMESTAMP
 		)
 	</insert>
+
+	<!-- 비밀번호 재설정: 같은 사용자의 미사용 토큰은 새 토큰 발급 시 폐기한다. -->
+	<select id="selectLatestPasswordResetDt" parameterType="string" resultType="java.sql.Timestamp">
+		SELECT MAX(REGIST_DT)
+		FROM PASSWORD_RESET_TOKEN
+		WHERE USER_ID = #{userId}
+	</select>
+
+	<delete id="deleteUnusedPasswordResetTokens" parameterType="string">
+		DELETE FROM PASSWORD_RESET_TOKEN
+		WHERE USER_ID = #{userId}
+			AND USED_YN = 'N'
+	</delete>
+
+	<insert id="insertPasswordResetToken" parameterType="egovMap">
+		INSERT INTO PASSWORD_RESET_TOKEN (
+			TOKEN_HASH,
+			USER_ID,
+			EXPIRES_DT,
+			USED_YN,
+			REGIST_DT
+		) VALUES (
+			#{tokenHash},
+			#{userId},
+			#{expiresDt},
+			'N',
+			CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<select id="selectValidPasswordResetToken" parameterType="string" resultType="egovMap">
+		SELECT TOKEN_HASH, USER_ID, EXPIRES_DT
+		FROM PASSWORD_RESET_TOKEN
+		WHERE TOKEN_HASH = #{tokenHash}
+			AND USED_YN = 'N'
+			AND EXPIRES_DT &gt; CURRENT_TIMESTAMP
+	</select>
+
+	<update id="markPasswordResetTokenUsed" parameterType="string">
+		UPDATE PASSWORD_RESET_TOKEN
+		SET USED_YN = 'Y'
+		WHERE TOKEN_HASH = #{tokenHash}
+			AND USED_YN = 'N'
+	</update>
 
 </mapper>

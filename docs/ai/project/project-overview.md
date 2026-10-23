@@ -50,11 +50,13 @@
 | 운영 모니터링 | Actuator `health,info,metrics` 노출, `health.show-details=always` | `application.properties` |
 | 운영 배포 / 실서비스 DB | 미확인. 현재 로컬 설정만으로 운영 구성을 추정하지 않는다. | 운영 설정 근거 미확인 |
 
-- 2026-10-22 기준 게시판 댓글(1단)과 쪽지관리(받은/보낸, 읽음, 함별 소프트 삭제)가 구현되어 있다. 상세 위치는 [function-inventory.md](function-inventory.md), [database-schema.md](database-schema.md), [api-contract.md](api-contract.md)를 참조한다.
+- 2026-10-22 기준 게시판 댓글(1단)과 쪽지관리(받은/보낸, 읽음, 함별 소프트 삭제)가 구현되어 있고, 2026-10-23에 공지 고정(CK 공지 목록 상단 정렬), 중복 로그인 방지(사용자별 최신 세션 유지), 역할 기반 메뉴 권한(서버 인터셉터 강제·SSE 역할 필터)을 추가했다. 상세 위치는 [function-inventory.md](function-inventory.md), [database-schema.md](database-schema.md), [api-contract.md](api-contract.md)를 참조한다.
 
 ## 주의할 실행 동작
 
-- DB 스키마와 초기 데이터는 모두 `db/versions/V*__*.sql`로 관리한다. V1 baseline, V2 게시글 댓글, V3 쪽지·쪽지 메뉴가 적용되어 있고, 다음 신규 변경은 V4부터 추가한다.
+- 로그인 성공 시 `LoginSessionRegistry`가 사용자별 최신 세션 1개만 유지한다. 같은 계정으로 다시 로그인하면 이전 세션이 만료되며, 이 레지스트리는 단일 애플리케이션 인스턴스의 메모리 기준이다. 다중 인스턴스 운영 시 공유 세션 저장소나 스티키 세션 정책이 필요하다.
+- 일반 사용자의 메뉴 조회·쓰기는 역할(`APP_ROLE`/`APP_ROLE_MENU`)로 판단하고 `MenuPermissionInterceptor`가 서버에서 강제한다. `ADMIN_YN='Y'`는 슈퍼관리자로 통과하며 `/system`·`/auth`는 기존 정책상 관리자만 접근한다. 역할이 없는 사용자는 메뉴 접근이 거부되고, 신규 사용자는 `ROLE_USER`를 기본 배정받는다.
+- DB 스키마와 초기 데이터는 모두 `db/versions/V*__*.sql`로 관리한다. V1 baseline, V2 게시글 댓글, V3 쪽지·쪽지 메뉴, V4 공지 고정, V5 권한 테이블·메뉴·역할 시드가 적용되어 있고, 다음 신규 변경은 V6부터 추가한다.
 - `db/system.sql`·`db/sampledb.sql`·`db/baseline_schema.sql`은 현재 저장소에 없다(2026-10-11 정리). 새 스키마 변경에는 버전 마이그레이션을 사용한다.
 - 기본 실행은 파일 DB(`./data/ArkiveDB`)를 열어 기존 데이터를 유지하고, 시작 시 버전 이력에 없는 마이그레이션 SQL만 적용한다.
 - 기존 메모리 DB는 종료 시 사라졌으며 파일 DB로 자동 이관되지 않는다. 초기화/마이그레이션 설명은 [migration.md](migration.md)를 참고한다.

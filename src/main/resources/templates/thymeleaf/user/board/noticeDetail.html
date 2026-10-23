@@ -8,7 +8,11 @@
 </head>
 <body>
 <div layout:fragment="content">
-    <h2 class="heading-large">공지사항 상세보기</h2>
+    <h2 class="heading-large">
+        <span class="krds-badge" th:if="${detail != null and detail['noticeYn'] == 'Y'}">공지</span>
+        <span class="krds-badge" th:if="${detail != null and detail['importantYn'] == 'Y'}">중요</span>
+        공지사항 상세보기
+    </h2>
     <div class="conts-wrap" th:if="${detail != null}">
         <div class="fieldset input-form">
             <div class="form-group">

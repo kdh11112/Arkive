@@ -24,24 +24,26 @@
 - 애플리케이션 시작 시 `SCHEMA_MIGRATION` 테이블을 준비하고, `db/versions/V*__*.sql` 중 미적용 버전을 숫자 순으로 실행한 뒤 버전과 파일명을 기록한다.
 - 2026-10-11 스쿼시: 구 체인(V1,V2,V6~V29, 당시 빈 번호 V3·삭제된 V4·V5 포함)을 최종 상태 단일 V1으로 교체했다. 구 이력이 남은 DB에서는 새 V1이 스킵되므로 `data/`를 지우고 시작해야 한다 (`data/`는 `.gitignore`).
 - 2026-10-22 `V2__board_comment.sql`(`BOARD_COMMENT`)과 `V3__message.sql`(`MESSAGE`·쪽지 메뉴 4행)을 추가했다. 기존 `data/ArkiveDB`에는 앱 기동 시 증분 적용되므로 `data/` 삭제가 필요 없다.
+- 2026-10-23 `V4__board_notice.sql`(`BOARD.NOTICE_YN`·`IDX_BOARD_NOTICE`)과 `V5__permission.sql`(`APP_ROLE`·`APP_USER_ROLE`·`APP_ROLE_MENU`, 권한관리 메뉴, 기본 역할·사용자 매핑)을 추가했다. V4 기존 행은 `DEFAULT 'N'`으로 채워지고, V5는 기존 `ADMIN_YN`에 따라 사용자 역할을 자동 매핑한다. 둘 다 앱 기동 시 증분 적용된다.
 - `db/data.sql`은 시작 마이그레이션이 아니다. `DBJob` 덤프 대상 파일명 표시용 주석 파일이며, 로더는 `db/versions/V*__*.sql`만 읽는다. 덤프 실체는 `backup/ArkiveDB.sql`이다.
 - `db/baseline_schema.sql`(구 밑그림)과 `db/sampledb.sql`(레거시, `DROP TABLE` 포함)은 2026-10-11에 삭제했다. 새 변경에는 사용하지 않는다.
 - `./data/ArkiveDB`는 로컬 HSQLDB의 실제 저장 경로다. 런타임 DB 파일은 `.gitignore`로 Git 추적에서 제외하고, `.lck` 파일은 DB 실행 중 잠금 용도로 사용한다.
-- 2026-10-22 `verify.cmd`의 테스트 DB(`target/test-db`, 포트 9002)에 V1→V2→V3가 순서대로 적용되는 것을 확인했고, 로컬 `data/ArkiveDB`에도 V2·V3이 적용됐다. 실제 운영 DB 적용 이력은 미확인.
+- 2026-10-22~23 `verify.cmd`의 테스트 DB(`target/test-db`, 포트 9002)에 V1→V5가 순서대로 적용되는 것을 확인했고, 로컬 `data/ArkiveDB`에는 V2·V3이 적용된 상태다(V4·V5는 다음 기동 시 증분 적용). 실제 운영 DB 적용 이력은 미확인.
 - 운영 배포, DDL 승인, 백업 및 롤백 담당자·절차: 미확인.
 
 ## DB 템플릿 적용 (대상 프로젝트)
 
-- `db/versions/V1__baseline.sql`, `V2__board_comment.sql`, `V3__message.sql`을 순서대로 적용하면 빈 DB가 현재 스키마가 된다. 복사 후 패키지·테이블명만 대상에 맞게 바꾼다.
-- 이력이 있는 DB에는 baseline을 쓰지 않는다. 이미 적용된 V1~V3은 수정하지 않고, 이후 변경은 V4부터 새 버전 체인으로 추가한다.
+- `db/versions/V1__baseline.sql`, `V2__board_comment.sql`, `V3__message.sql`, `V4__board_notice.sql`, `V5__permission.sql`을 순서대로 적용하면 빈 DB가 현재 스키마가 된다. 복사 후 패키지·테이블명만 대상에 맞게 바꾼다.
+- 이력이 있는 DB에는 baseline을 쓰지 않는다. 이미 배포된 버전은 수정하지 않고, 이후 변경은 새 버전으로 추가한다. 현재 V5는 커밋 전 개발 버전으로, 테스트 DB를 재생성해 최종 시드를 다시 적용했다.
 - 삭제된 구 체인은 Git 이력에 남아 있다. 과거 버전별 변경 내역이 필요하면 2026-10-11 이전 커밋을 본다.
 
 ## 개발자 사용법
 
-1. `src/main/resources/db/versions/`에 `V4__add_file_description.sql`처럼 다음 버전 SQL 파일을 추가한다 (V1~V3은 적용 이력이 있으므로 건드리지 않는다).
+1. `src/main/resources/db/versions/`에 `V6__add_file_description.sql`처럼 다음 버전 SQL 파일을 추가한다 (이미 배포된 버전은 건드리지 않는다).
 2. 파일은 이미 적용한 뒤에는 수정하지 않는다. 수정이 필요하면 더 높은 버전의 새 SQL을 추가한다.
 3. 프로젝트를 시작하면 미적용 버전만 실행된다. 적용 결과는 `SCHEMA_MIGRATION`의 `VERSION`, `SCRIPT_NAME`, `APPLIED_AT`에서 확인한다.
 4. SQL 구문 실패 시 해당 버전은 기록되지 않으며 시작이 실패한다. 원인을 수정한 뒤 SQL을 검증하고 재시작한다.
+5. V5는 기존 `APP_USER`의 `ADMIN_YN`을 기준으로 `ROLE_ADMIN`/`ROLE_USER`를 매핑한다. 이후 사용자 삭제는 애플리케이션이 `APP_USER_ROLE`도 함께 정리한다.
 
 운영 적용 전에는 대상 DB 제품과 DDL 트랜잭션 동작을 확인한다. 이 간단한 실행기는 오류 시 롤백을 시도하지만 DB별 DDL 자동 커밋 동작까지 보장하지 않는다.
 
