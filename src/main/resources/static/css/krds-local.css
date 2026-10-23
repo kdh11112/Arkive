@@ -524,3 +524,10 @@
 .sitemap-list a {
   text-decoration: underline;
 }
+
+/* [추가] 통합검색 결과 요약문. [기본] 검색 요약 규격 없음. */
+.search-snippet {
+  margin: 4px 0 0;
+  color: #555;
+  font-size: 1.4rem;
+}

@@ -115,7 +115,7 @@ Arkive 레퍼런스: C:\Users\kdh\Documents\workspace-egov\Arkive
 - [ ] 통계 (게시판·접속 현황)
 - [ ] 외부 웹분석 (GA4 + Clarity) — GA4 정량 통계, Clarity 히트맵·세션리플레이. 스크립트 1줄이라 내부 통계 이후에. 위험: 이벤트·리플레이에 개인정보 포함 금지, 쿠키 동의·마스킹 설정
 - [ ] 현황·통계 패턴 (ADTM statMng 참고) — 현황판 + 통계 + 엑셀 다운로드 세트. 위험: 도메인 쿼리는 대상에 맞게 재작성, 공통 패턴(조회→집계→엑셀)만 재사용
-- [ ] 통합검색 + 초성검색 (GIES goSearch 참고, DB LIKE 우선, es-hangul) — 게시판·FAQ·Q&A·강의 통합 검색 + 초성(ㄹㅁ→라면). 기본 1단계(DB LIKE, 설정 불필요), 2단계(ES 단일노드+Nori+자동완성)는 설정값 `search.engine=es`로만 전환(`LikeSearchService`/`EsSearchService` 분리, `@ConditionalOnProperty`). 불필요하면 값만 되돌림. GIES는 외부 검색엔진 API(내부 IP) 호출이라 단독 이식 불가. 위험: LIKE 성능 한계 명시, ES Docker·HSQLDB 동기화 정책 선행, 로그인 이후 단계
+- [ ] 통합검색 + 초성검색 (GIES goSearch 참고, DB LIKE 우선, es-hangul) — 게시판·FAQ·Q&A·강의 통합 검색 + 초성(ㄹㅁ→라면). 2026-10-23 1단계로 로그인 사용자 대상 **제목 LIKE 통합검색**(`/search`, BOARD CK·TOAST·FAQ·QNA, 본문은 태그 제거 요약)을 구현했다. 본문 검색은 에디터 HTML 오탐 때문에 보류했고, 초성·ES·강의·Q&A 공개 범위는 미적용. 기본 2단계(ES 단일노드+Nori+자동완성)는 설정값 `search.engine=es`로만 전환(`LikeSearchService`/`EsSearchService` 분리, `@ConditionalOnProperty`). 불필요하면 값만 되돌림. GIES는 외부 검색엔진 API(내부 IP) 호출이라 단독 이식 불가. 위험: LIKE 성능 한계 명시, ES Docker·HSQLDB 동기화 정책 선행, 로그인 이후 단계
 - [ ] SMS 보내기 (알리고 기반, 인증번호·알림) — 위험: API키 코드 하드코딩 금지(환경 분리), 발송 실패 재시도·요금 폭탄(루프 발송) 방지
 - [x] Mail 보내기 + @Async (spring-boot-starter-mail, `MailAsyncService`/`MailServiceImpl`, 기본 `MAIL_ENABLED=false`) — 회원가입 환영·공지/중요글은 수신 동의 사용자에게만, 비밀번호 재설정은 거래성이라 동의와 무관하게 발송. 게시글 알림은 `BOARD.MAIL_SENT_YN`을 원자적으로 선점해 1회만 발송. 위험: 실제 SMTP 계정·발신자·대량 발송 정책 미확인, SMTP 장애 시 재시도 없음
 - [ ] 중요글 알림 채널 분리 (글쓰기 중요 체크박스 → BOARD 표시 저장 → 채널별 발송) — 현재 CK/TOAST 중요글·공지 저장 후 `BoardNotificationEvent`를 발행하고, `BoardNotificationEventListener`가 SSE·메일을 채널별로 처리한다. SMS는 미적용. 위험: 채널 추가 시 기존 저장·조회 로직 변경 금지, 발송 실패가 본문 저장에 영향 금지

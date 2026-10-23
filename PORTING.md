@@ -101,6 +101,8 @@ Arkive 실행 → 기능 동작 확인 → 화면/JS 복사 → Controller → S
 | `BoardCommentControllerTest`, `MessageControllerTest` | **기능과 함께** | URL, 응답 메시지, 세션, seed 데이터 |
 | `BoardNotificationEventListenerTest`, `BoardNotificationControllerTest` | **기능과 함께** | 이벤트 클래스·리스너, 게시판 메뉴 ID, API, `@RecordApplicationEvents` |
 | `SitemapControllerTest` | **기능과 함께** | `MenuInterceptor`의 `menuList`, 세션 키, 메뉴 seed, 사이트맵 URL |
+| `SearchMapperTest` | **기능과 함께** | `BOARD`·`BOARD_TYPE` 값, `LIMIT/OFFSET` 문법, 결과 정렬 |
+| `SearchServiceImplTest`, `SearchControllerTest` | **기능과 함께** | 검색 서비스·컨트롤러, 결과 링크 URL, 로그인 세션, 빈 검색어 문구 |
 | `BoardMapperTest`, `MessageMapperTest` | **기능과 함께** | 테이블·컬럼·PK, SQL 문법, seed 데이터 |
 | `LoginSessionRegistryTest`, `LoginSessionControllerTest` | **기능과 함께** | 세션 키, 로그인 URL, seed 계정, 단일/다중 인스턴스 세션 정책 |
 | `PermissionMapperTest`, `RoleManageControllerTest`, `MenuPermissionControllerTest` | **기능과 함께** | 역할·메뉴 ID, 관리자 판정, 403 응답, 사이드바 메뉴, seed 역할 |

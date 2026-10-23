@@ -43,6 +43,7 @@
 | `/api` | `admin.auth.web.ApiController` | `/login.json`, `/noticeList.json`, `/noticeDetail.json`, `/faqList.json` | POST 또는 GET+POST |
 | `/board` | `admin.board.web.BoardController` | `/ckeditorList`, `/toastList`, `/toastList.json`, `/ckeditorWrite`, `/toastWrite`, `/detail`, `/insertBoard.json`, `/updateBoard.json`, `/deleteBoard.json`, `/updateNotice.json`, `/insertComment.json`, `/deleteComment.json`, `/subscribe`, `/editorImageUpload.json` | 화면 GET+POST, `.json` POST, 구독 GET |
 | `/sitemap` | `admin.comm.web.SitemapController` | `/sitemap` | 화면 GET, 로그인 사용자 권한별 메뉴 트리 |
+| `/search` | `admin.search.web.SearchController` | `/search` | 화면 GET, 로그인 필요, 제목 LIKE 통합검색 (CK·TOAST·FAQ·QNA) |
 | `/message` | `admin.message.web.MessageController` | `/inbox`, `/sent`, `/write`, `/detail`, `/insertMessage.json`, `/deleteMessage.json` | 화면 GET+POST, `.json` POST |
 | `/popup` | `admin.popup.web.PopupController` | `/popupList`, `/popupWrite`, `/activePopup.json`, `/popupImageUpload.json`, `/insertPopup.json`, `/updatePopup.json`, `/deletePopup.json` | 화면 GET+POST, `.json` POST |
 | `/banner` | `admin.banner.web.BannerController` | `/bannerList`, `/bannerWrite`, `/activeBanner.json`, `/bannerImageUpload.json`, `/insertBanner.json`, `/updateBanner.json` | 화면 GET+POST, `.json` POST |
@@ -69,7 +70,7 @@
 
 ## 추가 인벤토리
 
-- 위 표가 전체다. 2026-10-11에 29개 Controller prefix를 대조했고, 2026-10-22에 `/message`를 추가해 30개가 되었다. 2026-10-23에 `/board/updateNotice.json`, `/auth/role*`, `/login/resetPw*`, `/sitemap` 경로를 추가해 31개가 되었다. 선언 method는 각 Controller 코드에서 확인한다.
+- 위 표가 전체다. 2026-10-11에 29개 Controller prefix를 대조했고, 2026-10-22에 `/message`를 추가해 30개가 되었다. 2026-10-23에 `/board/updateNotice.json`, `/auth/role*`, `/login/resetPw*`, `/sitemap` 경로를 추가해 31개가 되었고, `/search`를 추가해 32개가 되었다. 선언 method는 각 Controller 코드에서 확인한다.
 - `NiceCheckController`(`/niceExt`) 외부 계약은 연계 명세를 확인한다.
 
 ## 2026-10-22~23 코드에서 확인한 로그인·댓글·쪽지·공지 고정·메일·재설정 JSON 동작

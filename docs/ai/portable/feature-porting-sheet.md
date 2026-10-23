@@ -31,6 +31,7 @@
 - [ ] `application.properties`의 `Globals.*` 키:
 - [ ] 메일·비동기 설정(`spring.mail.*`, `arkive.mail.*`, Executor):
 - [ ] `pom.xml` 의존성:
+- [ ] 검색 기능이면 검색 Controller/Service/Mapper/XML·결과 템플릿·상세 링크:
 - [ ] 테스트 클래스:
 - [ ] 테스트 이식 시트: [test-porting-sheet.md](test-porting-sheet.md)
 
@@ -50,6 +51,7 @@
 - [ ] `verify.cmd` 통과(빌드·테스트·JaCoCo)
 - [ ] 화면 정상 입력/필수값 누락/권한 없음 확인
 - [ ] API 정상/401/권한 없음/잘못된 입력 확인
+- [ ] 검색 기능이면 빈 검색어·무결과·본문 HTML 요약·상세 링크 확인
 - [ ] DB insert·update·delete(soft delete 포함) 확인
 - [ ] 메일 기능이면 실제 SMTP 대신 테스트 비활성/목으로 발송 조건·1회 발송·실패 무시 확인
 - [ ] 기존 기능 회귀 확인

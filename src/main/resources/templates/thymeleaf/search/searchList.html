@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{user/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>통합검색</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">통합검색</h2>
+
+    <form id="searchForm" method="get" th:action="@{/search}"
+          onsubmit="document.getElementById('pageIndex').value=1;">
+        <input type="hidden" id="pageIndex" name="pageIndex" th:value="${pageIndex}">
+        <div class="user-list-search">
+            <label class="sr-only" for="searchKeyword">검색어</label>
+            <input type="text" id="searchKeyword" name="searchKeyword" class="krds-input" maxlength="200"
+                   placeholder="제목 검색" th:value="${searchKeyword}">
+            <button type="submit" class="krds-btn medium secondary">검색</button>
+        </div>
+    </form>
+
+    <p th:if="${!searched}">검색어를 입력하세요.</p>
+    <p th:if="${searched and resultList.isEmpty()}">검색 결과가 없습니다.</p>
+
+    <div th:if="${searched and !resultList.isEmpty()}">
+        <p>총 <span th:text="${paginationInfo.totalRecordCount}">0</span>건</p>
+        <div class="krds-table-wrap">
+            <table class="tbl col data">
+                <caption>통합검색 결과</caption>
+                <colgroup>
+                    <col style="width: 12%;">
+                    <col>
+                    <col style="width: 12%;">
+                    <col style="width: 14%;">
+                </colgroup>
+                <thead>
+                <tr>
+                    <th scope="col">구분</th>
+                    <th scope="col">제목</th>
+                    <th scope="col">작성자</th>
+                    <th scope="col">등록일</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${resultList}">
+                    <td th:text="${item['sourceLabel']}">구분</td>
+                    <td>
+                        <a th:if="${item['boardType'] == 'CK'}"
+                           th:href="@{/user/board/noticeDetail(boardId=${item['boardId']})}"
+                           th:text="${item['title']}">제목</a>
+                        <a th:if="${item['boardType'] == 'TOAST'}"
+                           th:href="@{/user/board/archiveDetail(boardId=${item['boardId']})}"
+                           th:text="${item['title']}">제목</a>
+                        <a th:if="${item['boardType'] == 'FAQ'}"
+                           th:href="@{/user/faq/faqList(searchKeyword=${item['title']})}"
+                           th:text="${item['title']}">제목</a>
+                        <a th:if="${item['boardType'] == 'QNA'}"
+                           th:href="@{/user/qna/qnaDetail(boardId=${item['boardId']})}"
+                           th:text="${item['title']}">제목</a>
+                        <p class="search-snippet"
+                           th:if="${item['snippet'] != null and !item['snippet'].isEmpty()}"
+                           th:text="${item['snippet']}"></p>
+                    </td>
+                    <td th:text="${item['register']}">작성자</td>
+                    <td th:text="${item['registDt'] != null ? #dates.format(item['registDt'], 'yyyy-MM-dd') : ''}">등록일</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="paging" class="krds-pagination w-page"
+             th:utext="${#egovKrdsPaginationRenderer.renderPagination(paginationInfo, 'searchPaging')}"></div>
+    </div>
+
+<script>
+    function searchPaging(pageIndex) {
+        document.getElementById('pageIndex').value = pageIndex;
+        document.getElementById('searchForm').submit();
+    }
+</script>
+</div>
+</body>
+</html>

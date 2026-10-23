@@ -20,10 +20,10 @@
 
 | 종류 | Arkive 예 | 복사 방식 | 대상에서 바꿀 것 |
 | --- | --- | --- | --- |
-| 순수 단위 | `JwtUtilTest`, `FileTypeUtilTest`, `HtmlSanitizerTest`, `MailServiceImplTest`, `BoardNotificationEventListenerTest` | 거의 그대로 | 패키지·import·클래스명, 메일 본문·제목·URL, 이벤트 필드 |
+| 순수 단위 | `JwtUtilTest`, `FileTypeUtilTest`, `HtmlSanitizerTest`, `MailServiceImplTest`, `BoardNotificationEventListenerTest`, `SearchServiceImplTest` | 거의 그대로 | 패키지·import·클래스명, 메일 본문·제목·URL, 이벤트 필드, 검색 요약 규칙 |
 | 인증 인터셉터 | `AuthInterceptorTest` | 수정 복사 | 세션 키, 공개 경로, 리다이렉트 URL |
-| Controller/API | `BoardCommentControllerTest`, `BoardNotificationControllerTest`, `SitemapControllerTest`, `MessageControllerTest`, `PasswordResetControllerTest` | 기능과 함께 수정 복사 | URL, 응답 메시지, 세션, seed 데이터, 토큰 테이블, `@RecordApplicationEvents`, `MenuInterceptor` 모델 |
-| Mapper/DB | `BoardMapperTest`, `MessageMapperTest` | 기능과 함께 수정 복사 | 테이블·컬럼·PK, SQL 문법, seed 데이터 |
+| Controller/API | `BoardCommentControllerTest`, `BoardNotificationControllerTest`, `SitemapControllerTest`, `SearchControllerTest`, `MessageControllerTest`, `PasswordResetControllerTest` | 기능과 함께 수정 복사 | URL, 응답 메시지, 세션, seed 데이터, 토큰 테이블, `@RecordApplicationEvents`, `MenuInterceptor` 모델, 검색 결과 링크 |
+| Mapper/DB | `BoardMapperTest`, `MessageMapperTest`, `SearchMapperTest` | 기능과 함께 수정 복사 | 테이블·컬럼·PK, SQL 문법, seed 데이터, `BOARD_TYPE`·페이징 문법 |
 | 스모크 | `ArkiveSmokeTest` | 복사하지 않음 | 대상 앱 클래스로 새로 작성 |
 
 핵심은 **테스트 시나리오는 복사하고, assertion은 대상 업무 규칙에 맞게 다시 확인**하는 것이다.
@@ -61,6 +61,7 @@
 - [ ] 메일 발송 조건(활성화 플래그·발신자·수신 동의)과 1회 발송 선점
 - [ ] 게시글 알림 이벤트의 SSE·메일 분기와 채널별 실패 격리
 - [ ] 사이트맵의 로그인 필요·권한별 메뉴 필터·빈 메뉴 안내
+- [ ] 통합검색의 대상 `BOARD_TYPE`·제목 범위·Q&A 공개 조건·LIKE 페이징 문법·상세 링크
 - [ ] 비밀번호 재설정 토큰 만료·1회 사용·재발급 쿨다운·세션 무효화
 
 ## 5. 실행과 완료 기준

@@ -5,7 +5,7 @@
 
 ## 현황 (Arkive, 2026-10-23 실측)
 
-- `src/test`에 테스트 클래스 21개, 테스트 92개가 있고 `verify.cmd`가 통과한다.
+- `src/test`에 테스트 클래스 24개, 테스트 102개가 있고 `verify.cmd`가 통과한다.
   - `ArkiveSmokeTest` 1 — 컨텍스트·MyBatis 배선
   - `BoardMapperTest` 3 — 게시판 CRUD, null content, 댓글·cascade
   - `BoardCommentControllerTest` 3 — 댓글 인증·검증·작성자/관리자 삭제
@@ -25,11 +25,14 @@
   - `RoleManageControllerTest` 7 — 권한관리 화면, 역할 생성·메뉴·사용자 저장, 필수값, 잘못된 사용자 배정 거부, 기본 역할 삭제 거부, 사용자 삭제 시 역할 매핑 정리
   - `MenuPermissionControllerTest` 5 — 조회 전용/쓰기 역할, 역할 없음 거부, 관리자 우회, 사이드바 필터
   - `SitemapControllerTest` 3 — 로그인 필요, 관리자 메뉴 트리, 역할 없는 사용자의 빈 사이트맵
+  - `SearchMapperTest` 3 — CK/TOAST/FAQ/QNA 제목 검색, 본문만 일치 제외, 페이징·건수
+  - `SearchServiceImplTest` 3 — 유형 라벨, HTML 제거·요약, CLOB 변환
+  - `SearchControllerTest` 4 — 로그인 필요, 결과 렌더, 빈 검색어·무결과
   - `MailServiceImplTest` 10 — 비활성·발신자 없음, 수신 동의, 환영/재설정/공지 메일, HTML escape, 1회 선점, SMTP 실패 무시
   - `PasswordResetControllerTest` 5 — 토큰 발급 조건·1회 사용·만료·입력 검증·쿨다운
-- 전체 커버리지: instruction 16.2%, branch 14.7%, line 17.1% (2026-10-23 `verify.cmd` 기준). **아직 낮다.**
+- 전체 커버리지: instruction 16.5%, branch 15.0%, line 17.4% (2026-10-23 `verify.cmd` 기준). **아직 낮다.**
 - JaCoCo `check`는 전체가 아니라 검증된 일부 클래스만 강제한다.
-  (`HtmlSanitizer`, `FileTypeUtil`, `JwtUtil`, `AuthInterceptor`, `MessageController`, `MessageServiceImpl`, `BoardServiceImpl`, `MailServiceImpl`, `BoardNotificationEventListener`)
+  (`HtmlSanitizer`, `FileTypeUtil`, `JwtUtil`, `AuthInterceptor`, `MessageController`, `MessageServiceImpl`, `BoardServiceImpl`, `MailServiceImpl`, `BoardNotificationEventListener`, `SearchServiceImpl`)
 - GitHub Actions `.github/workflows/verify.yml`에서 `mvn -B clean verify`를 실행한다.
 - 테스트 DB는 `target/test-db`, 포트 **9002**를 쓴다. 앱이 9001을 쓰는 중에도 테스트가 돈다.
 - `ArkiveIntegrationTest` 합성 애노테이션으로 통합 테스트가 같은 Spring 컨텍스트를 공유한다.
@@ -96,7 +99,7 @@ arkive.mail.enabled=false
 ## 2. JaCoCo (핵심 클래스 한정)
 
 전체 19k LOC에 60%를 한 번에 강제하지 않는다. **검증된 클래스부터** 좁게 시작하고, 테스트를 추가할 때마다 `includes`를 늘린다.
-아래는 최소 예시다. Arkive `pom.xml`은 `HtmlSanitizer`·`FileTypeUtil`·`JwtUtil`·`AuthInterceptor`·`MessageController`·`MessageServiceImpl`·`BoardServiceImpl`·`MailServiceImpl`에 클래스별 룰을 둔다.
+아래는 최소 예시다. Arkive `pom.xml`은 `HtmlSanitizer`·`FileTypeUtil`·`JwtUtil`·`AuthInterceptor`·`MessageController`·`MessageServiceImpl`·`BoardServiceImpl`·`MailServiceImpl`·`BoardNotificationEventListener`·`SearchServiceImpl`에 클래스별 룰을 둔다.
 
 ```xml
 <plugin>
