@@ -23,6 +23,7 @@
 - [ ] 화면 JavaScript/CSS:
 - [ ] Controller:
 - [ ] Service / ServiceImpl:
+- [ ] 이벤트 / 리스너:
 - [ ] Mapper 인터페이스:
 - [ ] Mapper XML:
 - [ ] `db/versions/V*__*.sql`:

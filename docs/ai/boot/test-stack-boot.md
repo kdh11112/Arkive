@@ -5,12 +5,14 @@
 
 ## 현황 (Arkive, 2026-10-23 실측)
 
-- `src/test`에 테스트 클래스 18개, 테스트 76개가 있고 `verify.cmd`가 통과한다.
+- `src/test`에 테스트 클래스 20개, 테스트 89개가 있고 `verify.cmd`가 통과한다.
   - `ArkiveSmokeTest` 1 — 컨텍스트·MyBatis 배선
   - `BoardMapperTest` 3 — 게시판 CRUD, null content, 댓글·cascade
   - `BoardCommentControllerTest` 3 — 댓글 인증·검증·작성자/관리자 삭제
   - `BoardNoticeMapperTest` 2 — 공지 고정 정렬·해제·CK 외 거부
   - `BoardNoticeControllerTest` 4 — 공지 고정 인증·관리자 권한·입력 검증·목록 렌더링
+  - `BoardNotificationEventListenerTest` 9 — CK/TOAST SSE 역할, 메일 요청 분기, 채널별 실패 격리
+  - `BoardNotificationControllerTest` 4 — 게시글 저장·수정·공지 고정 시 알림 이벤트 발행
   - `MessageMapperTest` 2 — 받은/보낸함 분리, 읽음, 소프트 삭제, 검색
   - `MessageControllerTest` 4 — 쪽지 인증·중복제출·검증·함별 권한
   - `HtmlSanitizerTest` 6 — XSS 허용/차단
@@ -24,9 +26,9 @@
   - `MenuPermissionControllerTest` 5 — 조회 전용/쓰기 역할, 역할 없음 거부, 관리자 우회, 사이드바 필터
   - `MailServiceImplTest` 10 — 비활성·발신자 없음, 수신 동의, 환영/재설정/공지 메일, HTML escape, 1회 선점, SMTP 실패 무시
   - `PasswordResetControllerTest` 5 — 토큰 발급 조건·1회 사용·만료·입력 검증·쿨다운
-- 전체 커버리지: instruction 14.9%, branch 13.3%, line 15.8% (2026-10-23 `mvn verify` 기준). **아직 낮다.**
+- 전체 커버리지: instruction 16.0%, branch 14.5%, line 16.8% (2026-10-23 `verify.cmd` 기준). **아직 낮다.**
 - JaCoCo `check`는 전체가 아니라 검증된 일부 클래스만 강제한다.
-  (`HtmlSanitizer`, `FileTypeUtil`, `JwtUtil`, `AuthInterceptor`, `MessageController`, `MessageServiceImpl`, `BoardServiceImpl`, `MailServiceImpl`)
+  (`HtmlSanitizer`, `FileTypeUtil`, `JwtUtil`, `AuthInterceptor`, `MessageController`, `MessageServiceImpl`, `BoardServiceImpl`, `MailServiceImpl`, `BoardNotificationEventListener`)
 - GitHub Actions `.github/workflows/verify.yml`에서 `mvn -B clean verify`를 실행한다.
 - 테스트 DB는 `target/test-db`, 포트 **9002**를 쓴다. 앱이 9001을 쓰는 중에도 테스트가 돈다.
 - `ArkiveIntegrationTest` 합성 애노테이션으로 통합 테스트가 같은 Spring 컨텍스트를 공유한다.

@@ -31,7 +31,7 @@
 | --- | --- | --- | --- |
 | 시스템 메뉴·공통코드 관리 | `arkive.admin.system.*`, `System_SQL.xml`, `CommCode_SQL.xml`, `templates/thymeleaf/system/` | 메뉴·코드 목록·상세·등록·수정·삭제 (`/system` prefix) | 미확인 |
 | 로그인·회원·계정 찾기 | `arkive.admin.auth.web.LoginController`, `Auth_SQL.xml`(APP_USER), `templates/thymeleaf/login/` | 로그인·회원가입·ID/PW찾기·로그아웃 (`/login`) | 미확인 |
-| 메일 발송 | `arkive.admin.mail.*`, `MailServiceImpl`, `MailAsyncService`, `EgovConfigAsync`, `V6__mail_notification.sql`, `application.properties`(`spring.mail.*`·`arkive.mail.*`) | 환영·비밀번호 재설정·공지/중요글 알림, `@Async("mailTaskExecutor")`, 기본 비활성, 수신 동의 필터, 게시글당 1회 선점 | 미확인 (SMTP 제공자·발신 도메인·대량 발송 정책) |
+| 메일 발송 | `arkive.admin.mail.*`, `MailServiceImpl`, `MailAsyncService`, `EgovConfigAsync`, `BoardNotificationEvent`/`BoardNotificationEventListener`, `V6__mail_notification.sql`, `application.properties`(`spring.mail.*`·`arkive.mail.*`) | 환영·비밀번호 재설정·공지/중요글 알림, 게시판 알림은 ApplicationEvent로 채널 분리, `@Async("mailTaskExecutor")`, 기본 비활성, 수신 동의 필터, 게시글당 1회 선점 | 미확인 (SMTP 제공자·발신 도메인·대량 발송 정책) |
 | 비밀번호 재설정 | `LoginController`(`/login/findPw*`, `/login/resetPw*`), `AuthServiceImpl`, `AuthMapper`, `Auth_SQL.xml`, `PASSWORD_RESET_TOKEN`, `login/findPw.html`, `login/resetPw.html` | 아이디·이름·이메일 일치 시 1회용 링크 발급, 30분·1회·60초 쿨다운, SHA-256 해시 저장, 성공 시 세션 만료 | 미확인 (IP별 제한·감사 로그·메일 전달 정책) |
 | 중복 로그인 방지 | `LoginController`, `OauthController`, `LoginSessionRegistry`, `EgovConfigWeb` | 폼·OAuth 로그인 성공 시 사용자별 최신 세션만 유지, 이전 세션 만료, 로그아웃·세션 만료 시 매핑 제거 | 미확인 |
 | 사용자관리 | `arkive.admin.auth.web.UserManageController`, `templates/thymeleaf/auth/` | 목록·등록·수정·삭제·잠금해제·비번초기화 (`/auth`). 메뉴 `ME02010400` | 미확인 |
@@ -50,7 +50,7 @@
 
 ## 테스트 자산 현황 (2026-10-23)
 
-전체 76개 테스트, instruction 14.9% / branch 13.3% (line 15.8%). 커버리지 숫자만으로 품질을 판단하지 않고, 아래처럼 기능별 검증 범위와 공백을 함께 본다.
+전체 89개 테스트, instruction 16.0% / branch 14.5% / line 16.8% (2026-10-23 `verify.cmd` 기준). 숫자만으로 품질을 판단하지 않고 아래처럼 기능별 검증 범위와 공백을 함께 본다.
 
 | 기능/영역 | 자동 테스트 | 검증 범위 | 남은 공백 |
 | --- | --- | --- | --- |
@@ -58,6 +58,7 @@
 | 게시판 CRUD | `BoardMapperTest` 3 | insert/select/delete, null content, 댓글 cascade | 페이징 경계, 검색 조건, 첨부 연결 |
 | 게시글 댓글 API | `BoardCommentControllerTest` 3 | 401, 게시글/내용 검증, 작성자·관리자 삭제 | 수정·신고, 관리자 판정 범위 |
 | 공지 고정 | `BoardNoticeMapperTest` 2, `BoardNoticeControllerTest` 4 | 고정 우선 정렬·해제·CK 외 거부, 401·관리자 권한·입력 검증, 목록 템플릿 렌더링 | 페이지 경계, 다건 고정 정렬, 수동 화면 확인 |
+| 게시판 알림 이벤트 | `BoardNotificationEventListenerTest` 9, `BoardNotificationControllerTest` 4 | 등록 시 SSE·메일 요청 분리, CK/TOAST 메뉴 역할, 중요글 전환 시에만 메일, 채널별 실패 격리 | SMS 채널, 실제 SSE 구독 E2E, 실제 SMTP E2E, 이벤트 비동기 전환 |
 | 쪽지 | `MessageMapperTest` 2, `MessageControllerTest` 4 | 받은/보낸함 분리, 읽음, 소프트 삭제, 검색, 401, 중복제출, 함별 권한 | 보존·파기 정책, 수신자 삭제 후 발신자 표시, 메일·알림 연계 |
 | HTML sanitize | `HtmlSanitizerTest` 6 | script·이벤트·iframe·표·style | 실제 에디터 출력 회귀 |
 | 파일 실형식 | `FileTypeUtilTest` 5 | 매직바이트, 확장자 위조, 허용 목록 | 업로드 경로·다운로드 권한·TUS |

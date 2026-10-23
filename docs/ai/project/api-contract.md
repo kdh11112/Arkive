@@ -81,9 +81,9 @@
 | `/login/findPw.json` | POST | 공개 | `userId`, `userNm`, `email` | `success:true`, 고정 안내 메시지. 아이디·이름·이메일이 모두 일치하면 1회용 토큰을 만들고 `MailAsyncService`로 재설정 링크 메일을 비동기 요청 | `success:false`, `message` (필수값 누락); 계정 불일치도 동일한 `success:true` 안내로 존재 여부를 숨김. 같은 사용자 60초 쿨다운 |
 | `/login/resetPw` | GET | 공개(토큰) | `token` | 유효하면 새 비밀번호 입력 화면, 아니면 만료 안내 화면 | 토큰 원문은 URL에만 있고 DB에는 SHA-256 해시만 저장 |
 | `/login/resetPw.json` | POST | 공개(토큰) | `token`, `password`(8자 이상), `passwordConfirm` | `success:true`, 비밀번호 변경·토큰 사용 처리·실패 횟수/잠금 초기화·기존 로그인 세션 만료 | `success:false`, `message` (만료·사용됨, 8자 미만, 확인 불일치); 입력 검증 실패 시 토큰은 소비하지 않음 |
-| `/board/insertBoard.json` | POST | 로그인 + 관리자(중요글 지정 시) | 기존 게시글 입력 + `importantYn`(관리자만 Y) | 저장 성공. CK 공지/TOAST 중요글이면 `MailAsyncService.sendBoardNotification` 호출. 메일 실패는 저장 응답에 영향 없음 | 기존 오류 + 관리자 아님·중복 제출·제목/내용 검증 |
-| `/board/updateBoard.json` | POST | 로그인 + 관리자(중요글 전환 시) | 기존 게시글 입력 + `importantYn` | 중요글 N→Y 전환 시에만 메일 알림 요청. `BOARD.MAIL_SENT_YN` 선점으로 글당 1회 | 기존 오류 + 관리자 아님·중요글 지정 오류 |
-| `/board/updateNotice.json` | POST | 로그인 + 관리자 | `boardId`, `noticeYn` | 공지 Y 전환 시 메일 알림 요청. 이미 발송된 글이면 `MAIL_SENT_YN` 선점 실패로 추가 발송 없음 | 관리자 아님, CK 아님, 게시글 없음, 값 오류 |
+| `/board/insertBoard.json` | POST | 로그인 + 관리자(중요글 지정 시) | 기존 게시글 입력 + `importantYn`(관리자만 Y) | 저장 성공. 항상 `BoardNotificationEvent(notifySse=true)`를 발행하고, CK 공지/TOAST 중요글이면 `notifyMail=true`도 함께 요청. 실제 발송 실패는 리스너에서 격리 | 기존 오류 + 관리자 아님·중복 제출·제목/내용 검증 |
+| `/board/updateBoard.json` | POST | 로그인 + 관리자(중요글 전환 시) | 기존 게시글 입력 + `importantYn` | `BoardNotificationEvent(notifySse=false)`를 발행하고, 중요글 N→Y 전환 시에만 `notifyMail=true`. `BOARD.MAIL_SENT_YN` 선점으로 글당 1회 | 기존 오류 + 관리자 아님·중요글 지정 오류 |
+| `/board/updateNotice.json` | POST | 로그인 + 관리자 | `boardId`, `noticeYn` | `BoardNotificationEvent(notifySse=false)`를 발행하고, 공지 Y일 때만 `notifyMail=true`. 이미 발송된 글이면 `MAIL_SENT_YN` 선점 실패로 추가 발송 없음 | 관리자 아님, CK 아님, 게시글 없음, 값 오류 |
 | `/board/insertComment.json` | POST | 로그인 세션 | `boardId`, `content`(trim 후 1~1000자) | `success:true`, `commentId` | `success:false`, `message` |
 | `/board/deleteComment.json` | POST | 로그인 + 작성자/관리자 | `commentId` | `success:true` | `success:false`, `message` |
 | `/message/insertMessage.json` | POST | 로그인 세션 | `receiverId`, `title`(1~200자), `content`(1~4000자), double-submit token | `success:true`, `msgId` | `success:false`, `message` |
@@ -95,10 +95,10 @@
 - 댓글 삭제의 관리자 예외는 세션 `ADMIN_USER`로 판정한다. 쪽지는 관리자 예외 없이 발신자/수신자 본인만 열람·삭제한다. 공지 고정은 `ADMIN_USER`가 있어야 하며 CK 게시판만 허용한다.
 - `/login/login.json` 성공 시 `LoginSessionRegistry`가 사용자별 최신 세션을 유지하고 같은 계정의 이전 세션을 `invalidate()`한다. 폼 로그인·OAuth 콜백·계정연계 모두 동일하며, 다중 인스턴스에서는 공유 세션 저장소가 필요하다.
 - 로그인 사용자의 메뉴 조회·쓰기는 `MenuPermissionInterceptor`가 컨트롤러→메뉴 매핑으로 검사한다. 거부 시 `.json`은 HTTP 403 + `{"success":false,"message":"권한이 없습니다."}`, 화면은 403 오류 페이지다. `ADMIN_YN='Y'`는 슈퍼관리자로 통과하며, `/system`·`/auth`는 기존 `AuthInterceptor` 정책상 관리자만 접근한다.
-- 댓글·쪽지·다운로드·SSE 구독은 메뉴 CRUD 권한과 분리해 로그인 사용자 공통 기능으로 둔다. SSE는 구독 시 역할을 저장하고 발송 시 `selectRoleIdsWithMenuRead` 결과와 겹치는 역할에만 보낸다.
+- 댓글·쪽지·다운로드·SSE 구독은 메뉴 CRUD 권한과 분리해 로그인 사용자 공통 기능으로 둔다. SSE는 구독 시 역할을 저장하고, `BoardNotificationEventListener`가 발송 시 `selectRoleIdsWithMenuRead` 결과와 겹치는 역할에만 보낸다.
 - `/login/findPw.json`·`/login/resetPw.json`은 성공·실패 모두 HTTP 200과 `success` 필드로 응답한다. `findPw`는 계정 불일치·SMTP 비활성·발송 실패에서도 동일한 성공 메시지를 반환하므로, 클라이언트는 메일 도착 여부를 응답만으로 판단하지 않는다.
 - 메일 발송은 `arkive.mail.enabled=true`, 유효한 `arkive.mail.from`, SMTP 설정이 모두 있어야 한다. 기본값은 비활성이며, 비활성·수신 거부·이메일 없음이면 조용히 건너뛴다. 실제 SMTP 발송·반송·수신거부 계약은 미확인이다.
-- 공지/중요글 메일은 `BOARD.MAIL_SENT_YN`을 먼저 `Y`로 선점한 뒤 발송한다. 선점 후 SMTP가 실패해도 API 응답은 성공이며 자동 재시도는 없다.
+- 공지/중요글 메일은 `BOARD.MAIL_SENT_YN`을 먼저 `Y`로 선점한 뒤 발송한다. 선점 후 SMTP가 실패해도 API 응답은 성공이며 자동 재시도는 없다. 게시판 저장 API는 `BoardNotificationEvent`만 발행하고, SSE·메일 리스너가 각자 예외를 처리한다.
 
 ## 계약 기록 양식
 

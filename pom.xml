@@ -606,6 +606,20 @@
 										</limit>
 									</limits>
 								</rule>
+								<rule>
+									<element>CLASS</element>
+									<includes><include>arkive.admin.board.event.BoardNotificationEventListener</include></includes>
+									<limits>
+										<limit>
+											<counter>BRANCH</counter><value>COVEREDRATIO</value>
+											<minimum>0.80</minimum>
+										</limit>
+										<limit>
+											<counter>LINE</counter><value>COVEREDRATIO</value>
+											<minimum>0.90</minimum>
+										</limit>
+									</limits>
+								</rule>
 							</rules>
 						</configuration>
 					</execution>

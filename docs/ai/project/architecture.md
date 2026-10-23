@@ -45,7 +45,7 @@
 - 쪽지: `MessageController`(`/message`) → `MessageService`/`MessageServiceImpl` → `MessageMapper` → `Message_SQL.xml`. 화면은 `templates/thymeleaf/message/`의 목록·작성·상세이며, 수신자가 상세를 열 때 읽음 처리한다.
 - 로그인 세션: `LoginSessionRegistry`가 사용자별 최신 세션 1개를 유지한다. `LoginController`·`OauthController`가 로그인 성공 시 등록하고, 같은 사용자의 새 로그인은 이전 세션을 만료시킨다. `EgovConfigWeb`이 `HttpSessionListener`로 등록해 세션 만료 시 매핑을 지운다. 단일 인스턴스 메모리 기준이다.
 - 권한: `APP_USER_ROLE`로 사용자에 역할을 배정하고 `APP_ROLE_MENU`가 역할별 메뉴 조회·쓰기를 정의한다. `PermissionServiceImpl`이 여러 역할을 메뉴별 OR로 합치고, `MenuPermissionInterceptor`가 컨트롤러→메뉴 매핑으로 READ/WRITE를 서버에서 강제한다. `MenuInterceptor`는 같은 조회 권한으로 사이드바를 필터링한다. `ADMIN_YN='Y'`는 슈퍼관리자로 통과하며 `/system`·`/auth`는 기존 `AuthInterceptor` 정책상 관리자만 접근한다.
-- 메일: `LoginController`·`OauthController`(환영), `UserManageController`(관리자 등록), `BoardController`(공지/중요글), `LoginController`(비밀번호 재설정)가 `MailAsyncService`를 호출한다. `EgovConfigAsync`의 `mailTaskExecutor`가 요청 스레드에서 분리하고, `MailServiceImpl`이 `arkive.mail.enabled`·발신자·수신 동의를 재검사한 뒤 `JavaMailSender`로 보낸다. 공지/중요글은 `BOARD.MAIL_SENT_YN` 선점으로 1회만 발송한다.
+- 메일: `LoginController`·`OauthController`(환영), `UserManageController`(관리자 등록), `LoginController`(비밀번호 재설정)가 `MailAsyncService`를 호출한다. 게시판 공지/중요글은 `BoardController`가 `BoardNotificationEvent`를 발행하고 `BoardNotificationEventListener`가 `MailAsyncService`로 넘긴다. `EgovConfigAsync`의 `mailTaskExecutor`가 요청 스레드에서 분리하고, `MailServiceImpl`이 `arkive.mail.enabled`·발신자·수신 동의를 재검사한 뒤 `JavaMailSender`로 보낸다. 공지/중요글은 `BOARD.MAIL_SENT_YN` 선점으로 1회만 발송한다.
 - 비밀번호 재설정: `AuthServiceImpl.issuePasswordResetToken`이 32바이트 난수를 URL-safe Base64로 만들고 SHA-256 해시만 `PASSWORD_RESET_TOKEN`에 저장한다. `LoginController`의 `/login/resetPw`가 토큰 유효성(30분·1회)을 확인하고 `AuthServiceImpl.resetPasswordByToken`이 비밀번호 변경·잠금 해제·세션 만료를 처리한다.
 - DB, Mapper, 트랜잭션 및 웹 설정은 `egovframework.example.config`에 Java Config로 존재한다.
 - Controller에 `@Valid`와 `BindingResult`를 사용하는 입력 검증 예제가 있다. 실제 변경은 해당 기능의 서버 검증 패턴을 확인한다.
@@ -60,7 +60,7 @@
 ## 새 글 알림(SSE)
 
 - `BoardController`의 `GET /board/subscribe`가 로그인 세션의 역할을 조회해 `BoardSseService.subscribe(boardType, roles)`를 호출하고, `SseEmitter` 연결을 30분간 유지한다.
-- 새 글 등록 성공 후 `BoardSseService.broadcast(..., targetRoles)`가 해당 게시판과 `ALL` 통로로 `{boardId,title,boardType}`을 보낸다. `targetRoles`는 해당 메뉴의 조회 권한이 있는 역할(`selectRoleIdsWithMenuRead`)이며, 역할이 겹치는 구독자에게만 보낸다. 대상 역할이 비면 발송하지 않는다. 통로는 메모리에만 있으므로 단일 서버 기준이며, 서버 재시작 시 브라우저가 재구독한다.
+- 새 글 등록 성공 후 `BoardController`가 `BoardNotificationEvent(notifySse=true)`를 발행하고, `BoardNotificationEventListener`가 해당 메뉴의 조회 권한 역할(`selectRoleIdsWithMenuRead`)을 조회해 `BoardSseService.broadcast(..., targetRoles)`로 해당 게시판과 `ALL` 통로에 `{boardId,title,boardType}`을 보낸다. 역할이 겹치는 구독자에게만 보내며, 대상 역할이 비면 발송하지 않는다. 통로는 메모리에만 있으므로 단일 서버 기준이며, 서버 재시작 시 브라우저가 재구독한다.
 - `layout.html`은 전역 배너와 SSE 구독 스크립트를 포함하지만, 현재 `ARKIVE_SSE_ENABLED=false`라 기본 화면에서는 구독하지 않는다. 활성화하려면 `true`로 바꾸고, 페이지별 `window.ARKIVE_SSE` 선언이 layout 스크립트보다 먼저 실행되는지 확인한다.
 - 화면별 설정: `window.ARKIVE_SSE = { banner: false };`는 해당 화면에서 구독·배너를 끄고, `window.ARKIVE_SSE = { hideAfterMs: 30000 };`은 30초 뒤 배너를 자동으로 숨긴다. 기본값은 계속 표시다.
 - 역할 필터는 활성화되어 있다. 댓글·쪽지·다운로드·SSE 구독은 메뉴 CRUD 권한과 분리해 로그인 사용자 공통 기능으로 둔다.
@@ -107,7 +107,7 @@
 ## 타 프로젝트로 이식할 때 복사 범위
 
 - 기능 단위 복사: 화면(Thymeleaf+JS) → Controller → Service/Impl → Mapper 인터페이스 → Mapper XML → `db/versions` SQL → `application.properties`·Globals 키 → `pom.xml` 의존성 순서로 가져간다.
-- 메일·비밀번호 재설정을 복사할 때는 `spring-boot-starter-mail`, `EgovConfigAsync`, `MailService`/`MailAsyncService`/`MailServiceImpl`, `AuthServiceImpl`의 토큰 메서드, `LoginController`의 화면·API, `V6__mail_notification.sql`, `spring.mail.*`·`arkive.mail.*` 설정을 함께 가져간다. 실제 SMTP 값은 대상 환경변수로 주입한다.
+- 메일·비밀번호 재설정을 복사할 때는 `spring-boot-starter-mail`, `EgovConfigAsync`, `MailService`/`MailAsyncService`/`MailServiceImpl`, `AuthServiceImpl`의 토큰 메서드, `LoginController`의 화면·API, `V6__mail_notification.sql`, `spring.mail.*`·`arkive.mail.*` 설정을 함께 가져간다. 게시판 알림은 `BoardNotificationEvent`·`BoardNotificationEventListener`와 해당 테스트도 함께 복사한다. 실제 SMTP 값은 대상 환경변수로 주입한다.
 - 프로젝트명·패키지(`arkive.*`)·테이블명·파일 경로·DB 문법은 대상 프로젝트에 맞게 최소한만 바꾼다.
 
 수정 전 실제 관련 호출 흐름과 설정을 검색한다. 이 요약만으로 보안 적용이나 기능 소유권을 단정하지 않는다.

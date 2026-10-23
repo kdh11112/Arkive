@@ -25,6 +25,8 @@ main 설정을 덮어쓰므로 테스트에 필요한 키만 둔다.
 - `admin/message/MessageFixtures.java` — 쪽지 테스트 데이터
 - `admin/message/service/impl/MessageMapperTest.java` — 받은/보낸함·읽음·삭제
 - `admin/message/web/MessageControllerTest.java` — 쪽지 API 권한·검증
+- `admin/board/event/BoardNotificationEventListenerTest.java` — SSE·메일 채널 분리, 실패 격리 (Mockito 단위)
+- `admin/board/web/BoardNotificationControllerTest.java` — 게시글 저장 API의 알림 이벤트 발행
 - `admin/mail/service/impl/MailServiceImplTest.java` — 메일 발송 조건·1회 발송·SMTP 실패 (Mockito 단위)
 - `admin/auth/web/PasswordResetControllerTest.java` — 비밀번호 재설정 토큰 발급·소비·만료
 
@@ -50,6 +52,8 @@ main 설정을 덮어쓰므로 테스트에 필요한 키만 둔다.
 | `BoardCommentControllerTest` | 3 | 댓글 인증·검증·삭제 권한 | 중간(URL·메시지·세션) |
 | `BoardNoticeMapperTest` | 2 | 공지 고정 정렬·해제·CK 외 거부 | 높음(스키마·SQL) |
 | `BoardNoticeControllerTest` | 4 | 공지 고정 인증·관리자 권한·입력 검증·목록 렌더링 | 중간(URL·메시지·세션) |
+| `BoardNotificationEventListenerTest` | 9 | CK/TOAST SSE 역할, 메일 요청 분기, 채널별 실패 격리 | 낮음~중간(Mockito) |
+| `BoardNotificationControllerTest` | 4 | 등록·수정·공지 고정 시 알림 이벤트 발행 조건 | 중간(API·세션·이벤트) |
 | `MessageMapperTest` | 2 | 받은/보낸함, 읽음, 소프트 삭제, 검색 | 높음(스키마·SQL) |
 | `MessageControllerTest` | 4 | 쪽지 인증·중복제출·검증·권한 | 중간(URL·메시지·세션) |
 | `HtmlSanitizerTest` | 6 | XSS 허용/차단 | 낮음(거의 그대로) |
@@ -64,8 +68,8 @@ main 설정을 덮어쓰므로 테스트에 필요한 키만 둔다.
 | `MailServiceImplTest` | 10 | 비활성·발신자 없음, 수신 동의, 환영/재설정/공지 메일, HTML escape, 1회 선점, SMTP 실패 무시 | 낮음~중간(Mockito·메일 본문) |
 | `PasswordResetControllerTest` | 5 | 토큰 발급 조건·1회 사용·만료·입력 검증·쿨다운 | 중간(URL·메시지·DB) |
 
-합계 76개. 전체 커버리지는 instruction 14.9%, branch 13.3%, line 15.8%로 아직 낮다.
-JaCoCo 게이트는 검증된 일부 클래스만 강제하며, 메일은 `MailServiceImpl`의 branch 70%·line 80%를 추가로 검사한다.
+합계 89개. 전체 커버리지는 instruction 16.0%, branch 14.5%, line 16.8% (2026-10-23 `verify.cmd` 기준).
+JaCoCo 게이트는 검증된 일부 클래스만 강제하며, 메일은 `MailServiceImpl`(branch 70%·line 80%), 게시판 알림은 `BoardNotificationEventListener`(branch 80%·line 90%)를 추가로 검사한다.
 
 ## 5. 실행
 

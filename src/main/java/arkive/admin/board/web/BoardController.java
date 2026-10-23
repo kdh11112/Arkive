@@ -16,6 +16,8 @@ import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,12 +30,12 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import arkive.admin.auth.service.PermissionService;
 import arkive.admin.auth.web.LoginController;
+import arkive.admin.board.event.BoardNotificationEvent;
 import arkive.admin.board.service.BoardService;
 import arkive.admin.board.service.BoardSseService;
 import arkive.admin.comm.service.FileService;
 import arkive.admin.comm.web.CommUtil;
 import arkive.admin.comm.web.HtmlSanitizer;
-import arkive.admin.mail.service.MailAsyncService;
 import egovframework.com.cmm.util.EgovDoubleSubmitHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -68,8 +70,8 @@ public class BoardController {
 	@Resource(name = "permissionService")
 	private PermissionService permissionService;
 
-	@Resource(name = "mailAsyncService")
-	private MailAsyncService mailAsyncService;
+	@Autowired
+	private ApplicationEventPublisher eventPublisher;
 
 	private CommUtil cmmUtil = new CommUtil();
 
@@ -117,6 +119,20 @@ public class BoardController {
 		model.put("resultList", boardService.selectBoardList(param));
 		paginationInfo.setTotalRecordCount(boardService.selectBoardListTotCnt(param));
 		model.put("paginationInfo", paginationInfo);
+	}
+
+	/**
+	 * 저장 결과를 알림 이벤트로 넘긴다. 발행 실패가 저장 응답을 깨지 않게 한다.
+	 * 실제 SSE·메일 발송은 {@code BoardNotificationEventListener}가 채널별로 처리한다.
+	 */
+	private void publishBoardNotification(String boardId, String boardType, String title,
+			boolean notifySse, boolean notifyMail) {
+		try {
+			eventPublisher.publishEvent(
+					new BoardNotificationEvent(boardId, boardType, title, notifySse, notifyMail));
+		} catch (Exception e) {
+			logger.warn("board notification publish skipped", e);
+		}
 	}
 
 	@Operation(summary = "CK 게시판 목록 (전자정부 오프셋 페이징)")
@@ -303,23 +319,9 @@ public class BoardController {
 			result.put("success", true);
 			result.put("boardId", param.get("boardId"));
 			result.put("boardType", boardType);
-			// 새 글 알림. 해당 게시판 메뉴를 조회할 수 있는 역할의 구독자에게만 서버에서 필터해 보낸다.
-			try {
-				String menuId = "CK".equals(boardType) ? "ME02030100" : "ME02030200";
-				Set<String> targetRoles = permissionService.selectRoleIdsWithMenuRead(menuId);
-				boardSseService.broadcast(boardType, String.valueOf(param.get("boardId")),
-						String.valueOf(param.get("title")), targetRoles);
-			} catch (Exception e) {
-				// 알림 실패가 게시글 등록 실패로 번지지 않게 분리한다.
-				logger.warn("board SSE broadcast skipped", e);
-			}
-			if ("Y".equals(importantYn)) {
-				try {
-					mailAsyncService.sendBoardNotification(String.valueOf(param.get("boardId")));
-				} catch (Exception e) {
-					logger.warn("board mail dispatch skipped", e);
-				}
-			}
+			// 새 글 알림은 이벤트로 넘긴다. SSE 대상 역할 필터와 메일 발송은 리스너가 처리한다.
+			publishBoardNotification(String.valueOf(param.get("boardId")), boardType,
+					String.valueOf(param.get("title")), true, "Y".equals(importantYn));
 		} catch (Exception e) {
 			logger.error("insertBoard failed", e);
 			result.put("success", false);
@@ -363,13 +365,11 @@ public class BoardController {
 			param.put("atchFileGrpid", grpid);
 			param.put("updusr", "SYSTEM");
 			boardService.updateBoard(param);
-			if ("Y".equals(importantYn) && !"Y".equals(String.valueOf(before.get("importantYn")))) {
-				try {
-					mailAsyncService.sendBoardNotification(boardId);
-				} catch (Exception e) {
-					logger.warn("board mail dispatch skipped", e);
-				}
-			}
+			// 수정은 SSE를 보내지 않고, 중요글으로 새로 전환될 때만 메일을 요청한다.
+			boolean newlyImportant = "Y".equals(importantYn)
+					&& !"Y".equals(String.valueOf(before.get("importantYn")));
+			publishBoardNotification(boardId, String.valueOf(before.get("boardType")),
+					String.valueOf(param.get("title")), false, newlyImportant);
 			result.put("success", true);
 		} catch (Exception e) {
 			logger.error("updateBoard failed", e);
@@ -412,13 +412,9 @@ public class BoardController {
 			if (boardService.updateNoticeYn(param) == 0) {
 				throw new IllegalStateException("고정 상태를 변경하지 못했습니다.");
 			}
-			if ("Y".equals(noticeYn)) {
-				try {
-					mailAsyncService.sendBoardNotification(boardId);
-				} catch (Exception e) {
-					logger.warn("board mail dispatch skipped", e);
-				}
-			}
+			// 공지 고정/해제도 저장 후 이벤트로 넘긴다. 메일은 고정할 때만 요청한다.
+			publishBoardNotification(boardId, String.valueOf(detail.get("boardType")),
+					String.valueOf(detail.get("title")), false, "Y".equals(noticeYn));
 			result.put("success", true);
 			result.put("noticeYn", noticeYn);
 		} catch (Exception e) {
