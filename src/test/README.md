@@ -76,7 +76,7 @@ main 설정을 덮어쓰므로 테스트에 필요한 키만 둔다.
 | `MailServiceImplTest` | 10 | 비활성·발신자 없음, 수신 동의, 환영/재설정/공지 메일, HTML escape, 1회 선점, SMTP 실패 무시 | 낮음~중간(Mockito·메일 본문) |
 | `PasswordResetControllerTest` | 5 | 토큰 발급 조건·1회 사용·만료·입력 검증·쿨다운 | 중간(URL·메시지·DB) |
 
-합계 102개, 테스트 클래스 24개. 전체 커버리지는 instruction 16.5%, branch 15.0%, line 17.4% (2026-10-23 `verify.cmd` 기준).
+합계 102개, 테스트 클래스 24개. 전체 커버리지는 instruction 16.7%, branch 15.1%, line 17.6% (2026-10-23 `verify.cmd` 기준).
 JaCoCo 게이트는 검증된 일부 클래스만 강제하며, 메일은 `MailServiceImpl`(branch 70%·line 80%), 게시판 알림은 `BoardNotificationEventListener`(branch 80%·line 90%), 통합검색은 `SearchServiceImpl`(branch 80%·line 90%)를 추가로 검사한다.
 
 ## 5. 실행

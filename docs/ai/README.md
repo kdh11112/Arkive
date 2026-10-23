@@ -97,7 +97,7 @@
 ## 테스트 현황
 
 - 전체: 102개 테스트 통과 (`ArkiveSmokeTest`, `BoardMapperTest`, `BoardCommentControllerTest`, `BoardNoticeMapperTest`, `BoardNoticeControllerTest`, `BoardNotificationEventListenerTest`, `BoardNotificationControllerTest`, `MessageMapperTest`, `MessageControllerTest`, `HtmlSanitizerTest`, `FileTypeUtilTest`, `JwtUtilTest`, `LoginSessionRegistryTest`, `LoginSessionControllerTest`, `AuthInterceptorTest`, `PermissionMapperTest`, `RoleManageControllerTest`, `MenuPermissionControllerTest`, `SitemapControllerTest`, `SearchMapperTest`, `SearchServiceImplTest`, `SearchControllerTest`, `MailServiceImplTest`, `PasswordResetControllerTest`)
-- 커버리지: instruction 16.5%, branch 15.0%, line 17.4% (2026-10-23 `verify.cmd` 기준). 전체 19k LOC 대비 아직 낮다.
+- 커버리지: instruction 16.7%, branch 15.1%, line 17.6% (2026-10-23 `verify.cmd` 기준). 전체 19k LOC 대비 아직 낮다.
 - JaCoCo `check`는 `HtmlSanitizer`, `FileTypeUtil`, `JwtUtil`, `AuthInterceptor`, `MessageController`, `MessageServiceImpl`, `BoardServiceImpl`, `MailServiceImpl`, `BoardNotificationEventListener`, `SearchServiceImpl`만 검사한다.
 - 테스트 DB는 `target/test-db`, 포트 9002를 써서 앱(9001) 실행 중에도 돈다.
 - 상세: [test-stack-boot.md](boot/test-stack-boot.md)

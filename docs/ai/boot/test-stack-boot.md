@@ -30,7 +30,7 @@
   - `SearchControllerTest` 4 — 로그인 필요, 결과 렌더, 빈 검색어·무결과
   - `MailServiceImplTest` 10 — 비활성·발신자 없음, 수신 동의, 환영/재설정/공지 메일, HTML escape, 1회 선점, SMTP 실패 무시
   - `PasswordResetControllerTest` 5 — 토큰 발급 조건·1회 사용·만료·입력 검증·쿨다운
-- 전체 커버리지: instruction 16.5%, branch 15.0%, line 17.4% (2026-10-23 `verify.cmd` 기준). **아직 낮다.**
+- 전체 커버리지: instruction 16.7%, branch 15.1%, line 17.6% (2026-10-23 `verify.cmd` 기준). **아직 낮다.**
 - JaCoCo `check`는 전체가 아니라 검증된 일부 클래스만 강제한다.
   (`HtmlSanitizer`, `FileTypeUtil`, `JwtUtil`, `AuthInterceptor`, `MessageController`, `MessageServiceImpl`, `BoardServiceImpl`, `MailServiceImpl`, `BoardNotificationEventListener`, `SearchServiceImpl`)
 - GitHub Actions `.github/workflows/verify.yml`에서 `mvn -B clean verify`를 실행한다.
