@@ -102,6 +102,8 @@ Arkive 실행 → 기능 동작 확인 → 화면/JS 복사 → Controller → S
 | `BoardMapperTest`, `MessageMapperTest` | **기능과 함께** | 테이블·컬럼·PK, SQL 문법, seed 데이터 |
 | `LoginSessionRegistryTest`, `LoginSessionControllerTest` | **기능과 함께** | 세션 키, 로그인 URL, seed 계정, 단일/다중 인스턴스 세션 정책 |
 | `PermissionMapperTest`, `RoleManageControllerTest`, `MenuPermissionControllerTest` | **기능과 함께** | 역할·메뉴 ID, 관리자 판정, 403 응답, 사이드바 메뉴, seed 역할 |
+| `MailServiceImplTest` | **수정 복사** | `JavaMailSender` 목, 수신 동의·1회 선점·SMTP 실패, 메일 제목·본문·URL |
+| `PasswordResetControllerTest` | **기능과 함께** | 토큰 테이블·컬럼, 만료·쿨다운·1회 사용, 응답 메시지, seed 사용자, 테스트 메일 비활성 |
 | `ArkiveSmokeTest` | **아니오** | 대상에서 새로 작성 |
 | `pom.xml` JaCoCo `includes` | **예** | 대상 클래스명으로 교체 |
 
@@ -119,6 +121,8 @@ Arkive 실행 → 기능 동작 확인 → 화면/JS 복사 → Controller → S
 | 메뉴 ID | `ME0208xxxx` 등 | 대상 메뉴 체계·중복 ID |
 | 인증 | 세션 `LOGIN_USER`, `ADMIN_USER` | 대상 인증·권한 방식 |
 | 파일 경로 | `Globals.FILE_*`, `Globals.FFMPEG_PATH` | 대상 서버 경로·권한 |
+| 메일 설정 | `spring.mail.*`, `arkive.mail.enabled/from/base-url`, `MAIL_*` 환경변수 | 대상 SMTP·발신자·base URL. 테스트는 `arkive.mail.enabled=false` |
+| 비동기 실행 | `EgovConfigAsync`의 `mailTaskExecutor` | 대상 Executor·스레드 풀·종료 정책 |
 | DB 포트 | `Globals.hsql_server.Port=9001` | `Globals.hsql_server.Url`의 포트와 일치 |
 | 테스트 DB | `target/test-db`, 9002 | 앱 DB와 경로·포트 분리 |
 | 테스트 세션 | `LOGIN_USER`, `ADMIN_USER`, `EgovMap` | 대상 세션 키·사용자 모델 |
@@ -126,7 +130,7 @@ Arkive 실행 → 기능 동작 확인 → 화면/JS 복사 → Controller → S
 | 테스트 스키마 | `BOARD`, `MESSAGE`, `APP_USER` | 대상 테이블·컬럼·PK·seed |
 | JaCoCo 게이트 | `pom.xml`의 Arkive 클래스 `includes` | 대상 클래스로 교체. 게이트 자체를 비우지 않는다 |
 | 화면 경로 | `file:./src/main/resources/templates/thymeleaf/` | 대상 템플릿/JSP 경로 |
-| 비밀값 | SMS/JWT/NICE/OAuth/`private.key` | **그대로 복사 금지.** 환경변수·시크릿 저장소 |
+| 비밀값 | SMS/JWT/NICE/OAuth/`MAIL_PASSWORD`/`private.key` | **그대로 복사 금지.** 환경변수·시크릿 저장소 |
 
 `application.properties`에는 개발용 키·비밀값이 들어 있을 수 있다.
 문서·로그·Git에 값을 남기지 말고, 대상 환경의 환경변수나 시크릿 저장소로 주입한다.

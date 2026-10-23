@@ -3,9 +3,9 @@
 > 이식 구분: 복붙 가능(Boot). 공통 테스트 팩은 파일째 복사(패키지·진입 클래스·DB 값만 변경), 기능 테스트는 기능과 함께 수정 복사한다. 절차·판단은 가이드로 읽는다.
 > 클래식(전자정부 3.x/4.x)은 [../classic/test-stack-classic.md](../classic/test-stack-classic.md)를 쓴다.
 
-## 현황 (Arkive, 2026-10-22 실측)
+## 현황 (Arkive, 2026-10-23 실측)
 
-- `src/test`에 테스트 클래스 16개, 테스트 61개가 있고 `verify.cmd`가 통과한다.
+- `src/test`에 테스트 클래스 18개, 테스트 76개가 있고 `verify.cmd`가 통과한다.
   - `ArkiveSmokeTest` 1 — 컨텍스트·MyBatis 배선
   - `BoardMapperTest` 3 — 게시판 CRUD, null content, 댓글·cascade
   - `BoardCommentControllerTest` 3 — 댓글 인증·검증·작성자/관리자 삭제
@@ -22,9 +22,11 @@
   - `PermissionMapperTest` 4 — V5 역할 시드, 사용자 메뉴 권한 집계, 기본 사용자 역할의 시스템·업로드 메뉴 제외, SSE 대상 역할 조회
   - `RoleManageControllerTest` 7 — 권한관리 화면, 역할 생성·메뉴·사용자 저장, 필수값, 잘못된 사용자 배정 거부, 기본 역할 삭제 거부, 사용자 삭제 시 역할 매핑 정리
   - `MenuPermissionControllerTest` 5 — 조회 전용/쓰기 역할, 역할 없음 거부, 관리자 우회, 사이드바 필터
-- 전체 커버리지: instruction 13.3%, branch 11.2% (2026-10-23 `mvn verify` 기준). **아직 낮다.**
+  - `MailServiceImplTest` 10 — 비활성·발신자 없음, 수신 동의, 환영/재설정/공지 메일, HTML escape, 1회 선점, SMTP 실패 무시
+  - `PasswordResetControllerTest` 5 — 토큰 발급 조건·1회 사용·만료·입력 검증·쿨다운
+- 전체 커버리지: instruction 14.9%, branch 13.3%, line 15.8% (2026-10-23 `mvn verify` 기준). **아직 낮다.**
 - JaCoCo `check`는 전체가 아니라 검증된 일부 클래스만 강제한다.
-  (`HtmlSanitizer`, `FileTypeUtil`, `JwtUtil`, `AuthInterceptor`, `MessageController`, `MessageServiceImpl`, `BoardServiceImpl`)
+  (`HtmlSanitizer`, `FileTypeUtil`, `JwtUtil`, `AuthInterceptor`, `MessageController`, `MessageServiceImpl`, `BoardServiceImpl`, `MailServiceImpl`)
 - GitHub Actions `.github/workflows/verify.yml`에서 `mvn -B clean verify`를 실행한다.
 - 테스트 DB는 `target/test-db`, 포트 **9002**를 쓴다. 앱이 9001을 쓰는 중에도 테스트가 돈다.
 - `ArkiveIntegrationTest` 합성 애노테이션으로 통합 테스트가 같은 Spring 컨텍스트를 공유한다.
@@ -77,6 +79,8 @@ public @interface ArkiveIntegrationTest {
 Globals.hsql_server.DatabasePath=./target/test-db/ArkiveDB
 Globals.hsql_server.Port=9002
 Globals.hsql_server.Url=jdbc:log4jdbc:hsqldb:hsql://127.0.0.1:9002/ArkiveDB
+# 실제 SMTP로 나가지 않게 테스트에서는 메일을 끈다. 필요하면 테스트 클래스에서 목으로 대체한다.
+arkive.mail.enabled=false
 ```
 
 주의:
@@ -89,7 +93,7 @@ Globals.hsql_server.Url=jdbc:log4jdbc:hsqldb:hsql://127.0.0.1:9002/ArkiveDB
 ## 2. JaCoCo (핵심 클래스 한정)
 
 전체 19k LOC에 60%를 한 번에 강제하지 않는다. **검증된 클래스부터** 좁게 시작하고, 테스트를 추가할 때마다 `includes`를 늘린다.
-아래는 최소 예시다. Arkive `pom.xml`은 `HtmlSanitizer`·`FileTypeUtil`·`JwtUtil`·`AuthInterceptor`·`MessageController`·`MessageServiceImpl`·`BoardServiceImpl`에 6개 룰을 둔다.
+아래는 최소 예시다. Arkive `pom.xml`은 `HtmlSanitizer`·`FileTypeUtil`·`JwtUtil`·`AuthInterceptor`·`MessageController`·`MessageServiceImpl`·`BoardServiceImpl`·`MailServiceImpl`에 클래스별 룰을 둔다.
 
 ```xml
 <plugin>

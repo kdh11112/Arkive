@@ -25,6 +25,8 @@ main 설정을 덮어쓰므로 테스트에 필요한 키만 둔다.
 - `admin/message/MessageFixtures.java` — 쪽지 테스트 데이터
 - `admin/message/service/impl/MessageMapperTest.java` — 받은/보낸함·읽음·삭제
 - `admin/message/web/MessageControllerTest.java` — 쪽지 API 권한·검증
+- `admin/mail/service/impl/MailServiceImplTest.java` — 메일 발송 조건·1회 발송·SMTP 실패 (Mockito 단위)
+- `admin/auth/web/PasswordResetControllerTest.java` — 비밀번호 재설정 토큰 발급·소비·만료
 
 기능별 fixture는 공통 `support`에 두지 않는다. 게시판만 이식할 때 쪽지 fixture까지 끌고 오지 않기 위해서다.
 
@@ -59,9 +61,11 @@ main 설정을 덮어쓰므로 테스트에 필요한 키만 둔다.
 | `PermissionMapperTest` | 4 | V5 역할 시드, 사용자 메뉴 권한 집계, 기본 사용자 역할의 시스템·업로드 메뉴 제외, SSE 대상 역할 조회 | 높음(스키마·SQL) |
 | `RoleManageControllerTest` | 7 | 권한관리 화면, 역할·메뉴·사용자 저장, 필수값, 잘못된 사용자 배정 거부, 기본 역할 삭제 거부, 사용자 삭제 시 역할 매핑 정리 | 중간(URL·메시지·세션) |
 | `MenuPermissionControllerTest` | 5 | 조회 전용/쓰기 역할, 역할 없음 거부, 관리자 우회, 사이드바 필터 | 중간(URL·메시지·세션) |
+| `MailServiceImplTest` | 10 | 비활성·발신자 없음, 수신 동의, 환영/재설정/공지 메일, HTML escape, 1회 선점, SMTP 실패 무시 | 낮음~중간(Mockito·메일 본문) |
+| `PasswordResetControllerTest` | 5 | 토큰 발급 조건·1회 사용·만료·입력 검증·쿨다운 | 중간(URL·메시지·DB) |
 
-합계 61개. 전체 커버리지는 instruction 13.3%, branch 11.2%, line 14.0%로 아직 낮다.
-JaCoCo 게이트는 검증된 일부 클래스만 강제한다.
+합계 76개. 전체 커버리지는 instruction 14.9%, branch 13.3%, line 15.8%로 아직 낮다.
+JaCoCo 게이트는 검증된 일부 클래스만 강제하며, 메일은 `MailServiceImpl`의 branch 70%·line 80%를 추가로 검사한다.
 
 ## 5. 실행
 

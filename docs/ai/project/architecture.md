@@ -45,6 +45,8 @@
 - 쪽지: `MessageController`(`/message`) → `MessageService`/`MessageServiceImpl` → `MessageMapper` → `Message_SQL.xml`. 화면은 `templates/thymeleaf/message/`의 목록·작성·상세이며, 수신자가 상세를 열 때 읽음 처리한다.
 - 로그인 세션: `LoginSessionRegistry`가 사용자별 최신 세션 1개를 유지한다. `LoginController`·`OauthController`가 로그인 성공 시 등록하고, 같은 사용자의 새 로그인은 이전 세션을 만료시킨다. `EgovConfigWeb`이 `HttpSessionListener`로 등록해 세션 만료 시 매핑을 지운다. 단일 인스턴스 메모리 기준이다.
 - 권한: `APP_USER_ROLE`로 사용자에 역할을 배정하고 `APP_ROLE_MENU`가 역할별 메뉴 조회·쓰기를 정의한다. `PermissionServiceImpl`이 여러 역할을 메뉴별 OR로 합치고, `MenuPermissionInterceptor`가 컨트롤러→메뉴 매핑으로 READ/WRITE를 서버에서 강제한다. `MenuInterceptor`는 같은 조회 권한으로 사이드바를 필터링한다. `ADMIN_YN='Y'`는 슈퍼관리자로 통과하며 `/system`·`/auth`는 기존 `AuthInterceptor` 정책상 관리자만 접근한다.
+- 메일: `LoginController`·`OauthController`(환영), `UserManageController`(관리자 등록), `BoardController`(공지/중요글), `LoginController`(비밀번호 재설정)가 `MailAsyncService`를 호출한다. `EgovConfigAsync`의 `mailTaskExecutor`가 요청 스레드에서 분리하고, `MailServiceImpl`이 `arkive.mail.enabled`·발신자·수신 동의를 재검사한 뒤 `JavaMailSender`로 보낸다. 공지/중요글은 `BOARD.MAIL_SENT_YN` 선점으로 1회만 발송한다.
+- 비밀번호 재설정: `AuthServiceImpl.issuePasswordResetToken`이 32바이트 난수를 URL-safe Base64로 만들고 SHA-256 해시만 `PASSWORD_RESET_TOKEN`에 저장한다. `LoginController`의 `/login/resetPw`가 토큰 유효성(30분·1회)을 확인하고 `AuthServiceImpl.resetPasswordByToken`이 비밀번호 변경·잠금 해제·세션 만료를 처리한다.
 - DB, Mapper, 트랜잭션 및 웹 설정은 `egovframework.example.config`에 Java Config로 존재한다.
 - Controller에 `@Valid`와 `BindingResult`를 사용하는 입력 검증 예제가 있다. 실제 변경은 해당 기능의 서버 검증 패턴을 확인한다.
 - 로깅은 Lombok `@Slf4j`와 SLF4J `LoggerFactory` 직접 사용이 함께 확인된다. 수정 시 대상 모듈의 기존 방식을 따른다.
@@ -53,6 +55,7 @@
 
 - `arkive.com.config.QuartzConfig`에서 `DBJob`을 10분 간격으로 실행하는 Trigger를 구성한다.
 - `DBJob`은 DB 덤프를 파일로 기록하는 코드를 포함한다. 스케줄 활성화, 경로, 보존 및 복구 정책은 [project-overview.md](project-overview.md)와 운영 담당자 확인을 참조한다.
+- `EgovConfigAsync`가 `mailTaskExecutor`를 등록하고 `@Async("mailTaskExecutor")` 메일 호출을 처리한다. 기본 `arkive.mail.enabled=false`이면 실제 SMTP 연결 없이 즉시 반환한다.
 
 ## 새 글 알림(SSE)
 
@@ -61,6 +64,14 @@
 - `layout.html`은 전역 배너와 SSE 구독 스크립트를 포함하지만, 현재 `ARKIVE_SSE_ENABLED=false`라 기본 화면에서는 구독하지 않는다. 활성화하려면 `true`로 바꾸고, 페이지별 `window.ARKIVE_SSE` 선언이 layout 스크립트보다 먼저 실행되는지 확인한다.
 - 화면별 설정: `window.ARKIVE_SSE = { banner: false };`는 해당 화면에서 구독·배너를 끄고, `window.ARKIVE_SSE = { hideAfterMs: 30000 };`은 30초 뒤 배너를 자동으로 숨긴다. 기본값은 계속 표시다.
 - 역할 필터는 활성화되어 있다. 댓글·쪽지·다운로드·SSE 구독은 메뉴 CRUD 권한과 분리해 로그인 사용자 공통 기능으로 둔다.
+
+## 메일·비밀번호 재설정
+
+- 메일 설정 키는 `application.properties`의 `arkive.mail.enabled`, `arkive.mail.from`, `arkive.mail.base-url`과 Spring `spring.mail.*`이다. 실제 값은 환경변수로 주입하며 저장소에 자격증명을 두지 않는다.
+- `MailServiceImpl.sendWelcome`·`sendBoardNotification`은 `APP_USER.MAIL_YN='Y'`와 유효한 이메일을 가진 사용자만 대상으로 한다. `sendPasswordReset`은 거래성 메일이므로 `MAIL_YN`과 무관하게 이메일이 있으면 보낸다.
+- `sendBoardNotification`은 `BOARD.MAIL_SENT_YN='N'`인 글만 `Y`로 선점한 뒤 수신자에게 보낸다. 같은 글을 다시 저장하거나 공지 고정을 반복해도 두 번 보내지 않는다. 선점 후 SMTP가 실패해도 선점은 유지되므로 자동 재시도는 없다(정책 미확인).
+- 비밀번호 재설정 토큰은 원문을 저장하지 않는다. `PASSWORD_RESET_TOKEN.TOKEN_HASH`에 SHA-256 해시를 저장하고, `EXPIRES_DT`(30분)·`USED_YN`·`REGIST_DT`로 유효성을 판정한다. 같은 사용자의 재발급은 60초 쿨다운을 두며, 새 토큰 발급 시 이전 미사용 토큰을 폐기한다.
+- 메일 본문은 `MailServiceImpl`에 하드코딩된 단순 HTML이다. 운영 템플릿·다국어·수신거부 링크·발송 이력은 미구현이며, 대상 프로젝트에서 요구사항을 확인해야 한다.
 
 ## 참조와 개선 결정 (Arkive 예시)
 
@@ -89,12 +100,14 @@
 
 - 인증·인가 필터/인터셉터 적용 범위는 코드에서 확인했으나, 운영 역할·메뉴 매핑과 `/system`·`/auth` 관리자 전용 정책의 최종 승인은 미확인
 - 외부 시스템 연계별 호출 흐름, 소유자, 타임아웃 및 오류 처리 계약
+- SMTP 제공자·발신 도메인·SPF/DKIM·반송/수신거부·대량 발송 정책과 메일 발송 이력·재시도 설계
 - 프로파일별 구성과 운영 배포 토폴로지
 - 전체 모듈 경계 및 기능 소유 조직
 
 ## 타 프로젝트로 이식할 때 복사 범위
 
 - 기능 단위 복사: 화면(Thymeleaf+JS) → Controller → Service/Impl → Mapper 인터페이스 → Mapper XML → `db/versions` SQL → `application.properties`·Globals 키 → `pom.xml` 의존성 순서로 가져간다.
+- 메일·비밀번호 재설정을 복사할 때는 `spring-boot-starter-mail`, `EgovConfigAsync`, `MailService`/`MailAsyncService`/`MailServiceImpl`, `AuthServiceImpl`의 토큰 메서드, `LoginController`의 화면·API, `V6__mail_notification.sql`, `spring.mail.*`·`arkive.mail.*` 설정을 함께 가져간다. 실제 SMTP 값은 대상 환경변수로 주입한다.
 - 프로젝트명·패키지(`arkive.*`)·테이블명·파일 경로·DB 문법은 대상 프로젝트에 맞게 최소한만 바꾼다.
 
 수정 전 실제 관련 호출 흐름과 설정을 검색한다. 이 요약만으로 보안 적용이나 기능 소유권을 단정하지 않는다.

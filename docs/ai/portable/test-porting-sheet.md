@@ -11,6 +11,7 @@
 - [ ] 기능별 테스트 클래스
 - [ ] 기능별 fixture (`BoardFixtures`, `MessageFixtures` 등)
 - [ ] `pom.xml`의 테스트 의존성·JaCoCo 설정
+- [ ] `application-test.properties`에 `arkive.mail.enabled=false`(메일 기능을 복사한 경우)
 - [ ] `verify.cmd`
 
 `ArkiveSmokeTest`는 Arkive 전용이므로 복사하지 않고, 대상 프로젝트에서 새로 만든다.
@@ -19,9 +20,9 @@
 
 | 종류 | Arkive 예 | 복사 방식 | 대상에서 바꿀 것 |
 | --- | --- | --- | --- |
-| 순수 단위 | `JwtUtilTest`, `FileTypeUtilTest`, `HtmlSanitizerTest` | 거의 그대로 | 패키지·import·클래스명 |
+| 순수 단위 | `JwtUtilTest`, `FileTypeUtilTest`, `HtmlSanitizerTest`, `MailServiceImplTest` | 거의 그대로 | 패키지·import·클래스명, 메일 본문·제목·URL |
 | 인증 인터셉터 | `AuthInterceptorTest` | 수정 복사 | 세션 키, 공개 경로, 리다이렉트 URL |
-| Controller/API | `BoardCommentControllerTest`, `MessageControllerTest` | 기능과 함께 수정 복사 | URL, 응답 메시지, 세션, seed 데이터 |
+| Controller/API | `BoardCommentControllerTest`, `MessageControllerTest`, `PasswordResetControllerTest` | 기능과 함께 수정 복사 | URL, 응답 메시지, 세션, seed 데이터, 토큰 테이블 |
 | Mapper/DB | `BoardMapperTest`, `MessageMapperTest` | 기능과 함께 수정 복사 | 테이블·컬럼·PK, SQL 문법, seed 데이터 |
 | 스모크 | `ArkiveSmokeTest` | 복사하지 않음 | 대상 앱 클래스로 새로 작성 |
 
@@ -57,6 +58,8 @@
 - [ ] 테스트 seed 데이터(`admin` 등)
 - [ ] 삭제 정책(soft delete·cascade)
 - [ ] 대상 DB 문법(페이징·날짜·`MERGE` 등)
+- [ ] 메일 발송 조건(활성화 플래그·발신자·수신 동의)과 1회 발송 선점
+- [ ] 비밀번호 재설정 토큰 만료·1회 사용·재발급 쿨다운·세션 무효화
 
 ## 5. 실행과 완료 기준
 

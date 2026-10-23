@@ -14,6 +14,7 @@ mvn spring-boot:run
 
 - 기본 주소: `http://localhost:8080` (앱의 HSQLDB 서버는 9001)
 - 테스트 DB는 `target/test-db`, 포트 9002를 쓴다. 앱의 HSQLDB(9001)와 분리되어 앱 실행 중에도 `verify.cmd`를 돌릴 수 있다.
+- 메일 발송은 기본 비활성(`MAIL_ENABLED=false`)이다. SMTP·발신자 설정 키는 [project-overview.md](docs/ai/project/project-overview.md)를 본다.
 
 ## 이식과 문서
 
@@ -116,14 +117,15 @@ Arkive 레퍼런스: C:\Users\kdh\Documents\workspace-egov\Arkive
 - [ ] 현황·통계 패턴 (ADTM statMng 참고) — 현황판 + 통계 + 엑셀 다운로드 세트. 위험: 도메인 쿼리는 대상에 맞게 재작성, 공통 패턴(조회→집계→엑셀)만 재사용
 - [ ] 통합검색 + 초성검색 (GIES goSearch 참고, DB LIKE 우선, es-hangul) — 게시판·FAQ·Q&A·강의 통합 검색 + 초성(ㄹㅁ→라면). 기본 1단계(DB LIKE, 설정 불필요), 2단계(ES 단일노드+Nori+자동완성)는 설정값 `search.engine=es`로만 전환(`LikeSearchService`/`EsSearchService` 분리, `@ConditionalOnProperty`). 불필요하면 값만 되돌림. GIES는 외부 검색엔진 API(내부 IP) 호출이라 단독 이식 불가. 위험: LIKE 성능 한계 명시, ES Docker·HSQLDB 동기화 정책 선행, 로그인 이후 단계
 - [ ] SMS 보내기 (알리고 기반, 인증번호·알림) — 위험: API키 코드 하드코딩 금지(환경 분리), 발송 실패 재시도·요금 폭탄(루프 발송) 방지
-- [ ] Mail 보내기 + @Async (spring-boot-starter-mail 활용, 블로킹 분리) — 위험: SMTP 계정 노출 금지, 대량 발송 시 스팸 차단 정책 확인
-- [ ] 중요글 알림 채널 분리 (글쓰기 중요 체크박스 → BOARD 표시 저장 → 채널별 발송) — 지금은 배너만. 나중에 Mail(위 항목)·SMS를 게시판 코드 손대지 않고 꽂는다. 방식: ApplicationEvent 발행 + 채널별 리스너(배너/SMTP/알리고). 위험: 채널 추가 시 기존 저장·조회 로직 변경 금지, 발송 실패가 본문 저장에 영향 금지
+- [x] Mail 보내기 + @Async (spring-boot-starter-mail, `MailAsyncService`/`MailServiceImpl`, 기본 `MAIL_ENABLED=false`) — 회원가입 환영·공지/중요글은 수신 동의 사용자에게만, 비밀번호 재설정은 거래성이라 동의와 무관하게 발송. 게시글 알림은 `BOARD.MAIL_SENT_YN`을 원자적으로 선점해 1회만 발송. 위험: 실제 SMTP 계정·발신자·대량 발송 정책 미확인, SMTP 장애 시 재시도 없음
+- [ ] 중요글 알림 채널 분리 (글쓰기 중요 체크박스 → BOARD 표시 저장 → 채널별 발송) — 현재 CK/TOAST 중요글·공지 저장 후 `MailAsyncService`를 직접 호출하고 SSE는 별도 호출한다. ApplicationEvent 기반 채널 분리와 SMS는 미적용. 위험: 채널 추가 시 기존 저장·조회 로직 변경 금지, 발송 실패가 본문 저장에 영향 금지
 - [ ] ApplicationEvent 기반 로그 (업무 코드 오염 없이 기록) — 로그 도입 시 같이 적용. 위험: 비동기 유실 가능성은 감안(트랜잭션 분리)
 - [ ] 외부 API 연계 (수신) — 다른 시스템 API 연결 (pony ImportApiController 아임포트 검증 참고). 위험: 타임아웃·재시도·서킷브레이커 없이 붙이면 장애 전파, 키·URL 환경 분리
 - [ ] 내부 API 제공 (송신) — 내 기능을 외부에 개방. Swagger 문서 + 키 발급·버전 관리. 위험: 인증 없이 공개 금지, 버전 변경 시 하위호환 정책 선행
 - [x] 본인인증 (NICE/휴대폰) (CheckPlus 요청·복호화·세션 저장, 미계약 차단) — 회원가입·비밀번호 찾기의 전제. 코드에 NiceCheck 있음. 위험: 실계약·운영사용 여부 미확인, 테스트키와 운영키 분리
-- [x] 회원가입 + 아이디 찾기(마스킹) + 비밀번호 찾기(임시 10자리 1회 표시·잠금 해제) — 일반 회원 고정(ADMIN_YN 강제 N). 약관동의·재설정 토큰은 미포함. 위험: 임시 비밀번호 화면 이탈 시 재발급, 운영에서는 이메일 발송 연계
-- [ ] 약관동의 (버전 고정·동의이력 보관) + 비밀번호 재설정 토큰 (만료시간 설정)
+- [x] 회원가입 + 아이디 찾기(마스킹) + 비밀번호 찾기(임시 10자리 1회 표시·잠금 해제) — 일반 회원 고정(ADMIN_YN 강제 N). 약관동의는 미포함. 위험: 임시 비밀번호 화면 이탈 시 재발급
+- [x] 비밀번호 재설정 토큰 (30분 유효·1회 사용·SHA-256 해시 저장·60초 재발급 제한, `PASSWORD_RESET_TOKEN`) — 이메일 링크로 본인이 새 비밀번호를 설정하고 기존 로그인 세션을 만료한다. 위험: 실제 SMTP 전달·발송 실패 재시도·IP별 요청 제한은 미확인
+- [ ] 약관동의 (버전 고정·동의이력 보관)
 - [ ] DB 암호화 (연락처·계좌 등) — fdl-crypto 있음. 개인정보 보호와 연계. 위험: 키 관리(분실 시 복구 불가), 검색 조건 컬럼 암호화 금지
 
 ### 3단계 — 조건 해소 후 (외부·승인·규모)

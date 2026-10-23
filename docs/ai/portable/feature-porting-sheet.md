@@ -28,6 +28,7 @@
 - [ ] `db/versions/V*__*.sql`:
 - [ ] 메뉴 seed:
 - [ ] `application.properties`의 `Globals.*` 키:
+- [ ] 메일·비동기 설정(`spring.mail.*`, `arkive.mail.*`, Executor):
 - [ ] `pom.xml` 의존성:
 - [ ] 테스트 클래스:
 - [ ] 테스트 이식 시트: [test-porting-sheet.md](test-porting-sheet.md)
@@ -49,6 +50,7 @@
 - [ ] 화면 정상 입력/필수값 누락/권한 없음 확인
 - [ ] API 정상/401/권한 없음/잘못된 입력 확인
 - [ ] DB insert·update·delete(soft delete 포함) 확인
+- [ ] 메일 기능이면 실제 SMTP 대신 테스트 비활성/목으로 발송 조건·1회 발송·실패 무시 확인
 - [ ] 기존 기능 회귀 확인
 - [ ] 테스트 데이터 정리·롤백 확인
 

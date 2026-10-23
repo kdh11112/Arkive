@@ -25,12 +25,14 @@
 
 ## Arkive 작성 예시
 
-> 2026-10-11, 2026-10-22, 2026-10-23 저장소 검색으로 확인한 주요 코드 영역의 목록이다. 전체 기능 목록이나 조직별 소유권을 확정한 문서가 아니다. 소유자는 근거가 없어 미확인으로 둔다.
+> 2026-10-11, 2026-10-22, 2026-10-23(메일·비밀번호 재설정 포함) 저장소 검색으로 확인한 주요 코드 영역의 목록이다. 전체 기능 목록이나 조직별 소유권을 확정한 문서가 아니다. 소유자는 근거가 없어 미확인으로 둔다.
 
 | 기능/영역 | 확인된 구현 위치 | 확인된 범위 | 책임자/소유권 |
 | --- | --- | --- | --- |
 | 시스템 메뉴·공통코드 관리 | `arkive.admin.system.*`, `System_SQL.xml`, `CommCode_SQL.xml`, `templates/thymeleaf/system/` | 메뉴·코드 목록·상세·등록·수정·삭제 (`/system` prefix) | 미확인 |
 | 로그인·회원·계정 찾기 | `arkive.admin.auth.web.LoginController`, `Auth_SQL.xml`(APP_USER), `templates/thymeleaf/login/` | 로그인·회원가입·ID/PW찾기·로그아웃 (`/login`) | 미확인 |
+| 메일 발송 | `arkive.admin.mail.*`, `MailServiceImpl`, `MailAsyncService`, `EgovConfigAsync`, `V6__mail_notification.sql`, `application.properties`(`spring.mail.*`·`arkive.mail.*`) | 환영·비밀번호 재설정·공지/중요글 알림, `@Async("mailTaskExecutor")`, 기본 비활성, 수신 동의 필터, 게시글당 1회 선점 | 미확인 (SMTP 제공자·발신 도메인·대량 발송 정책) |
+| 비밀번호 재설정 | `LoginController`(`/login/findPw*`, `/login/resetPw*`), `AuthServiceImpl`, `AuthMapper`, `Auth_SQL.xml`, `PASSWORD_RESET_TOKEN`, `login/findPw.html`, `login/resetPw.html` | 아이디·이름·이메일 일치 시 1회용 링크 발급, 30분·1회·60초 쿨다운, SHA-256 해시 저장, 성공 시 세션 만료 | 미확인 (IP별 제한·감사 로그·메일 전달 정책) |
 | 중복 로그인 방지 | `LoginController`, `OauthController`, `LoginSessionRegistry`, `EgovConfigWeb` | 폼·OAuth 로그인 성공 시 사용자별 최신 세션만 유지, 이전 세션 만료, 로그아웃·세션 만료 시 매핑 제거 | 미확인 |
 | 사용자관리 | `arkive.admin.auth.web.UserManageController`, `templates/thymeleaf/auth/` | 목록·등록·수정·삭제·잠금해제·비번초기화 (`/auth`). 메뉴 `ME02010400` | 미확인 |
 | 권한관리 | `arkive.admin.auth.web.RoleManageController`, `PermissionService`/`PermissionServiceImpl`, `PermissionMapper`, `Permission_SQL.xml`, `MenuPermissionInterceptor`, `auth/roleList.html`, `auth/roleWrite.html`, `V5__permission.sql` | 역할 목록·등록·수정·삭제, 메뉴별 조회/쓰기, 사용자 역할 배정 (`/auth/role*`). 서버 인터셉터로 메뉴 CRUD 강제, SSE 대상 역할 조회 | 미확인 |
@@ -48,7 +50,7 @@
 
 ## 테스트 자산 현황 (2026-10-23)
 
-전체 61개 테스트, instruction 13.3% / branch 11.2%. 커버리지 숫자만으로 품질을 판단하지 않고, 아래처럼 기능별 검증 범위와 공백을 함께 본다.
+전체 76개 테스트, instruction 14.9% / branch 13.3% (line 15.8%). 커버리지 숫자만으로 품질을 판단하지 않고, 아래처럼 기능별 검증 범위와 공백을 함께 본다.
 
 | 기능/영역 | 자동 테스트 | 검증 범위 | 남은 공백 |
 | --- | --- | --- | --- |
@@ -62,6 +64,8 @@
 | JWT | `JwtUtilTest` 4 | 발급·검증, 시크릿 불일치, 만료·형식 오류 | 키 회전·로그아웃 블랙리스트 |
 | 로그인 인터셉터 | `AuthInterceptorTest` 5 | 공개 경로, JSON 401, 화면 redirect, 관리자 경로 | CSRF·API 필터 |
 | 중복 로그인 방지 | `LoginSessionRegistryTest` 5, `LoginSessionControllerTest` 1 | 사용자별 세션 교체·만료, 동일 세션 재등록, 사용자 전환, 세션 소멸 정리, 실제 로그인 2회 | 다중 인스턴스·실제 컨테이너 세션 타임아웃 |
+| 메일 발송 | `MailServiceImplTest` 10 | 기본 비활성·발신자 없음, 수신 동의 필터, 환영/재설정/공지 메일, HTML escape, 게시글당 1회 선점, 수신자 없음, SMTP 실패 무시 | 실제 SMTP 발송·반송·수신거부, 메일 템플릿, 실패 재시도, 대량 발송 정책 |
+| 비밀번호 재설정 | `PasswordResetControllerTest` 5 | 일치 시에만 토큰 발급, 1회 사용·재사용 거부, 만료 토큰, 8자·확인 불일치 검증, 60초 쿨다운, 비밀번호 변경·잠금 초기화 | IP별 요청 제한, 감사 로그, 실제 메일 링크 E2E, 운영 SMTP |
 | 권한관리 | `PermissionMapperTest` 4, `RoleManageControllerTest` 7, `MenuPermissionControllerTest` 5 | V5 시드·기본 사용자 역할의 시스템·업로드 메뉴 제외·메뉴 권한 OR 집계·SSE 역할 조회, 역할 CRUD/저장, 잘못된 사용자 배정 거부, 사용자 삭제 시 역할 매핑 정리, 조회 전용·쓰기·역할 없음·관리자 우회·사이드바 필터 | 화면 수동 확인, 시스템관리 메뉴의 관리자 전용 정책, 다중 역할 조합, 역할 변경 즉시 반영(세션 캐시 없음), 새 Controller는 `MenuPermissionInterceptor` 매핑 필수(누락 시 검사 제외), `/user`·`/api` 공개 경로는 기존 정책 유지 |
 | 나머지 기능 | 없음 | - | 로그인·잠금·OAuth·NICE, 파일, 엑셀, POLL 중복, 상담 비밀번호, Q&A 상태 등 |
 
