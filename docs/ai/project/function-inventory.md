@@ -71,7 +71,7 @@
 | 비밀번호 재설정 | `PasswordResetControllerTest` 5 | 일치 시에만 토큰 발급, 1회 사용·재사용 거부, 만료 토큰, 8자·확인 불일치 검증, 60초 쿨다운, 비밀번호 변경·잠금 초기화 | IP별 요청 제한, 감사 로그, 실제 메일 링크 E2E, 운영 SMTP |
 | 권한관리 | `PermissionMapperTest` 4, `RoleManageControllerTest` 7, `MenuPermissionControllerTest` 5 | V5 시드·기본 사용자 역할의 시스템·업로드 메뉴 제외·메뉴 권한 OR 집계·SSE 역할 조회, 역할 CRUD/저장, 잘못된 사용자 배정 거부, 사용자 삭제 시 역할 매핑 정리, 조회 전용·쓰기·역할 없음·관리자 우회·사이드바 필터 | 화면 수동 확인, 시스템관리 메뉴의 관리자 전용 정책, 다중 역할 조합, 역할 변경 즉시 반영(세션 캐시 없음), 새 Controller는 `MenuPermissionInterceptor` 매핑 필수(누락 시 검사 제외), `/user`·`/api` 공개 경로는 기존 정책 유지 |
 | 사이트맵 | `SitemapControllerTest` 3 | 로그인 필요, 관리자 메뉴 트리 렌더, 역할 없는 사용자의 빈 메뉴 안내 | 메뉴명·순서 변경, 권한별 실제 화면 수동 확인, 외부 사용자 전용 사이트맵 |
-| 통합검색 (1단계) | `SearchMapperTest` 3, `SearchServiceImplTest` 3, `SearchControllerTest` 4 | 제목 LIKE의 CK/TOAST/FAQ/QNA 통합, 본문만 일치하는 글 제외, LIMIT/OFFSET 페이징·건수, 유형 라벨·HTML 제거·CLOB 요약, 로그인 필요·빈 검색어·무결과·결과 링크 렌더 | 본문 검색(평문 인덱스 필요), 초성검색, ES 전환, Q&A 내·외부 공개 범위, FAQ 결과의 정확한 위치 이동, 검색 성능·입력 길이 제한 |
+| 통합검색 (1단계) | `SearchMapperTest` 3, `SearchServiceImplTest` 3, `SearchControllerTest` 4 | 제목 LIKE의 CK/TOAST/FAQ/QNA 통합, 본문만 일치하는 글 제외, LIMIT/OFFSET 페이징·건수, 유형 라벨·HTML 제거·CLOB 요약, 로그인 필요·빈 검색어·무결과·결과 렌더 | 본문 검색(평문 인덱스 필요), 초성검색, ES 전환, Q&A 내·외부 공개 범위, FAQ 결과의 정확한 위치 이동, 검색 성능·입력 길이 제한 |
 | 나머지 기능 | 없음 | - | 로그인·잠금·OAuth·NICE, 파일, 엑셀, POLL 중복, 상담 비밀번호, Q&A 상태 등 |
 
 기능을 추가하거나 이식할 때는 [feature-porting-sheet.md](../portable/feature-porting-sheet.md)에 실행·복사·검증 결과를 남기고, 이 표의 테스트 자산도 함께 갱신한다.
