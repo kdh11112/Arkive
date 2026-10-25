@@ -11,6 +11,10 @@ target/
 # Local DB dump files (Quartz DBJob output)
 /backup/
 
+# Local editor/tool settings
+.qoder/
+.vscode/
+
 ### Eclipse ###
 .metadata
 bin/
