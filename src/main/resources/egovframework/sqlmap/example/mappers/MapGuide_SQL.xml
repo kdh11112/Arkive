@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.map.service.impl.MapGuideMapper">
+
+	<select id="selectMapGuideList" parameterType="egovMap" resultType="egovMap">
+		SELECT MAP_ID, TITLE, ADDRESS, LATITUDE, LONGITUDE, DESCRIPTION, USE_YN, REGIST_DT, UPDT_DT
+		FROM MAP_GUIDE
+		<where>
+			<if test="useYn != null and useYn != ''">
+				AND USE_YN = #{useYn}
+			</if>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR ADDRESS LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+		ORDER BY TITLE, MAP_ID
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<select id="selectMapGuideListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM MAP_GUIDE
+		<where>
+			<if test="useYn != null and useYn != ''">
+				AND USE_YN = #{useYn}
+			</if>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR ADDRESS LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+	</select>
+
+	<select id="selectMapGuideDetail" parameterType="string" resultType="egovMap">
+		SELECT MAP_ID, TITLE, ADDRESS, LATITUDE, LONGITUDE, DESCRIPTION, USE_YN, REGIST_DT, UPDT_DT
+		FROM MAP_GUIDE
+		WHERE MAP_ID = #{mapId}
+	</select>
+
+	<insert id="insertMapGuide" parameterType="egovMap">
+		INSERT INTO MAP_GUIDE (
+			MAP_ID, TITLE, ADDRESS, LATITUDE, LONGITUDE, DESCRIPTION, USE_YN, REGIST_DT
+		) VALUES (
+			#{mapId}, #{title}, #{address}, #{latitude,jdbcType=DECIMAL}, #{longitude,jdbcType=DECIMAL},
+			#{description}, #{useYn}, CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<update id="updateMapGuide" parameterType="egovMap">
+		UPDATE MAP_GUIDE
+		SET TITLE = #{title},
+			ADDRESS = #{address},
+			LATITUDE = #{latitude,jdbcType=DECIMAL},
+			LONGITUDE = #{longitude,jdbcType=DECIMAL},
+			DESCRIPTION = #{description},
+			USE_YN = #{useYn},
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE MAP_ID = #{mapId}
+	</update>
+
+	<delete id="deleteMapGuide" parameterType="string">
+		DELETE FROM MAP_GUIDE WHERE MAP_ID = #{mapId}
+	</delete>
+
+</mapper>

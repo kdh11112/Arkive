@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>경조사관리</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">경조사관리</h2>
+
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+        <a th:href="@{/hr/eventWrite}" class="krds-btn medium primary">등록</a>
+    </div>
+
+    <form id="listForm" method="get" th:action="@{/hr/eventList}">
+        <input type="hidden" id="pageIndex" name="pageIndex" th:value="${pageIndex}">
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <input type="number" name="year" class="krds-input" style="width: 110px;"
+                   min="2000" max="2100" th:value="${year}">
+            <select name="eventType" class="krds-form-select" style="width: 140px;">
+                <option value="" th:selected="${eventType == ''}">전체 구분</option>
+                <option value="WEDDING" th:selected="${eventType == 'WEDDING'}">결혼</option>
+                <option value="FUNERAL" th:selected="${eventType == 'FUNERAL'}">장례</option>
+                <option value="BIRTH" th:selected="${eventType == 'BIRTH'}">출산</option>
+                <option value="ETC" th:selected="${eventType == 'ETC'}">기타</option>
+            </select>
+            <input type="text" name="searchKeyword" class="krds-input" style="flex: 1;"
+                   placeholder="경조사명·사용자 검색" th:value="${searchKeyword}">
+            <button type="submit" class="krds-btn medium secondary"
+                    onclick="document.getElementById('pageIndex').value=1;">검색</button>
+        </div>
+    </form>
+
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>경조사 목록</caption>
+            <colgroup>
+                <col style="width: 12%;">
+                <col style="width: 18%;">
+                <col style="width: 10%;">
+                <col>
+                <col style="width: 14%;">
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">경조사일</th>
+                <th scope="col">대상자</th>
+                <th scope="col">구분</th>
+                <th scope="col">경조사명</th>
+                <th scope="col">경조금</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${resultList}">
+                <td><a th:href="@{/hr/eventWrite}" data-post th:attr="data-name='eventId',data-value=${item['eventId']}" th:text="${item['eventDe']}"></a></td>
+                <td>
+                    <div th:text="${item['userNm']}"></div>
+                    <div th:text="${item['userId']}" style="font-size: 12px; color: #666;"></div>
+                </td>
+                <td th:switch="${item['eventType']}">
+                    <span th:case="'WEDDING'">결혼</span>
+                    <span th:case="'FUNERAL'">장례</span>
+                    <span th:case="'BIRTH'">출산</span>
+                    <span th:case="*">기타</span>
+                </td>
+                <td th:text="${item['title']}"></td>
+                <td th:text="${#numbers.formatDecimal(item['amount'], 1, 0)} + '원'"></td>
+            </tr>
+            <tr th:if="${resultList == null or resultList.isEmpty()}">
+                <td colspan="5">조회된 경조사가 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="paging" class="krds-pagination w-page"
+         th:utext="${#egovKrdsPaginationRenderer.renderPagination(paginationInfo, 'eventPaging')}"></div>
+    <script>
+        function eventPaging(pageIndex) {
+            document.getElementById('pageIndex').value = pageIndex;
+            document.getElementById('listForm').submit();
+        }
+    </script>
+</div>
+</body>
+</html>

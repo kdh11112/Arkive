@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.approval.service.impl.ApprovalMapper">
+
+	<sql id="docColumns">
+		D.DOC_ID,
+		D.DOC_TYPE,
+		D.TITLE,
+		D.CONTENT,
+		D.DRAFTER_ID,
+		DU.USER_NM AS DRAFTER_NM,
+		D.APPROVER_ID,
+		AU.USER_NM AS APPROVER_NM,
+		D.STATUS,
+		D.SUBMIT_DT,
+		D.APPROVED_DT,
+		D.REJECT_REASON,
+		D.REGIST_DT,
+		D.UPDT_DT
+	</sql>
+
+	<select id="selectDocList" parameterType="egovMap" resultType="egovMap">
+		SELECT <include refid="docColumns"/>
+		FROM APPROVAL_DOC D
+		LEFT JOIN APP_USER DU ON DU.USER_ID = D.DRAFTER_ID
+		LEFT JOIN APP_USER AU ON AU.USER_ID = D.APPROVER_ID
+		<where>
+			<if test="drafterId != null and drafterId != ''">
+				AND D.DRAFTER_ID = #{drafterId}
+			</if>
+			<if test="approverId != null and approverId != ''">
+				AND D.APPROVER_ID = #{approverId}
+				AND D.STATUS = 'SUBMITTED'
+			</if>
+			<if test="status != null and status != ''">
+				AND D.STATUS = #{status}
+			</if>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (D.TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR D.DRAFTER_ID LIKE '%' || #{searchKeyword} || '%'
+					OR DU.USER_NM LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+		ORDER BY D.REGIST_DT DESC, D.DOC_ID DESC
+		LIMIT 200
+	</select>
+
+	<select id="selectDocDetail" parameterType="string" resultType="egovMap">
+		SELECT <include refid="docColumns"/>
+		FROM APPROVAL_DOC D
+		LEFT JOIN APP_USER DU ON DU.USER_ID = D.DRAFTER_ID
+		LEFT JOIN APP_USER AU ON AU.USER_ID = D.APPROVER_ID
+		WHERE D.DOC_ID = #{docId}
+	</select>
+
+	<select id="selectHistory" parameterType="string" resultType="egovMap">
+		SELECT
+			H.HISTORY_ID,
+			H.DOC_ID,
+			H.ACTION,
+			H.ACTOR_ID,
+			U.USER_NM AS ACTOR_NM,
+			H.NOTE,
+			H.ACTION_DT
+		FROM APPROVAL_HISTORY H
+		LEFT JOIN APP_USER U ON U.USER_ID = H.ACTOR_ID
+		WHERE H.DOC_ID = #{docId}
+		ORDER BY H.ACTION_DT, H.HISTORY_ID
+	</select>
+
+	<select id="selectActiveUserList" resultType="egovMap">
+		SELECT USER_ID, USER_NM
+		FROM APP_USER
+		WHERE USE_YN = 'Y'
+		ORDER BY USER_NM, USER_ID
+	</select>
+
+	<select id="selectActiveUser" parameterType="string" resultType="egovMap">
+		SELECT USER_ID, USER_NM
+		FROM APP_USER
+		WHERE USER_ID = #{userId}
+			AND USE_YN = 'Y'
+	</select>
+
+	<insert id="insertDoc" parameterType="egovMap">
+		INSERT INTO APPROVAL_DOC (
+			DOC_ID, DOC_TYPE, TITLE, CONTENT, DRAFTER_ID, APPROVER_ID, STATUS, REGIST_DT
+		) VALUES (
+			#{docId}, #{docType}, #{title}, #{content}, #{drafterId}, #{approverId}, #{status}, CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<update id="updateDoc" parameterType="egovMap">
+		UPDATE APPROVAL_DOC
+		SET DOC_TYPE = #{docType},
+			TITLE = #{title},
+			CONTENT = #{content},
+			APPROVER_ID = #{approverId},
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE DOC_ID = #{docId}
+			AND DRAFTER_ID = #{drafterId}
+			AND STATUS = 'DRAFT'
+	</update>
+
+	<delete id="deleteDoc" parameterType="egovMap">
+		DELETE FROM APPROVAL_DOC
+		WHERE DOC_ID = #{docId}
+			AND DRAFTER_ID = #{drafterId}
+			AND STATUS = 'DRAFT'
+	</delete>
+
+	<delete id="deleteHistory" parameterType="string">
+		DELETE FROM APPROVAL_HISTORY WHERE DOC_ID = #{docId}
+	</delete>
+
+	<update id="submitDoc" parameterType="egovMap">
+		UPDATE APPROVAL_DOC
+		SET STATUS = 'SUBMITTED',
+			SUBMIT_DT = CURRENT_TIMESTAMP,
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE DOC_ID = #{docId}
+			AND DRAFTER_ID = #{drafterId}
+			AND STATUS = 'DRAFT'
+	</update>
+
+	<update id="approveDoc" parameterType="egovMap">
+		UPDATE APPROVAL_DOC
+		SET STATUS = 'APPROVED',
+			APPROVED_DT = CURRENT_TIMESTAMP,
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE DOC_ID = #{docId}
+			AND APPROVER_ID = #{approverId}
+			AND STATUS = 'SUBMITTED'
+	</update>
+
+	<update id="rejectDoc" parameterType="egovMap">
+		UPDATE APPROVAL_DOC
+		SET STATUS = 'REJECTED',
+			REJECT_REASON = #{rejectReason},
+			APPROVED_DT = CURRENT_TIMESTAMP,
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE DOC_ID = #{docId}
+			AND APPROVER_ID = #{approverId}
+			AND STATUS = 'SUBMITTED'
+	</update>
+
+	<update id="cancelDoc" parameterType="egovMap">
+		UPDATE APPROVAL_DOC
+		SET STATUS = 'CANCELLED',
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE DOC_ID = #{docId}
+			AND DRAFTER_ID = #{drafterId}
+			AND STATUS = 'SUBMITTED'
+	</update>
+
+	<insert id="insertHistory" parameterType="egovMap">
+		INSERT INTO APPROVAL_HISTORY (HISTORY_ID, DOC_ID, ACTION, ACTOR_ID, NOTE, ACTION_DT)
+		VALUES (#{historyId}, #{docId}, #{action}, #{actorId}, #{note}, CURRENT_TIMESTAMP)
+	</insert>
+
+</mapper>

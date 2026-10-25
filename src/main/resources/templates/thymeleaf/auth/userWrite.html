@@ -37,6 +37,19 @@
                     </label>
                 </div>
             </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="phone">휴대전화</label></div>
+                <div class="form-conts"><input type="text" id="phone" class="krds-input" maxlength="20" th:value="${detail != null ? detail['phone'] : ''}" placeholder="010-0000-0000"></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit">SMS 수신</div>
+                <div class="form-conts">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 14px;">
+                        <input type="checkbox" id="smsYn" th:checked="${detail != null and detail['smsYn'] == 'Y'}">
+                        <span>공지·중요글 알림 SMS 수신에 동의</span>
+                    </label>
+                </div>
+            </div>
             <div class="form-group" th:if="${detail != null}">
                 <div class="form-tit"><label for="useYn">사용여부</label></div>
                 <div class="form-conts">
@@ -88,10 +101,17 @@
             $('#email').focus();
             return;
         }
+        var smsYn = $('#smsYn').is(':checked') ? 'Y' : 'N';
+        var phone = ($('#phone').val() || '').trim();
+        if (smsYn === 'Y' && !/^01[016789]-?[0-9]{3,4}-?[0-9]{4}$/.test(phone)) {
+            alert('SMS 수신에 동의하려면 올바른 휴대전화 번호를 입력하세요.');
+            $('#phone').focus();
+            return;
+        }
         $.ajax({
             type: 'post',
             url: isUpdate ? '/auth/updateUser.json' : '/auth/insertUser.json',
-            data: { userId: userId, password: $('#password').val(), userNm: $('#userNm').val(), email: $('#email').val(), mailYn: mailYn, useYn: $('#useYn').val(), adminYn: $('#adminYn').val(), 'egovframework.double.submit.preventer.parameter.name': $('#doubleSubmitToken').val() },
+            data: { userId: userId, password: $('#password').val(), userNm: $('#userNm').val(), email: $('#email').val(), mailYn: mailYn, phone: phone, smsYn: smsYn, useYn: $('#useYn').val(), adminYn: $('#adminYn').val(), 'egovframework.double.submit.preventer.parameter.name': $('#doubleSubmitToken').val() },
             beforeSend: function() { window._userSaving = true; $('#saveBtn').prop('disabled', true); },
             complete: function() { window._userSaving = false; $('#saveBtn').prop('disabled', false); },
             success: function(res) {

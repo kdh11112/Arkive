@@ -17,9 +17,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import arkive.admin.auth.service.PermissionService;
 import arkive.admin.board.service.BoardSseService;
 import arkive.admin.mail.service.MailAsyncService;
+import arkive.admin.sms.service.SmsAsyncService;
 
 /**
- * 게시글 알림 이벤트가 SSE·메일 채널로만 분기되고, 한 채널의 실패가 다른 채널이나
+ * 게시글 알림 이벤트가 SSE·메일·SMS 채널로만 분기되고, 한 채널의 실패가 다른 채널이나
  * 저장 요청으로 번지지 않는지 확인한다.
  */
 @ExtendWith(MockitoExtension.class)
@@ -33,6 +34,9 @@ class BoardNotificationEventListenerTest {
 
 	@Mock
 	private MailAsyncService mailAsyncService;
+
+	@Mock
+	private SmsAsyncService smsAsyncService;
 
 	@InjectMocks
 	private BoardNotificationEventListener listener;
@@ -123,7 +127,49 @@ class BoardNotificationEventListenerTest {
 		verify(mailAsyncService).sendBoardNotification("B1");
 	}
 
+	@Test
+	void smsShouldDispatchOnlyWhenRequested() throws Exception {
+		listener.handleSms(event("CK", false, false, true));
+
+		verify(smsAsyncService).sendBoardNotification("B1");
+		verifyNoInteractions(permissionService, boardSseService, mailAsyncService);
+	}
+
+	@Test
+	void smsShouldBeSkippedWhenNotRequested() throws Exception {
+		listener.handleSms(event("CK", true, true, false));
+
+		verifyNoInteractions(smsAsyncService);
+	}
+
+	@Test
+	void smsFailureShouldNotEscape() throws Exception {
+		doThrow(new RuntimeException("sms down"))
+				.when(smsAsyncService).sendBoardNotification("B1");
+
+		assertThatCode(() -> listener.handleSms(event("CK", false, false, true)))
+				.doesNotThrowAnyException();
+
+		verify(smsAsyncService).sendBoardNotification("B1");
+	}
+
+	@Test
+	void mailFailureShouldNotBlockSms() throws Exception {
+		doThrow(new RuntimeException("smtp down"))
+				.when(mailAsyncService).sendBoardNotification("B1");
+
+		listener.handleMail(event("CK", false, true, true));
+		listener.handleSms(event("CK", false, true, true));
+
+		verify(mailAsyncService).sendBoardNotification("B1");
+		verify(smsAsyncService).sendBoardNotification("B1");
+	}
+
 	private BoardNotificationEvent event(String boardType, boolean notifySse, boolean notifyMail) {
 		return new BoardNotificationEvent("B1", boardType, "title", notifySse, notifyMail);
+	}
+
+	private BoardNotificationEvent event(String boardType, boolean notifySse, boolean notifyMail, boolean notifySms) {
+		return new BoardNotificationEvent("B1", boardType, "title", notifySse, notifyMail, notifySms);
 	}
 }

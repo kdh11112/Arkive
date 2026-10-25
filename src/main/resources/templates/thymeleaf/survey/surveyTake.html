@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>설문 응답</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">설문 응답<div th:replace="~{cmm/doubleSubmit :: badge}"></div></h2>
+
+    <div th:if="${errorMessage != null}" class="conts-wrap">
+        <p style="padding: 12px; background: #fdecea; border: 1px solid #f5c2c0;" th:text="${errorMessage}"></p>
+        <a th:href="@{/survey/participateList}" class="krds-btn medium secondary">목록</a>
+    </div>
+
+    <th:block th:if="${errorMessage == null}">
+        <div class="conts-wrap" style="margin-bottom: 12px;">
+            <h3 style="margin: 0 0 6px 0;" th:text="${survey['title']}"></h3>
+            <div th:if="${survey['templateNm'] != null}" style="font-size: 12px; color: #666;"
+                 th:text="'템플릿: ' + ${survey['templateNm']}"></div>
+            <div style="font-size: 12px; color: #666;"
+                 th:text="'기간: ' + ${survey['startDe']} + ' ~ ' + ${survey['endDe']} + ' / ' + (${survey['anonymousYn']} == 'Y' ? '익명 응답' : '실명 응답')"></div>
+            <div th:if="${survey['description'] != null and survey['description'] != ''}"
+                 style="margin-top: 8px;" th:text="${survey['description']}"></div>
+        </div>
+
+        <form id="takeForm">
+            <input type="hidden" id="surveyId" name="surveyId" th:value="${survey['surveyId']}">
+            <div th:replace="~{cmm/doubleSubmit :: token}"></div>
+            <div class="conts-wrap">
+                <div th:each="question : ${survey['questions']}" class="fieldset input-form" style="margin-bottom: 12px;">
+                    <div class="form-group" style="display: block;">
+                        <div class="form-tit" style="width: auto; margin-bottom: 6px;">
+                            <strong th:text="${question['questionNo']} + '. ' + ${question['questionTxt']}"></strong>
+                            <span th:if="${question['requiredYn'] == 'Y'}" style="color: #d33; margin-left: 4px;">*</span>
+                        </div>
+                        <div class="form-conts">
+                            <th:block th:if="${question['questionType'] == 'TEXT'}">
+                                <textarea class="krds-input answer-text" rows="3" maxlength="2000" style="width: 100%;"
+                                          th:attr="name='answers_' + ${question['questionId']},data-required=${question['requiredYn']}"
+                                          placeholder="응답을 입력하세요."></textarea>
+                            </th:block>
+                            <th:block th:unless="${question['questionType'] == 'TEXT'}">
+                                <label th:each="item : ${question['items']}"
+                                       style="display: block; margin-bottom: 4px;">
+                                    <input th:if="${question['questionType'] == 'SINGLE'}" type="radio"
+                                           th:attr="name='answers_' + ${question['questionId']},value=${item['itemId']},data-required=${question['requiredYn']}">
+                                    <input th:if="${question['questionType'] == 'MULTI'}" type="checkbox"
+                                           th:attr="name='answers_' + ${question['questionId']},value=${item['itemId']},data-required=${question['requiredYn']}">
+                                    <span th:text="${item['itemTxt']}"></span>
+                                </label>
+                            </th:block>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: center; gap: 8px; margin-top: 12px;">
+                <a th:href="@{/survey/participateList}" class="krds-btn medium secondary">취소</a>
+                <button type="button" id="submitBtn" class="krds-btn medium primary" onclick="fnSubmit()">제출</button>
+            </div>
+        </form>
+    </th:block>
+
+    <script>
+        function fnValidate() {
+            var valid = true;
+            $('.answer-text').each(function() {
+                if ($(this).attr('data-required') === 'Y' && !($(this).val() || '').trim()) {
+                    alert('필수 질문에 응답하세요.');
+                    $(this).focus();
+                    valid = false;
+                    return false;
+                }
+            });
+            if (!valid) { return false; }
+            $('input[data-required="Y"]').each(function() {
+                if (!valid) { return; }
+                var name = $(this).attr('name');
+                if ($('input[name="' + name + '"]:checked').length === 0) {
+                    alert('필수 질문에 응답하세요.');
+                    valid = false;
+                }
+            });
+            return valid;
+        }
+        function fnSubmit() {
+            if (!fnValidate()) { return; }
+            $('#submitBtn').prop('disabled', true);
+            $.ajax({
+                type: 'post',
+                url: '/survey/submitSurvey.json',
+                data: $('#takeForm').serialize(),
+                success: function(res) {
+                    if (res.success) {
+                        alert('응답이 제출되었습니다.');
+                        location.href = '/survey/participateList';
+                    } else {
+                        alert(res.message || '제출에 실패했습니다.');
+                        $('#submitBtn').prop('disabled', false);
+                    }
+                },
+                error: function() {
+                    alert('제출 중 오류가 발생했습니다.');
+                    $('#submitBtn').prop('disabled', false);
+                }
+            });
+        }
+    </script>
+</div>
+</body>
+</html>

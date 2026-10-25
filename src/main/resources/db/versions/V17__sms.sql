@@ -1,0 +1,4 @@
+-- 2단계: SMS 알림 발송 상태.
+-- 게시글 저장과 SMS 발송을 분리하고, 같은 글을 여러 번 발송하지 않도록 발송 시점에 선점한다.
+ALTER TABLE BOARD ADD COLUMN SMS_SENT_YN VARCHAR(1) DEFAULT 'N' NOT NULL;
+ALTER TABLE BOARD ADD COLUMN SMS_SENT_DT TIMESTAMP;

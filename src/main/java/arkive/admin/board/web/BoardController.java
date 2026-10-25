@@ -126,10 +126,10 @@ public class BoardController {
 	 * 실제 SSE·메일 발송은 {@code BoardNotificationEventListener}가 채널별로 처리한다.
 	 */
 	private void publishBoardNotification(String boardId, String boardType, String title,
-			boolean notifySse, boolean notifyMail) {
+			boolean notifySse, boolean notifyMail, boolean notifySms) {
 		try {
 			eventPublisher.publishEvent(
-					new BoardNotificationEvent(boardId, boardType, title, notifySse, notifyMail));
+					new BoardNotificationEvent(boardId, boardType, title, notifySse, notifyMail, notifySms));
 		} catch (Exception e) {
 			logger.warn("board notification publish skipped", e);
 		}
@@ -204,6 +204,9 @@ public class BoardController {
 		String boardId = cmmUtil.convertHtml(request, "boardId");
 		if (boardId != null && !boardId.isEmpty()) {
 			EgovMap detail = boardService.selectBoardDetail(boardId);
+			if (detail != null && !"CK".equals(String.valueOf(detail.get("boardType")))) {
+				return "redirect:/board/ckeditorList";
+			}
 			model.put("detail", detail);
 			if (detail != null && detail.get("atchFileGrpid") != null) {
 				model.put("fileList", fileService.getFileInfoList(String.valueOf(detail.get("atchFileGrpid"))));
@@ -223,6 +226,9 @@ public class BoardController {
 		String boardId = cmmUtil.convertHtml(request, "boardId");
 		if (boardId != null && !boardId.isEmpty()) {
 			EgovMap detail = boardService.selectBoardDetail(boardId);
+			if (detail != null && !"TOAST".equals(String.valueOf(detail.get("boardType")))) {
+				return "redirect:/board/toastList";
+			}
 			model.put("detail", detail);
 			if (detail != null && detail.get("atchFileGrpid") != null) {
 				model.put("fileList", fileService.getFileInfoList(String.valueOf(detail.get("atchFileGrpid"))));
@@ -241,14 +247,19 @@ public class BoardController {
 	public String detail(HttpServletRequest request, ModelMap model) throws Exception {
 		// 근거: 동일 BOARD_TYPE 내 REGIST_DT·BOARD_ID 기준 이전/다음 1건. 조회수는 세션 집합으로 중복 방지한다.
 		String boardId = cmmUtil.convertHtml(request, "boardId");
+		EgovMap detail = boardService.selectBoardDetail(boardId);
+		// 관리자 상세 URL로 QNA/FAQ 등 다른 BOARD_TYPE을 열람하지 못하게 한다.
+		if (detail != null && !"CK".equals(String.valueOf(detail.get("boardType")))
+				&& !"TOAST".equals(String.valueOf(detail.get("boardType")))) {
+			detail = null;
+		}
 		// 조회수 중복 방지. 세션에 본 글 ID를 모아두고 처음 볼 때만 올린다.
 		// 새로고침·뒤로가기로 뻥튀기되는 것을 막는다. (세션 만료되면 다시 센다)
 		Set<String> viewed = getViewedSet(request);
-		if (boardId != null && !boardId.isEmpty() && !viewed.contains(boardId)) {
+		if (detail != null && boardId != null && !boardId.isEmpty() && !viewed.contains(boardId)) {
 			boardService.updateViewCnt(boardId);
 			viewed.add(boardId);
 		}
-		EgovMap detail = boardService.selectBoardDetail(boardId);
 		model.put("detail", detail);
 		if (detail != null) {
 			EgovMap neighborParam = new EgovMap();
@@ -321,7 +332,7 @@ public class BoardController {
 			result.put("boardType", boardType);
 			// 새 글 알림은 이벤트로 넘긴다. SSE 대상 역할 필터와 메일 발송은 리스너가 처리한다.
 			publishBoardNotification(String.valueOf(param.get("boardId")), boardType,
-					String.valueOf(param.get("title")), true, "Y".equals(importantYn));
+					String.valueOf(param.get("title")), true, "Y".equals(importantYn), "Y".equals(importantYn));
 		} catch (Exception e) {
 			logger.error("insertBoard failed", e);
 			result.put("success", false);
@@ -341,6 +352,10 @@ public class BoardController {
 			EgovMap before = boardService.selectBoardDetail(boardId);
 			if (before == null) {
 				throw new IllegalArgumentException("게시글이 없습니다.");
+			}
+			if (!"CK".equals(String.valueOf(before.get("boardType")))
+					&& !"TOAST".equals(String.valueOf(before.get("boardType")))) {
+				throw new IllegalArgumentException("게시판 글만 수정할 수 있습니다.");
 			}
 			param.put("boardId", boardId);
 			String title = cmmUtil.convertHtml(request, "title");
@@ -369,7 +384,7 @@ public class BoardController {
 			boolean newlyImportant = "Y".equals(importantYn)
 					&& !"Y".equals(String.valueOf(before.get("importantYn")));
 			publishBoardNotification(boardId, String.valueOf(before.get("boardType")),
-					String.valueOf(param.get("title")), false, newlyImportant);
+					String.valueOf(param.get("title")), false, newlyImportant, newlyImportant);
 			result.put("success", true);
 		} catch (Exception e) {
 			logger.error("updateBoard failed", e);
@@ -414,7 +429,7 @@ public class BoardController {
 			}
 			// 공지 고정/해제도 저장 후 이벤트로 넘긴다. 메일은 고정할 때만 요청한다.
 			publishBoardNotification(boardId, String.valueOf(detail.get("boardType")),
-					String.valueOf(detail.get("title")), false, "Y".equals(noticeYn));
+					String.valueOf(detail.get("title")), false, "Y".equals(noticeYn), "Y".equals(noticeYn));
 			result.put("success", true);
 			result.put("noticeYn", noticeYn);
 		} catch (Exception e) {
@@ -433,6 +448,13 @@ public class BoardController {
 		try {
 			String boardId = cmmUtil.convertHtml(request, "boardId");
 			EgovMap detail = boardService.selectBoardDetail(boardId);
+			if (detail == null) {
+				throw new IllegalArgumentException("게시글이 없습니다.");
+			}
+			if (!"CK".equals(String.valueOf(detail.get("boardType")))
+					&& !"TOAST".equals(String.valueOf(detail.get("boardType")))) {
+				throw new IllegalArgumentException("게시판 글만 삭제할 수 있습니다.");
+			}
 			if (detail != null && detail.get("content") != null) {
 				// 본문 HTML 속 에디터 이미지(file/downloadFile.do?downloadFileId=...)도 함께 삭제한다.
 				// 다른 글에서 같은 이미지를 참조하면 함께 안 보이게 되므로 복붙 공유는 운영상 자제한다.
@@ -497,8 +519,13 @@ public class BoardController {
 				throw new IllegalStateException("로그인이 필요합니다.");
 			}
 			String boardId = cmmUtil.convertHtml(request, "boardId");
-			if (boardId == null || boardId.isEmpty() || boardService.selectBoardDetail(boardId) == null) {
+			EgovMap board = boardId == null || boardId.isEmpty() ? null : boardService.selectBoardDetail(boardId);
+			if (board == null) {
 				throw new IllegalArgumentException("게시글이 없습니다.");
+			}
+			if (!"CK".equals(String.valueOf(board.get("boardType")))
+					&& !"TOAST".equals(String.valueOf(board.get("boardType")))) {
+				throw new IllegalArgumentException("게시판 글에만 댓글을 등록할 수 있습니다.");
 			}
 			// 댓글은 평문으로 저장하고 화면에서 th:text로 이스케이프한다.
 			String content = cmmUtil.convertHtml(request, "content");

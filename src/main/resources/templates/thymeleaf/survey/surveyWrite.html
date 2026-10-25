@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>설문 등록</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large"><span th:text="${detail != null ? '설문 수정' : '설문 등록'}">설문 등록</span><div th:replace="~{cmm/doubleSubmit :: badge}"></div></h2>
+
+    <div th:if="${detail != null and detail['status'] != 'DRAFT'}"
+         style="margin-bottom: 12px; padding: 10px 12px; background: #fff7e6; border: 1px solid #f0c36d;">
+        <span th:switch="${detail['status']}">
+            <span th:case="'OPEN'">공개중인 설문입니다. 질문·보기·기간을 수정할 수 없고 마감만 할 수 있습니다.</span>
+            <span th:case="*">마감된 설문입니다. 수정할 수 없습니다.</span>
+        </span>
+        <a th:href="@{/survey/surveyList}" class="krds-btn small secondary" style="margin-left: 8px;">목록</a>
+        <a th:href="@{/survey/questionList(surveyId=${detail['surveyId']})}" class="krds-btn small secondary">질문 보기</a>
+        <a th:href="@{/survey/stats(surveyId=${detail['surveyId']})}" class="krds-btn small secondary">통계</a>
+        <button type="button" class="krds-btn small primary" th:if="${detail['status'] == 'OPEN'}"
+                onclick="fnClose()">마감</button>
+    </div>
+
+    <div class="conts-wrap">
+        <div class="fieldset input-form">
+            <input type="hidden" id="surveyId" th:value="${detail != null ? detail['surveyId'] : ''}">
+            <input type="hidden" id="surveyStatus" th:value="${detail != null ? detail['status'] : 'DRAFT'}">
+            <div th:replace="~{cmm/doubleSubmit :: token}"></div>
+            <div class="form-group">
+                <div class="form-tit"><label for="templateId">템플릿</label></div>
+                <div class="form-conts">
+                    <select id="templateId" class="krds-form-select" style="width: 320px;"
+                            th:disabled="${detail != null and detail['status'] != 'DRAFT'}">
+                        <option value="">선택 안 함</option>
+                        <option th:each="template : ${templateList}" th:value="${template['templateId']}"
+                                th:text="${template['templateNm']}"
+                                th:selected="${detail != null and detail['templateId'] == template['templateId']}"
+                                th:attr="data-description=${template['description']}"></option>
+                    </select>
+                    <span style="margin-left: 8px; font-size: 12px; color: #666;">템플릿 설명을 불러오면 설문 설명에 채워집니다.</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="title">설문 제목</label></div>
+                <div class="form-conts">
+                    <input type="text" id="title" class="krds-input" maxlength="200" style="width: 100%;"
+                           th:value="${detail != null ? detail['title'] : ''}"
+                           th:readonly="${detail != null and detail['status'] != 'DRAFT'}">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="description">설명</label></div>
+                <div class="form-conts">
+                    <textarea id="description" class="krds-input" rows="5" maxlength="2000" style="width: 100%;"
+                              th:text="${detail != null ? detail['description'] : ''}"
+                              th:readonly="${detail != null and detail['status'] != 'DRAFT'}"></textarea>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="startDe">참여 기간</label></div>
+                <div class="form-conts" style="display: flex; gap: 8px; align-items: center;">
+                    <input type="date" id="startDe" class="krds-input"
+                           th:value="${detail != null ? detail['startDe'] : ''}"
+                           th:readonly="${detail != null and detail['status'] != 'DRAFT'}">
+                    <span>~</span>
+                    <input type="date" id="endDe" class="krds-input"
+                           th:value="${detail != null ? detail['endDe'] : ''}"
+                           th:readonly="${detail != null and detail['status'] != 'DRAFT'}">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="anonymousYn">응답 공개</label></div>
+                <div class="form-conts">
+                    <select id="anonymousYn" class="krds-form-select" style="width: 220px;"
+                            th:disabled="${detail != null and detail['status'] != 'DRAFT'}">
+                        <option value="N" th:selected="${detail == null or detail['anonymousYn'] == 'N'}">실명 응답</option>
+                        <option value="Y" th:selected="${detail != null and detail['anonymousYn'] == 'Y'}">익명 응답</option>
+                    </select>
+                    <span style="margin-left: 8px; font-size: 12px; color: #666;">샘플: 익명이어도 중복 참여 방지를 위해 사용자 ID는 저장합니다.</span>
+                </div>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: center; gap: 8px; margin-top: 12px;">
+            <a th:href="@{/survey/surveyList}" class="krds-btn medium secondary">목록</a>
+            <a th:if="${detail != null}" th:href="@{/survey/questionList(surveyId=${detail['surveyId']})}"
+               class="krds-btn medium secondary">질문 관리</a>
+            <th:block th:if="${detail == null or detail['status'] == 'DRAFT'}">
+                <button type="button" class="krds-btn medium danger" th:if="${detail != null}" onclick="fnDelete()">삭제</button>
+                <button type="button" id="saveBtn" class="krds-btn medium primary"
+                        th:text="${detail != null ? '수정' : '등록'}" onclick="fnSave()">저장</button>
+            </th:block>
+        </div>
+    </div>
+    <script>
+        var SURVEY_ID = $('#surveyId').val();
+        var LOCKED = $('#surveyStatus').val() !== 'DRAFT';
+
+        $('#templateId').on('change', function() {
+            if (LOCKED) { return; }
+            var description = $(this).find('option:selected').attr('data-description') || '';
+            if (description && confirm('템플릿 설명을 설문 설명에 채울까요? 기존 설명은 덮어씁니다.')) {
+                $('#description').val(description);
+            }
+        });
+
+        function fnSave() {
+            if (!$('#title').val() || !$('#title').val().trim()) { alert('설문 제목을 입력하세요.'); return; }
+            if (!$('#startDe').val() || !$('#endDe').val()) { alert('참여 기간을 입력하세요.'); return; }
+            $.ajax({
+                type: 'post',
+                url: SURVEY_ID ? '/survey/updateSurvey.json' : '/survey/insertSurvey.json',
+                data: {
+                    surveyId: SURVEY_ID,
+                    templateId: $('#templateId').val(),
+                    title: $('#title').val(),
+                    description: $('#description').val(),
+                    startDe: $('#startDe').val(),
+                    endDe: $('#endDe').val(),
+                    anonymousYn: $('#anonymousYn').val(),
+                    'egovframework.double.submit.preventer.parameter.name': $('#doubleSubmitToken').val()
+                },
+                beforeSend: function() { $('#saveBtn').prop('disabled', true); },
+                complete: function() { $('#saveBtn').prop('disabled', false); },
+                success: function(res) {
+                    if (res.success) { location.href = '/survey/surveyWrite?surveyId=' + encodeURIComponent(res.id || SURVEY_ID); }
+                    else { alert(res.message || '저장에 실패했습니다.'); }
+                },
+                error: function() { alert('저장 중 오류가 발생했습니다.'); }
+            });
+        }
+        function fnDelete() {
+            if (!confirm('삭제하시겠습니까?')) { return; }
+            $.ajax({
+                type: 'post', url: '/survey/deleteSurvey.json', data: { surveyId: SURVEY_ID },
+                success: function(res) {
+                    if (res.success) { location.href = '/survey/surveyList'; }
+                    else { alert(res.message || '삭제에 실패했습니다.'); }
+                },
+                error: function() { alert('삭제 중 오류가 발생했습니다.'); }
+            });
+        }
+        function fnClose() {
+            if (!confirm('설문을 마감하시겠습니까?')) { return; }
+            $.ajax({
+                type: 'post', url: '/survey/closeSurvey.json', data: { surveyId: SURVEY_ID },
+                success: function(res) {
+                    if (res.success) { location.reload(); }
+                    else { alert(res.message || '마감에 실패했습니다.'); }
+                },
+                error: function() { alert('마감 중 오류가 발생했습니다.'); }
+            });
+        }
+    </script>
+</div>
+</body>
+</html>

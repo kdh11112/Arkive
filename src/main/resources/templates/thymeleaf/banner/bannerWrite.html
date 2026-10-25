@@ -37,9 +37,9 @@
             <div class="form-group">
                 <div class="form-tit"><label for="startYmd">게시기간</label></div>
                 <div class="form-conts" style="display: flex; flex-direction: row; gap: 8px; align-items: center; flex-wrap: nowrap;">
-                    <input type="date" id="startYmd" class="krds-input" style="flex: 1; min-width: 0;" onclick="this.showPicker()" th:value="${detail != null ? #strings.substring(detail['startYmd'],0,4) + '-' + #strings.substring(detail['startYmd'],4,6) + '-' + #strings.substring(detail['startYmd'],6,8) : ''}">
+                    <input type="date" id="startYmd" class="krds-input" style="flex: 1; min-width: 0;" th:value="${detail != null ? #strings.substring(detail['startYmd'],0,4) + '-' + #strings.substring(detail['startYmd'],4,6) + '-' + #strings.substring(detail['startYmd'],6,8) : ''}">
                     <span>~</span>
-                    <input type="date" id="endYmd" class="krds-input" style="flex: 1; min-width: 0;" onclick="this.showPicker()" th:value="${detail != null ? #strings.substring(detail['endYmd'],0,4) + '-' + #strings.substring(detail['endYmd'],4,6) + '-' + #strings.substring(detail['endYmd'],6,8) : ''}">
+                    <input type="date" id="endYmd" class="krds-input" style="flex: 1; min-width: 0;" th:value="${detail != null ? #strings.substring(detail['endYmd'],0,4) + '-' + #strings.substring(detail['endYmd'],4,6) + '-' + #strings.substring(detail['endYmd'],6,8) : ''}">
                 </div>
             </div>
             <div class="form-group">

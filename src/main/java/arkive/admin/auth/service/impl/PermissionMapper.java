@@ -54,4 +54,6 @@ public interface PermissionMapper {
 	 * 관리자(ADMIN_YN='Y')는 역할 매핑과 무관하게 포함한다.
 	 */
 	List<EgovMap> selectBoardMailRecipients(String menuId) throws Exception;
+
+	List<EgovMap> selectBoardSmsRecipients(String menuId) throws Exception;
 }

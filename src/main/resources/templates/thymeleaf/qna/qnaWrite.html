@@ -17,6 +17,15 @@
                 <div class="form-tit"><label for="title">질문</label></div>
                 <div class="form-conts"><input type="text" id="title" class="krds-input" th:value="${detail != null ? detail['title'] : ''}"></div>
             </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="askType">공개범위</label></div>
+                <div class="form-conts">
+                    <select id="askType" class="krds-input">
+                        <option value="PUBLIC" th:selected="${detail == null or detail['askType'] == null or detail['askType'] == 'PUBLIC'}">외부 공개</option>
+                        <option value="INTERNAL" th:selected="${detail != null and detail['askType'] == 'INTERNAL'}">내부(로그인 사용자만)</option>
+                    </select>
+                </div>
+            </div>
             <div class="form-group" th:if="${detail == null}">
                 <div class="form-tit"><label for="register">작성자 (미입력 시 익명)</label></div>
                 <div class="form-conts"><input type="text" id="register" class="krds-input" maxlength="50"></div>
@@ -45,7 +54,7 @@
         $.ajax({
             type: 'post',
             url: isUpdate ? '/qna/updateQna.json' : '/qna/insertQna.json',
-            data: { boardId: boardId, title: title, content: $('#content').val(), register: $('#register').val(), 'egovframework.double.submit.preventer.parameter.name': $('#doubleSubmitToken').val() },
+            data: { boardId: boardId, title: title, content: $('#content').val(), register: $('#register').val(), askType: $('#askType').val(), 'egovframework.double.submit.preventer.parameter.name': $('#doubleSubmitToken').val() },
             beforeSend: function() { window._qnaSaving = true; $('#saveBtn').prop('disabled', true); },
             complete: function() { window._qnaSaving = false; $('#saveBtn').prop('disabled', false); },
             success: function(res) {

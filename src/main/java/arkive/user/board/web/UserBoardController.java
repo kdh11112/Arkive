@@ -90,7 +90,7 @@ public class UserBoardController {
 	@Operation(summary = "외부 공지사항 상세")
 	@RequestMapping(value = "/noticeDetail", method = { RequestMethod.GET, RequestMethod.POST })
 	public String noticeDetail(HttpServletRequest request, ModelMap model) throws Exception {
-		return detail(request, model, "user/board/noticeDetail");
+		return detail(request, model, "CK", "user/board/noticeDetail");
 	}
 
 	@Operation(summary = "외부 자료실 목록 껍데기 (목록은 /board/toastList.json 공용)")
@@ -103,17 +103,21 @@ public class UserBoardController {
 	@Operation(summary = "외부 자료실 상세")
 	@RequestMapping(value = "/archiveDetail", method = { RequestMethod.GET, RequestMethod.POST })
 	public String archiveDetail(HttpServletRequest request, ModelMap model) throws Exception {
-		return detail(request, model, "user/board/archiveDetail");
+		return detail(request, model, "TOAST", "user/board/archiveDetail");
 	}
 
-	private String detail(HttpServletRequest request, ModelMap model, String view) throws Exception {
+	private String detail(HttpServletRequest request, ModelMap model, String expectedType, String view) throws Exception {
 		String boardId = cmmUtil.convertHtml(request, "boardId");
+		EgovMap detail = boardService.selectBoardDetail(boardId);
+		// 게시판 타입을 URL로 바꿔 다른 게시판(QNA/FAQ 포함)을 열람하지 못하게 한다.
+		if (detail != null && !expectedType.equals(String.valueOf(detail.get("boardType")))) {
+			detail = null;
+		}
 		Set<String> viewed = getViewedSet(request);
-		if (boardId != null && !boardId.isEmpty() && !viewed.contains(boardId)) {
+		if (detail != null && boardId != null && !boardId.isEmpty() && !viewed.contains(boardId)) {
 			boardService.updateViewCnt(boardId);
 			viewed.add(boardId);
 		}
-		EgovMap detail = boardService.selectBoardDetail(boardId);
 		model.put("detail", detail);
 		if (detail != null) {
 			EgovMap neighborParam = new EgovMap();

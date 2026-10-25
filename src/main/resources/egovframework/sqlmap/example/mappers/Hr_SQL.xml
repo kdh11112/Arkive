@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.hr.service.impl.HrMapper">
+
+	<sql id="anniversaryColumns">
+		A.ANNIV_ID,
+		A.USER_ID,
+		U.USER_NM,
+		A.ANNIV_TYPE,
+		A.ANNIV_DE,
+		A.TITLE,
+		A.REMARK,
+		A.USE_YN,
+		A.REGIST_DT,
+		A.UPDT_DT
+	</sql>
+
+	<select id="selectAnniversaryList" parameterType="egovMap" resultType="egovMap">
+		SELECT <include refid="anniversaryColumns"/>
+		FROM HR_ANNIVERSARY A
+		LEFT JOIN APP_USER U ON U.USER_ID = A.USER_ID
+		<where>
+			<if test="month != null and month != ''">
+				AND SUBSTRING(A.ANNIV_DE, 1, 2) = #{month}
+			</if>
+			<if test="useYn != null and useYn != ''">
+				AND A.USE_YN = #{useYn}
+			</if>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (A.TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR A.USER_ID LIKE '%' || #{searchKeyword} || '%'
+					OR U.USER_NM LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+		ORDER BY A.ANNIV_DE, U.USER_NM, A.ANNIV_ID
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<select id="selectAnniversaryListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM HR_ANNIVERSARY A
+		LEFT JOIN APP_USER U ON U.USER_ID = A.USER_ID
+		<where>
+			<if test="month != null and month != ''">
+				AND SUBSTRING(A.ANNIV_DE, 1, 2) = #{month}
+			</if>
+			<if test="useYn != null and useYn != ''">
+				AND A.USE_YN = #{useYn}
+			</if>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (A.TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR A.USER_ID LIKE '%' || #{searchKeyword} || '%'
+					OR U.USER_NM LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+	</select>
+
+	<select id="selectAnniversaryDetail" parameterType="string" resultType="egovMap">
+		SELECT <include refid="anniversaryColumns"/>
+		FROM HR_ANNIVERSARY A
+		LEFT JOIN APP_USER U ON U.USER_ID = A.USER_ID
+		WHERE A.ANNIV_ID = #{annivId}
+	</select>
+
+	<insert id="insertAnniversary" parameterType="egovMap">
+		INSERT INTO HR_ANNIVERSARY (
+			ANNIV_ID, USER_ID, ANNIV_TYPE, ANNIV_DE, TITLE, REMARK, USE_YN, REGIST_DT
+		) VALUES (
+			#{annivId}, #{userId}, #{annivType}, #{annivDe}, #{title}, #{remark}, #{useYn}, CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<update id="updateAnniversary" parameterType="egovMap">
+		UPDATE HR_ANNIVERSARY
+		SET USER_ID = #{userId},
+			ANNIV_TYPE = #{annivType},
+			ANNIV_DE = #{annivDe},
+			TITLE = #{title},
+			REMARK = #{remark},
+			USE_YN = #{useYn},
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE ANNIV_ID = #{annivId}
+	</update>
+
+	<delete id="deleteAnniversary" parameterType="string">
+		DELETE FROM HR_ANNIVERSARY WHERE ANNIV_ID = #{annivId}
+	</delete>
+
+	<sql id="eventColumns">
+		E.EVENT_ID,
+		E.USER_ID,
+		U.USER_NM,
+		E.EVENT_TYPE,
+		E.EVENT_DE,
+		E.TITLE,
+		E.AMOUNT,
+		E.REMARK,
+		E.REGIST_DT,
+		E.UPDT_DT
+	</sql>
+
+	<select id="selectEventList" parameterType="egovMap" resultType="egovMap">
+		SELECT <include refid="eventColumns"/>
+		FROM HR_EVENT E
+		LEFT JOIN APP_USER U ON U.USER_ID = E.USER_ID
+		<where>
+			<if test="year != null and year != ''">
+				AND E.EVENT_DE LIKE #{year} || '%'
+			</if>
+			<if test="eventType != null and eventType != ''">
+				AND E.EVENT_TYPE = #{eventType}
+			</if>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (E.TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR E.USER_ID LIKE '%' || #{searchKeyword} || '%'
+					OR U.USER_NM LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+		ORDER BY E.EVENT_DE DESC, E.EVENT_ID DESC
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<select id="selectEventListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM HR_EVENT E
+		LEFT JOIN APP_USER U ON U.USER_ID = E.USER_ID
+		<where>
+			<if test="year != null and year != ''">
+				AND E.EVENT_DE LIKE #{year} || '%'
+			</if>
+			<if test="eventType != null and eventType != ''">
+				AND E.EVENT_TYPE = #{eventType}
+			</if>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (E.TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR E.USER_ID LIKE '%' || #{searchKeyword} || '%'
+					OR U.USER_NM LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+	</select>
+
+	<select id="selectEventDetail" parameterType="string" resultType="egovMap">
+		SELECT <include refid="eventColumns"/>
+		FROM HR_EVENT E
+		LEFT JOIN APP_USER U ON U.USER_ID = E.USER_ID
+		WHERE E.EVENT_ID = #{eventId}
+	</select>
+
+	<insert id="insertEvent" parameterType="egovMap">
+		INSERT INTO HR_EVENT (
+			EVENT_ID, USER_ID, EVENT_TYPE, EVENT_DE, TITLE, AMOUNT, REMARK, REGIST_DT
+		) VALUES (
+			#{eventId}, #{userId}, #{eventType}, #{eventDe}, #{title}, #{amount}, #{remark}, CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<update id="updateEvent" parameterType="egovMap">
+		UPDATE HR_EVENT
+		SET USER_ID = #{userId},
+			EVENT_TYPE = #{eventType},
+			EVENT_DE = #{eventDe},
+			TITLE = #{title},
+			AMOUNT = #{amount},
+			REMARK = #{remark},
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE EVENT_ID = #{eventId}
+	</update>
+
+	<delete id="deleteEvent" parameterType="string">
+		DELETE FROM HR_EVENT WHERE EVENT_ID = #{eventId}
+	</delete>
+
+	<sql id="rewardColumns">
+		R.REWARD_ID,
+		R.USER_ID,
+		U.USER_NM,
+		R.REWARD_TYPE,
+		R.REWARD_DE,
+		R.TITLE,
+		R.AMOUNT,
+		R.REWARDER,
+		R.REMARK,
+		R.REGIST_DT,
+		R.UPDT_DT
+	</sql>
+
+	<select id="selectRewardList" parameterType="egovMap" resultType="egovMap">
+		SELECT <include refid="rewardColumns"/>
+		FROM HR_REWARD R
+		LEFT JOIN APP_USER U ON U.USER_ID = R.USER_ID
+		<where>
+			<if test="year != null and year != ''">
+				AND R.REWARD_DE LIKE #{year} || '%'
+			</if>
+			<if test="rewardType != null and rewardType != ''">
+				AND R.REWARD_TYPE = #{rewardType}
+			</if>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (R.TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR R.USER_ID LIKE '%' || #{searchKeyword} || '%'
+					OR U.USER_NM LIKE '%' || #{searchKeyword} || '%'
+					OR R.REWARDER LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+		ORDER BY R.REWARD_DE DESC, R.REWARD_ID DESC
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<select id="selectRewardListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM HR_REWARD R
+		LEFT JOIN APP_USER U ON U.USER_ID = R.USER_ID
+		<where>
+			<if test="year != null and year != ''">
+				AND R.REWARD_DE LIKE #{year} || '%'
+			</if>
+			<if test="rewardType != null and rewardType != ''">
+				AND R.REWARD_TYPE = #{rewardType}
+			</if>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (R.TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR R.USER_ID LIKE '%' || #{searchKeyword} || '%'
+					OR U.USER_NM LIKE '%' || #{searchKeyword} || '%'
+					OR R.REWARDER LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+	</select>
+
+	<select id="selectRewardDetail" parameterType="string" resultType="egovMap">
+		SELECT <include refid="rewardColumns"/>
+		FROM HR_REWARD R
+		LEFT JOIN APP_USER U ON U.USER_ID = R.USER_ID
+		WHERE R.REWARD_ID = #{rewardId}
+	</select>
+
+	<insert id="insertReward" parameterType="egovMap">
+		INSERT INTO HR_REWARD (
+			REWARD_ID, USER_ID, REWARD_TYPE, REWARD_DE, TITLE, AMOUNT, REWARDER, REMARK, REGIST_DT
+		) VALUES (
+			#{rewardId}, #{userId}, #{rewardType}, #{rewardDe}, #{title}, #{amount}, #{rewarder}, #{remark}, CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<update id="updateReward" parameterType="egovMap">
+		UPDATE HR_REWARD
+		SET USER_ID = #{userId},
+			REWARD_TYPE = #{rewardType},
+			REWARD_DE = #{rewardDe},
+			TITLE = #{title},
+			AMOUNT = #{amount},
+			REWARDER = #{rewarder},
+			REMARK = #{remark},
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE REWARD_ID = #{rewardId}
+	</update>
+
+	<delete id="deleteReward" parameterType="string">
+		DELETE FROM HR_REWARD WHERE REWARD_ID = #{rewardId}
+	</delete>
+
+	<select id="selectActiveUserList" resultType="egovMap">
+		SELECT USER_ID, USER_NM
+		FROM APP_USER
+		WHERE USE_YN = 'Y'
+		ORDER BY USER_NM, USER_ID
+	</select>
+
+	<select id="selectUser" parameterType="string" resultType="egovMap">
+		SELECT USER_ID, USER_NM
+		FROM APP_USER
+		WHERE USER_ID = #{userId}
+			AND USE_YN = 'Y'
+	</select>
+
+	<!-- 개인연차 화면의 당직 연계. DUTY는 사용자 ID가 아닌 이름 문자열을 저장하므로
+	     같은 이름의 당직을 보여준다. 대상 프로젝트에서 DUTY_USER를 사용자 ID로 바꿀 때 함께 교체한다. -->
+	<select id="selectDutyListByUserName" parameterType="egovMap" resultType="egovMap">
+		SELECT DUTY_ID, DUTY_DE, DUTY_USER, NOTE
+		FROM DUTY
+		WHERE DUTY_DE LIKE #{year} || '%'
+			AND DUTY_USER = #{userNm}
+		ORDER BY DUTY_DE, DUTY_ID
+		LIMIT 100
+	</select>
+
+</mapper>

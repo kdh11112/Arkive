@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.survey.service.impl.SurveyMapper">
+
+	<select id="selectTemplateList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			T.TEMPLATE_ID,
+			T.TEMPLATE_NM,
+			T.DESCRIPTION,
+			T.USE_YN,
+			(SELECT COUNT(*) FROM SURVEY S WHERE S.TEMPLATE_ID = T.TEMPLATE_ID) AS SURVEY_CNT,
+			T.REGIST_DT,
+			T.UPDT_DT
+		FROM SURVEY_TEMPLATE T
+		<where>
+			<if test="useYn != null and useYn != ''">
+				AND T.USE_YN = #{useYn}
+			</if>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (T.TEMPLATE_NM LIKE '%' || #{searchKeyword} || '%'
+					OR T.DESCRIPTION LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+		ORDER BY T.TEMPLATE_NM, T.TEMPLATE_ID
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<select id="selectTemplateListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM SURVEY_TEMPLATE T
+		<where>
+			<if test="useYn != null and useYn != ''">
+				AND T.USE_YN = #{useYn}
+			</if>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (T.TEMPLATE_NM LIKE '%' || #{searchKeyword} || '%'
+					OR T.DESCRIPTION LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+	</select>
+
+	<select id="selectActiveTemplateList" resultType="egovMap">
+		SELECT TEMPLATE_ID, TEMPLATE_NM, DESCRIPTION
+		FROM SURVEY_TEMPLATE
+		WHERE USE_YN = 'Y'
+		ORDER BY TEMPLATE_NM, TEMPLATE_ID
+	</select>
+
+	<select id="selectTemplateDetail" parameterType="string" resultType="egovMap">
+		SELECT TEMPLATE_ID, TEMPLATE_NM, DESCRIPTION, USE_YN, REGIST_DT, UPDT_DT
+		FROM SURVEY_TEMPLATE
+		WHERE TEMPLATE_ID = #{templateId}
+	</select>
+
+	<select id="countSurveyByTemplate" parameterType="string" resultType="int">
+		SELECT COUNT(*) FROM SURVEY WHERE TEMPLATE_ID = #{templateId}
+	</select>
+
+	<insert id="insertTemplate" parameterType="egovMap">
+		INSERT INTO SURVEY_TEMPLATE (TEMPLATE_ID, TEMPLATE_NM, DESCRIPTION, USE_YN, REGIST_DT)
+		VALUES (#{templateId}, #{templateNm}, #{description}, #{useYn}, CURRENT_TIMESTAMP)
+	</insert>
+
+	<update id="updateTemplate" parameterType="egovMap">
+		UPDATE SURVEY_TEMPLATE
+		SET TEMPLATE_NM = #{templateNm},
+			DESCRIPTION = #{description},
+			USE_YN = #{useYn},
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE TEMPLATE_ID = #{templateId}
+	</update>
+
+	<delete id="deleteTemplate" parameterType="string">
+		DELETE FROM SURVEY_TEMPLATE WHERE TEMPLATE_ID = #{templateId}
+	</delete>
+
+	<select id="selectSurveyList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			S.SURVEY_ID,
+			S.TEMPLATE_ID,
+			T.TEMPLATE_NM,
+			S.TITLE,
+			S.DESCRIPTION,
+			S.START_DE,
+			S.END_DE,
+			S.STATUS,
+			S.ANONYMOUS_YN,
+			(SELECT COUNT(*) FROM SURVEY_QUESTION Q WHERE Q.SURVEY_ID = S.SURVEY_ID) AS QUESTION_CNT,
+			(SELECT COUNT(*) FROM SURVEY_PARTICIPATION P WHERE P.SURVEY_ID = S.SURVEY_ID) AS PARTICIPATION_CNT,
+			S.REGIST_DT,
+			S.UPDT_DT
+		FROM SURVEY S
+		LEFT JOIN SURVEY_TEMPLATE T ON T.TEMPLATE_ID = S.TEMPLATE_ID
+		<where>
+			<if test="status != null and status != ''">
+				AND S.STATUS = #{status}
+			</if>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (S.TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR S.DESCRIPTION LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+		ORDER BY S.REGIST_DT DESC, S.SURVEY_ID DESC
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<select id="selectSurveyListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM SURVEY S
+		<where>
+			<if test="status != null and status != ''">
+				AND S.STATUS = #{status}
+			</if>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (S.TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR S.DESCRIPTION LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+	</select>
+
+	<select id="selectParticipableSurveyList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			S.SURVEY_ID,
+			S.TITLE,
+			S.DESCRIPTION,
+			S.START_DE,
+			S.END_DE,
+			S.ANONYMOUS_YN,
+			CASE WHEN EXISTS (
+				SELECT 1 FROM SURVEY_PARTICIPATION P
+				WHERE P.SURVEY_ID = S.SURVEY_ID AND P.USER_ID = #{userId}
+			) THEN 'Y' ELSE 'N' END AS PARTICIPATED_YN
+		FROM SURVEY S
+		WHERE S.STATUS = 'OPEN'
+			AND S.START_DE &lt;= #{today}
+			AND S.END_DE &gt;= #{today}
+		ORDER BY S.END_DE, S.SURVEY_ID
+		LIMIT 200
+	</select>
+
+	<select id="selectSurveyDetail" parameterType="string" resultType="egovMap">
+		SELECT
+			S.SURVEY_ID,
+			S.TEMPLATE_ID,
+			T.TEMPLATE_NM,
+			S.TITLE,
+			S.DESCRIPTION,
+			S.START_DE,
+			S.END_DE,
+			S.STATUS,
+			S.ANONYMOUS_YN,
+			(SELECT COUNT(*) FROM SURVEY_QUESTION Q WHERE Q.SURVEY_ID = S.SURVEY_ID) AS QUESTION_CNT,
+			(SELECT COUNT(*) FROM SURVEY_PARTICIPATION P WHERE P.SURVEY_ID = S.SURVEY_ID) AS PARTICIPATION_CNT,
+			S.REGIST_DT,
+			S.UPDT_DT
+		FROM SURVEY S
+		LEFT JOIN SURVEY_TEMPLATE T ON T.TEMPLATE_ID = S.TEMPLATE_ID
+		WHERE S.SURVEY_ID = #{surveyId}
+	</select>
+
+	<insert id="insertSurvey" parameterType="egovMap">
+		INSERT INTO SURVEY (
+			SURVEY_ID, TEMPLATE_ID, TITLE, DESCRIPTION, START_DE, END_DE, STATUS, ANONYMOUS_YN, REGIST_DT
+		) VALUES (
+			#{surveyId}, NULLIF(CAST(#{templateId} AS VARCHAR(30)), ''), #{title}, #{description}, #{startDe}, #{endDe}, #{status}, #{anonymousYn}, CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<update id="updateSurvey" parameterType="egovMap">
+		UPDATE SURVEY
+		SET TEMPLATE_ID = NULLIF(CAST(#{templateId} AS VARCHAR(30)), ''),
+			TITLE = #{title},
+			DESCRIPTION = #{description},
+			START_DE = #{startDe},
+			END_DE = #{endDe},
+			ANONYMOUS_YN = #{anonymousYn},
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE SURVEY_ID = #{surveyId}
+			AND STATUS = 'DRAFT'
+	</update>
+
+	<delete id="deleteSurvey" parameterType="string">
+		DELETE FROM SURVEY WHERE SURVEY_ID = #{surveyId} AND STATUS = 'DRAFT'
+	</delete>
+
+	<update id="openSurvey" parameterType="string">
+		UPDATE SURVEY
+		SET STATUS = 'OPEN', UPDT_DT = CURRENT_TIMESTAMP
+		WHERE SURVEY_ID = #{surveyId} AND STATUS = 'DRAFT'
+	</update>
+
+	<update id="closeSurvey" parameterType="string">
+		UPDATE SURVEY
+		SET STATUS = 'CLOSED', UPDT_DT = CURRENT_TIMESTAMP
+		WHERE SURVEY_ID = #{surveyId} AND STATUS = 'OPEN'
+	</update>
+
+	<select id="selectQuestionList" parameterType="string" resultType="egovMap">
+		SELECT
+			QUESTION_ID,
+			SURVEY_ID,
+			QUESTION_NO,
+			QUESTION_TXT,
+			QUESTION_TYPE,
+			REQUIRED_YN,
+			ORDR,
+			REGIST_DT,
+			UPDT_DT
+		FROM SURVEY_QUESTION
+		WHERE SURVEY_ID = #{surveyId}
+		ORDER BY ORDR, QUESTION_ID
+	</select>
+
+	<select id="selectQuestionDetail" parameterType="string" resultType="egovMap">
+		SELECT
+			Q.QUESTION_ID,
+			Q.SURVEY_ID,
+			Q.QUESTION_NO,
+			Q.QUESTION_TXT,
+			Q.QUESTION_TYPE,
+			Q.REQUIRED_YN,
+			Q.ORDR,
+			S.TITLE AS SURVEY_TITLE,
+			S.STATUS AS SURVEY_STATUS,
+			Q.REGIST_DT,
+			Q.UPDT_DT
+		FROM SURVEY_QUESTION Q
+		JOIN SURVEY S ON S.SURVEY_ID = Q.SURVEY_ID
+		WHERE Q.QUESTION_ID = #{questionId}
+	</select>
+
+	<select id="selectNextQuestionOrd" parameterType="string" resultType="int">
+		SELECT COALESCE(MAX(ORDR), 0) + 1 FROM SURVEY_QUESTION WHERE SURVEY_ID = #{surveyId}
+	</select>
+
+	<insert id="insertQuestion" parameterType="egovMap">
+		INSERT INTO SURVEY_QUESTION (
+			QUESTION_ID, SURVEY_ID, QUESTION_NO, QUESTION_TXT, QUESTION_TYPE, REQUIRED_YN, ORDR, REGIST_DT
+		) VALUES (
+			#{questionId}, #{surveyId}, #{ordr}, #{questionTxt}, #{questionType}, #{requiredYn}, #{ordr}, CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<update id="updateQuestion" parameterType="egovMap">
+		UPDATE SURVEY_QUESTION
+		SET QUESTION_TXT = #{questionTxt},
+			QUESTION_TYPE = #{questionType},
+			REQUIRED_YN = #{requiredYn},
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE QUESTION_ID = #{questionId}
+	</update>
+
+	<delete id="deleteQuestion" parameterType="string">
+		DELETE FROM SURVEY_QUESTION WHERE QUESTION_ID = #{questionId}
+	</delete>
+
+	<select id="selectItemList" parameterType="string" resultType="egovMap">
+		SELECT ITEM_ID, QUESTION_ID, ITEM_TXT, ORDR
+		FROM SURVEY_ITEM
+		WHERE QUESTION_ID = #{questionId}
+		ORDER BY ORDR, ITEM_ID
+	</select>
+
+	<insert id="insertItem" parameterType="egovMap">
+		INSERT INTO SURVEY_ITEM (ITEM_ID, QUESTION_ID, ITEM_TXT, ORDR, REGIST_DT)
+		VALUES (#{itemId}, #{questionId}, #{itemTxt}, #{ordr}, CURRENT_TIMESTAMP)
+	</insert>
+
+	<delete id="deleteItems" parameterType="string">
+		DELETE FROM SURVEY_ITEM WHERE QUESTION_ID = #{questionId}
+	</delete>
+
+	<select id="countParticipation" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM SURVEY_PARTICIPATION
+		WHERE SURVEY_ID = #{surveyId} AND USER_ID = #{userId}
+	</select>
+
+	<select id="selectParticipationCount" parameterType="string" resultType="int">
+		SELECT COUNT(*) FROM SURVEY_PARTICIPATION WHERE SURVEY_ID = #{surveyId}
+	</select>
+
+	<insert id="insertParticipation" parameterType="egovMap">
+		INSERT INTO SURVEY_PARTICIPATION (PARTICIPATION_ID, SURVEY_ID, USER_ID, SUBMIT_DT)
+		VALUES (#{participationId}, #{surveyId}, #{userId}, CURRENT_TIMESTAMP)
+	</insert>
+
+	<insert id="insertAnswer" parameterType="egovMap">
+		INSERT INTO SURVEY_ANSWER (ANSWER_ID, PARTICIPATION_ID, QUESTION_ID, ITEM_ID, ANSWER_TXT, REGIST_DT)
+		VALUES (#{answerId}, #{participationId}, #{questionId}, #{itemId}, #{answerTxt}, CURRENT_TIMESTAMP)
+	</insert>
+
+	<select id="selectItemStats" parameterType="string" resultType="egovMap">
+		SELECT
+			Q.QUESTION_ID,
+			Q.QUESTION_NO,
+			Q.QUESTION_TXT,
+			Q.QUESTION_TYPE,
+			I.ITEM_ID,
+			I.ITEM_TXT,
+			(SELECT COUNT(*)
+				FROM SURVEY_ANSWER A
+				JOIN SURVEY_PARTICIPATION P ON P.PARTICIPATION_ID = A.PARTICIPATION_ID
+				WHERE P.SURVEY_ID = Q.SURVEY_ID
+					AND A.QUESTION_ID = Q.QUESTION_ID
+					AND A.ITEM_ID = I.ITEM_ID) AS ANSWER_CNT
+		FROM SURVEY_QUESTION Q
+		JOIN SURVEY_ITEM I ON I.QUESTION_ID = Q.QUESTION_ID
+		WHERE Q.SURVEY_ID = #{surveyId}
+		ORDER BY Q.ORDR, I.ORDR
+	</select>
+
+	<select id="selectTextAnswers" parameterType="string" resultType="egovMap">
+		SELECT Q.QUESTION_NO, Q.QUESTION_TXT, A.ANSWER_TXT
+		FROM SURVEY_ANSWER A
+		JOIN SURVEY_QUESTION Q ON Q.QUESTION_ID = A.QUESTION_ID
+		WHERE Q.SURVEY_ID = #{surveyId}
+			AND Q.QUESTION_TYPE = 'TEXT'
+		ORDER BY Q.ORDR, A.REGIST_DT, A.ANSWER_ID
+		LIMIT 200
+	</select>
+
+</mapper>

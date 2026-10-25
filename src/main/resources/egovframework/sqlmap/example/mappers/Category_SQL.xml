@@ -22,7 +22,7 @@
 			ORDR
 		FROM CATEGORY
 		<choose>
-			<when test="value == null or value == ''">
+			<when test="_parameter == null or _parameter == ''">
 				WHERE UP_CAT_ID IS NULL
 			</when>
 			<otherwise>

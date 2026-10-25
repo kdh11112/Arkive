@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>기안 상세</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">기안 상세</h2>
+
+    <div class="krds-table-wrap" style="margin-bottom: 16px;">
+        <table class="tbl col">
+            <caption>기안 정보</caption>
+            <colgroup>
+                <col style="width: 15%;">
+                <col style="width: 35%;">
+                <col style="width: 15%;">
+                <col style="width: 35%;">
+            </colgroup>
+            <tbody>
+            <tr>
+                <th scope="row">제목</th>
+                <td colspan="3" th:text="${detail['title']}"></td>
+            </tr>
+            <tr>
+                <th scope="row">문서구분</th>
+                <td th:text="${detail['docType'] == 'LEAVE' ? '휴가' : (detail['docType'] == 'EXPENSE' ? '지출' : (detail['docType'] == 'ETC' ? '기타' : '일반'))}"></td>
+                <th scope="row">상태</th>
+                <td>
+                    <span class="krds-badge"
+                          th:text="${detail['status'] == 'DRAFT' ? '임시저장' : (detail['status'] == 'SUBMITTED' ? '상신' : (detail['status'] == 'APPROVED' ? '승인' : (detail['status'] == 'REJECTED' ? '반려' : '취소')))}"></span>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">기안자</th>
+                <td th:text="${detail['drafterNm'] ?: detail['drafterId']}"></td>
+                <th scope="row">결재자</th>
+                <td th:text="${detail['approverNm'] ?: detail['approverId']}"></td>
+            </tr>
+            <tr>
+                <th scope="row">기안일</th>
+                <td th:text="${detail['registDt'] != null ? #dates.format(detail['registDt'], 'yyyy-MM-dd HH:mm') : ''}"></td>
+                <th scope="row">결재일</th>
+                <td th:text="${detail['approvedDt'] != null ? #dates.format(detail['approvedDt'], 'yyyy-MM-dd HH:mm') : ''}"></td>
+            </tr>
+            <tr th:if="${detail['rejectReason'] != null and detail['rejectReason'] != ''}">
+                <th scope="row">반려사유</th>
+                <td colspan="3" th:text="${detail['rejectReason']}" style="color: #b42318;"></td>
+            </tr>
+            <tr>
+                <th scope="row">내용</th>
+                <td colspan="3" style="white-space: pre-wrap;" th:text="${detail['content']}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 20px;">
+        <a th:href="@{/approval/approvalList}" class="krds-btn medium secondary">목록</a>
+        <a th:if="${isDrafter and detail['status'] == 'DRAFT'}"
+           th:href="@{/approval/approvalWrite(docId=${detail['docId']})}" class="krds-btn medium secondary">수정</a>
+        <button th:if="${isDrafter and detail['status'] == 'DRAFT'}" type="button"
+                class="krds-btn medium danger" onclick="fnDeleteDraft()">삭제</button>
+        <button th:if="${isDrafter and detail['status'] == 'DRAFT'}" type="button"
+                class="krds-btn medium primary" onclick="fnSubmit()">상신</button>
+        <button th:if="${isDrafter and detail['status'] == 'SUBMITTED'}" type="button"
+                class="krds-btn medium danger" onclick="fnCancel()">상신 취소</button>
+        <button th:if="${isApprover and detail['status'] == 'SUBMITTED'}" type="button"
+                class="krds-btn medium primary" onclick="fnApprove()">승인</button>
+        <button th:if="${isApprover and detail['status'] == 'SUBMITTED'}" type="button"
+                class="krds-btn medium danger" onclick="fnReject()">반려</button>
+    </div>
+
+    <h3 class="heading-medium">결재 이력</h3>
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>결재 이력</caption>
+            <colgroup>
+                <col style="width: 14%;">
+                <col style="width: 14%;">
+                <col style="width: 18%;">
+                <col>
+                <col style="width: 18%;">
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">처리</th>
+                <th scope="col">처리자</th>
+                <th scope="col">처리일시</th>
+                <th scope="col">비고</th>
+                <th scope="col">이력 ID</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="history : ${historyList}">
+                <td th:text="${history['action'] == 'CREATE' ? '작성' : (history['action'] == 'UPDATE' ? '수정' : (history['action'] == 'SUBMIT' ? '상신' : (history['action'] == 'APPROVE' ? '승인' : (history['action'] == 'REJECT' ? '반려' : '취소'))))}"></td>
+                <td th:text="${history['actorNm'] ?: history['actorId']}"></td>
+                <td th:text="${history['actionDt'] != null ? #dates.format(history['actionDt'], 'yyyy-MM-dd HH:mm') : ''}"></td>
+                <td th:text="${history['note']}"></td>
+                <td th:text="${history['historyId']}"></td>
+            </tr>
+            <tr th:if="${historyList == null or historyList.isEmpty()}">
+                <td colspan="5">이력이 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        var docId = /*[[${detail['docId']}]]*/ '';
+        function postAction(url, data, done) {
+            $.ajax({
+                type: 'post',
+                url: url,
+                data: data,
+                success: function(res) {
+                    if (res.success) { done(); }
+                    else { alert(res.message || '처리에 실패했습니다.'); }
+                },
+                error: function() { alert('처리 중 오류가 발생했습니다.'); }
+            });
+        }
+        function fnDeleteDraft() {
+            if (!confirm('이 기안을 삭제하시겠습니까?')) { return; }
+            postAction('/approval/deleteDraft.json', { docId: docId }, function() {
+                location.href = '/approval/approvalList';
+            });
+        }
+        function fnSubmit() {
+            if (!confirm('이 기안을 상신하시겠습니까? 상신 후에는 수정할 수 없습니다.')) { return; }
+            postAction('/approval/submitApproval.json', { docId: docId }, function() { location.reload(); });
+        }
+        function fnCancel() {
+            if (!confirm('상신을 취소하시겠습니까?')) { return; }
+            postAction('/approval/cancelApproval.json', { docId: docId }, function() { location.reload(); });
+        }
+        function fnApprove() {
+            if (!confirm('이 기안을 승인하시겠습니까?')) { return; }
+            postAction('/approval/approveApproval.json', { docId: docId }, function() { location.reload(); });
+        }
+        function fnReject() {
+            var reason = prompt('반려 사유를 입력하세요.');
+            if (reason === null) { return; }
+            if (reason.trim() === '') { alert('반려 사유를 입력하세요.'); return; }
+            postAction('/approval/rejectApproval.json', { docId: docId, rejectReason: reason }, function() {
+                location.reload();
+            });
+        }
+    </script>
+</div>
+</body>
+</html>

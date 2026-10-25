@@ -2,7 +2,9 @@ package arkive.admin.auth.web;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -10,11 +12,7 @@ import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -24,15 +22,19 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import arkive.admin.auth.service.AuthService;
+import arkive.admin.auth.service.LoginSessionService;
 import arkive.admin.auth.service.PermissionService;
+import arkive.admin.comm.service.ExternalHttpClient;
 import arkive.admin.comm.web.CommUtil;
+import arkive.admin.comm.web.PhoneNumberUtil;
 import arkive.admin.mail.service.MailAsyncService;
+import arkive.admin.terms.service.TermsService;
+import arkive.admin.totp.service.TotpService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -59,21 +61,29 @@ public class OauthController {
 	@Resource
 	private Environment env;
 
-	@Resource(name = "loginSessionRegistry")
-	private LoginSessionRegistry loginSessionRegistry;
-
 	@Resource(name = "permissionService")
 	private PermissionService permissionService;
 
 	@Resource(name = "mailAsyncService")
 	private MailAsyncService mailAsyncService;
 
+	@Resource(name = "loginSessionService")
+	private LoginSessionService loginSessionService;
+
+	@Resource(name = "totpService")
+	private TotpService totpService;
+
+	@Resource(name = "termsService")
+	private TermsService termsService;
+
+	@Resource(name = "externalHttpClient")
+	private ExternalHttpClient externalHttpClient;
+
 	private CommUtil cmmUtil = new CommUtil();
 
 	private static final java.util.regex.Pattern EMAIL_PATTERN =
 			java.util.regex.Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
-	private final RestTemplate restTemplate = new RestTemplate();
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	private static final String SESSION_STATE = "OAUTH_STATE";
@@ -156,22 +166,13 @@ public class OauthController {
 			if (user == null) {
 				throw new IllegalStateException("연계된 계정을 찾을 수 없습니다. 관리자에게 문의하세요.");
 			}
-			permissionService.assignDefaultRole(String.valueOf(user.get("userId")));
-			EgovMap loginUser = new EgovMap();
-			loginUser.put("userId", String.valueOf(user.get("userId")));
-			loginUser.put("userNm", String.valueOf(user.get("userNm")));
-			// 세션 고정 공격 방어: 인증 성공 시 세션 ID를 새로 발급한다.
-			request.getSession(true);
-			request.changeSessionId();
-			request.getSession().setAttribute(LoginController.SESSION_KEY, loginUser);
-			boolean isAdmin = "Y".equals(String.valueOf(user.get("adminYn")));
-			if (isAdmin) {
-				EgovMap adminUser = new EgovMap();
-				adminUser.put("userId", String.valueOf(user.get("userId")));
-				adminUser.put("userNm", String.valueOf(user.get("userNm")));
-				request.getSession().setAttribute(LoginController.ADMIN_KEY, adminUser);
+			String userId = String.valueOf(user.get("userId"));
+			permissionService.assignDefaultRole(userId);
+			if (totpService.isEnabled(userId)) {
+				loginSessionService.beginTotpChallenge(request, user, request.getRequestURI(), "GET");
+				return "redirect:/login/login?totp=1";
 			}
-			loginSessionRegistry.register(String.valueOf(user.get("userId")), request.getSession());
+			boolean isAdmin = loginSessionService.establishSession(request, user, request.getRequestURI(), "GET");
 			return isAdmin ? "redirect:/dashboard" : "redirect:/user/userMain";
 		}
 		profile.put("provider", provider);
@@ -180,6 +181,7 @@ public class OauthController {
 		model.put("provider", provider);
 		model.put("email", profile.get("email"));
 		model.put("nickname", profile.get("nickname"));
+		model.put("termsList", termsService.selectCurrentTerms());
 		model.put("naverEnabled", isEnabled("naver"));
 		model.put("kakaoEnabled", isEnabled("kakao"));
 		model.put("googleEnabled", isEnabled("google"));
@@ -192,8 +194,6 @@ public class OauthController {
 				: "kakao".equals(provider)
 						? "https://kauth.kakao.com/oauth/token"
 						: "https://oauth2.googleapis.com/token";
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 		MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
 		body.add("grant_type", "authorization_code");
 		body.add("client_id", prop("Globals." + provider + ".clientId"));
@@ -201,9 +201,8 @@ public class OauthController {
 		body.add("redirect_uri", prop("Globals." + provider + ".callbackUrl"));
 		body.add("code", code);
 		body.add("state", state);
-		ResponseEntity<String> response = restTemplate.postForEntity(tokenUrl,
-				new HttpEntity<>(body, headers), String.class);
-		JsonNode node = objectMapper.readTree(response.getBody());
+		String tokenResponse = externalHttpClient.postForm(tokenUrl, body);
+		JsonNode node = objectMapper.readTree(tokenResponse);
 		if (!node.hasNonNull("access_token")) {
 			throw new IllegalStateException("토큰 발급에 실패했습니다.");
 		}
@@ -218,9 +217,8 @@ public class OauthController {
 				: "kakao".equals(provider)
 						? "https://kapi.kakao.com/v2/user/me"
 						: "https://www.googleapis.com/oauth2/v3/userinfo";
-		ResponseEntity<String> response = restTemplate.exchange(profileUrl, HttpMethod.GET,
-				new HttpEntity<>(headers), String.class);
-		JsonNode root = objectMapper.readTree(response.getBody());
+		String profileResponse = externalHttpClient.get(profileUrl, headers);
+		JsonNode root = objectMapper.readTree(profileResponse);
 		EgovMap profile = new EgovMap();
 		if ("naver".equals(provider)) {
 			JsonNode r = root.path("response");
@@ -280,6 +278,18 @@ public class OauthController {
 				if (email.length() > 100) {
 					throw new IllegalArgumentException("이메일은 100자 이내여야 합니다.");
 				}
+				String smsYn = "Y".equals(cmmUtil.convertHtml(request, "smsYn")) ? "Y" : "N";
+				String phone = PhoneNumberUtil.normalizeMobile(cmmUtil.convertHtml(request, "phone"));
+				if ("Y".equals(smsYn) && phone == null) {
+					throw new IllegalArgumentException("SMS 수신에 동의하려면 올바른 휴대전화 번호를 입력하세요.");
+				}
+				List<String> selectedTermIds = selectedTermsIds(request);
+				for (EgovMap term : termsService.selectCurrentTerms()) {
+					if ("Y".equals(String.valueOf(term.get("requiredYn")))
+							&& !selectedTermIds.contains(String.valueOf(term.get("termsId")))) {
+						throw new IllegalArgumentException("필수 약관에 모두 동의해야 가입할 수 있습니다.");
+					}
+				}
 				userId = ("sns_" + provider + "_" + providerId).toLowerCase();
 				if (userId.length() > 20) {
 					userId = userId.substring(0, 20);
@@ -293,8 +303,11 @@ public class OauthController {
 				param.put("userNm", userNm.trim());
 				param.put("email", email.isEmpty() ? null : email);
 				param.put("mailYn", mailYn);
+				param.put("phone", "Y".equals(smsYn) ? phone : null);
+				param.put("smsYn", smsYn);
 				authService.insertUser(param);
 				permissionService.assignDefaultRole(userId);
+				termsService.saveConsents(userId, selectedTermIds);
 				if ("Y".equals(mailYn)) {
 					mailAsyncService.sendWelcome(userId);
 				}
@@ -321,22 +334,14 @@ public class OauthController {
 			}
 			EgovMap user = authService.selectLoginUser(userId);
 			permissionService.assignDefaultRole(userId);
-			EgovMap loginUser = new EgovMap();
-			loginUser.put("userId", String.valueOf(user.get("userId")));
-			loginUser.put("userNm", String.valueOf(user.get("userNm")));
-			// 세션 고정 공격 방어: 인증 성공 시 세션 ID를 새로 발급한다.
-			request.getSession(true);
-			request.changeSessionId();
-			request.getSession().setAttribute(LoginController.SESSION_KEY, loginUser);
-			boolean isAdmin = "Y".equals(String.valueOf(user.get("adminYn")));
-			if (isAdmin) {
-				EgovMap adminUser = new EgovMap();
-				adminUser.put("userId", String.valueOf(user.get("userId")));
-				adminUser.put("userNm", String.valueOf(user.get("userNm")));
-				request.getSession().setAttribute(LoginController.ADMIN_KEY, adminUser);
-			}
-			loginSessionRegistry.register(String.valueOf(user.get("userId")), request.getSession());
 			request.getSession().removeAttribute(SESSION_PROFILE);
+			if (totpService.isEnabled(userId)) {
+				loginSessionService.beginTotpChallenge(request, user, request.getRequestURI(), "POST");
+				result.put("success", true);
+				result.put("totpRequired", true);
+				return result;
+			}
+			boolean isAdmin = loginSessionService.establishSession(request, user, request.getRequestURI(), "POST");
 			result.put("success", true);
 			result.put("isAdmin", isAdmin);
 		} catch (Exception e) {
@@ -345,5 +350,19 @@ public class OauthController {
 			result.put("message", e.getMessage());
 		}
 		return result;
+	}
+
+	private List<String> selectedTermsIds(HttpServletRequest request) {
+		String[] values = request.getParameterValues("termsIds");
+		List<String> ids = new ArrayList<>();
+		if (values == null) {
+			return ids;
+		}
+		for (String value : values) {
+			if (value != null && !value.isBlank() && !ids.contains(value.trim())) {
+				ids.add(value.trim());
+			}
+		}
+		return ids;
 	}
 }

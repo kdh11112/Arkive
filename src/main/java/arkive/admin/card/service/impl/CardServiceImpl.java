@@ -7,6 +7,7 @@ import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.springframework.stereotype.Service;
 
 import arkive.admin.card.service.CardService;
+import arkive.admin.comm.service.PiiFieldService;
 import jakarta.annotation.Resource;
 
 /**
@@ -18,9 +19,14 @@ public class CardServiceImpl extends EgovAbstractServiceImpl implements CardServ
 	@Resource(name = "cardMapper")
 	private CardMapper cardMapper;
 
+	@Resource(name = "piiFieldService")
+	private PiiFieldService piiFieldService;
+
 	@Override
 	public List<EgovMap> selectPublicCardList(EgovMap egovMap) throws Exception {
-		return cardMapper.selectPublicCardList(egovMap);
+		List<EgovMap> rows = cardMapper.selectPublicCardList(egovMap);
+		piiFieldService.decrypt(rows);
+		return rows;
 	}
 
 	@Override
@@ -30,7 +36,9 @@ public class CardServiceImpl extends EgovAbstractServiceImpl implements CardServ
 
 	@Override
 	public List<EgovMap> selectMyCardList(EgovMap egovMap) throws Exception {
-		return cardMapper.selectMyCardList(egovMap);
+		List<EgovMap> rows = cardMapper.selectMyCardList(egovMap);
+		piiFieldService.decrypt(rows);
+		return rows;
 	}
 
 	@Override
@@ -40,16 +48,20 @@ public class CardServiceImpl extends EgovAbstractServiceImpl implements CardServ
 
 	@Override
 	public EgovMap selectCardDetail(String cardId) throws Exception {
-		return cardMapper.selectCardDetail(cardId);
+		EgovMap row = cardMapper.selectCardDetail(cardId);
+		piiFieldService.decrypt(row);
+		return row;
 	}
 
 	@Override
 	public void insertCard(EgovMap egovMap) throws Exception {
+		piiFieldService.encrypt(egovMap);
 		cardMapper.insertCard(egovMap);
 	}
 
 	@Override
 	public void updateCard(EgovMap egovMap) throws Exception {
+		piiFieldService.encrypt(egovMap);
 		if (cardMapper.updateCard(egovMap) == 0) {
 			throw new IllegalStateException("본인이 등록한 명함만 수정할 수 있습니다.");
 		}

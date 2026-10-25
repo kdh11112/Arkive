@@ -1,5 +1,7 @@
 package arkive.user.qna.web;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import arkive.admin.auth.web.LoginController;
 import arkive.admin.comm.web.CommUtil;
 import arkive.admin.comm.web.HtmlSanitizer;
 import arkive.admin.qna.service.QnaService;
@@ -58,22 +61,31 @@ public class UserQnaController {
 		paginationInfo.setPageSize(10);
 
 		EgovMap param = new EgovMap();
+		boolean loggedIn = isLoggedIn(request);
 		param.put("searchKeyword", cmmUtil.convertHtml(request, "searchKeyword"));
+		param.put("publicOnly", !loggedIn);
 		param.put("firstIndex", paginationInfo.getFirstRecordIndex());
 		param.put("recordCountPerPage", paginationInfo.getRecordCountPerPage());
 		model.put("searchKeyword", param.get("searchKeyword"));
 		model.put("pageIndex", pageIndex);
+		model.put("loggedIn", loggedIn);
 		model.put("resultList", qnaService.selectQnaList(param));
 		paginationInfo.setTotalRecordCount(qnaService.selectQnaListTotCnt(param));
 		model.put("paginationInfo", paginationInfo);
 		return "user/qna/qnaList";
 	}
 
-	@Operation(summary = "외부 Q&A 상세 (답변 읽기 전용)")
+	@Operation(summary = "외부 Q&A 상세 (내부글은 로그인 필요, 답변 읽기 전용)")
 	@RequestMapping(value = "/qnaDetail", method = { RequestMethod.GET, RequestMethod.POST })
 	public String qnaDetail(HttpServletRequest request, ModelMap model) throws Exception {
 		String boardId = cmmUtil.convertHtml(request, "boardId");
-		model.put("detail", qnaService.selectQnaDetail(boardId));
+		EgovMap detail = qnaService.selectQnaDetail(boardId);
+		if (detail != null && "INTERNAL".equals(String.valueOf(detail.get("askType"))) && !isLoggedIn(request)) {
+			String returnUrl = "/user/qna/qnaDetail?boardId=" + URLEncoder.encode(boardId == null ? "" : boardId,
+					StandardCharsets.UTF_8);
+			return "redirect:/login/login?returnUrl=" + URLEncoder.encode(returnUrl, StandardCharsets.UTF_8);
+		}
+		model.put("detail", detail);
 		model.put("answer", qnaService.selectQnaAnswer(boardId));
 		return "user/qna/qnaDetail";
 	}
@@ -114,6 +126,8 @@ public class UserQnaController {
 			String content = request.getParameter("content") == null ? "" : request.getParameter("content");
 			param.put("content", htmlSanitizer.sanitizeBoardContent(content));
 			param.put("register", register.trim());
+			// 외부 화면에서 등록하는 질문은 항상 PUBLIC이다. INTERNAL은 내부 관리 화면에서만 만든다.
+			param.put("askType", "PUBLIC");
 			qnaService.insertQna(param);
 			result.put("success", true);
 			result.put("boardId", param.get("boardId"));
@@ -123,5 +137,10 @@ public class UserQnaController {
 			result.put("message", e.getMessage());
 		}
 		return result;
+	}
+
+	private boolean isLoggedIn(HttpServletRequest request) {
+		return request.getSession(false) != null
+				&& request.getSession(false).getAttribute(LoginController.SESSION_KEY) != null;
 	}
 }

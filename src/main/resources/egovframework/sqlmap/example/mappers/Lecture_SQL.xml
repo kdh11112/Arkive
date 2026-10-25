@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.lecture.service.impl.LectureMapper">
+
+	<sql id="lectureColumns">
+		L.LECTURE_ID,
+		L.TITLE,
+		L.DESCRIPTION,
+		L.VIDEO_PATH,
+		L.VIDEO_ORIGINAL_NM,
+		L.DURATION_SEC,
+		L.SURVEY_ID,
+		S.SURVEY_ID AS LINKED_SURVEY_ID,
+		S.TITLE AS SURVEY_TITLE,
+		L.COMPLETE_RATE,
+		L.STATUS,
+		L.USE_YN,
+		L.REGIST_DT,
+		L.UPDT_DT
+	</sql>
+
+	<select id="selectLectureList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			<include refid="lectureColumns"/>,
+			(SELECT COUNT(*) FROM LECTURE_PROGRESS P WHERE P.LECTURE_ID = L.LECTURE_ID) AS LEARNER_CNT,
+			(SELECT COUNT(*) FROM LECTURE_PROGRESS P
+				WHERE P.LECTURE_ID = L.LECTURE_ID AND P.COMPLETED_YN = 'Y') AS COMPLETED_CNT
+		FROM LECTURE L
+		LEFT JOIN SURVEY S ON S.SURVEY_ID = L.SURVEY_ID
+		<where>
+			<if test="status != null and status != ''">
+				AND L.STATUS = #{status}
+			</if>
+			<if test="useYn != null and useYn != ''">
+				AND L.USE_YN = #{useYn}
+			</if>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (L.TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR L.DESCRIPTION LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+		ORDER BY L.REGIST_DT DESC, L.LECTURE_ID DESC
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<select id="selectLectureListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM LECTURE L
+		<where>
+			<if test="status != null and status != ''">
+				AND L.STATUS = #{status}
+			</if>
+			<if test="useYn != null and useYn != ''">
+				AND L.USE_YN = #{useYn}
+			</if>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (L.TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR L.DESCRIPTION LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+	</select>
+
+	<select id="selectAvailableLectureList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			<include refid="lectureColumns"/>,
+			COALESCE(P.WATCHED_SEC, 0) AS WATCHED_SEC,
+			COALESCE(P.VIDEO_COMPLETED_YN, 'N') AS VIDEO_COMPLETED_YN,
+			CASE WHEN S.SURVEY_ID IS NOT NULL AND EXISTS (
+				SELECT 1 FROM SURVEY_PARTICIPATION SP
+				WHERE SP.SURVEY_ID = S.SURVEY_ID AND SP.USER_ID = #{userId}
+			) THEN 'Y' ELSE 'N' END AS SURVEY_PARTICIPATED_YN
+		FROM LECTURE L
+		LEFT JOIN SURVEY S ON S.SURVEY_ID = L.SURVEY_ID
+		LEFT JOIN LECTURE_PROGRESS P ON P.LECTURE_ID = L.LECTURE_ID AND P.USER_ID = #{userId}
+		WHERE L.STATUS = 'OPEN' AND L.USE_YN = 'Y'
+		ORDER BY L.REGIST_DT DESC, L.LECTURE_ID DESC
+		LIMIT 200
+	</select>
+
+	<select id="selectLectureDetail" parameterType="string" resultType="egovMap">
+		SELECT
+			<include refid="lectureColumns"/>,
+			(SELECT COUNT(*) FROM LECTURE_PROGRESS P WHERE P.LECTURE_ID = L.LECTURE_ID) AS LEARNER_CNT,
+			(SELECT COUNT(*) FROM LECTURE_PROGRESS P
+				WHERE P.LECTURE_ID = L.LECTURE_ID AND P.COMPLETED_YN = 'Y') AS COMPLETED_CNT
+		FROM LECTURE L
+		LEFT JOIN SURVEY S ON S.SURVEY_ID = L.SURVEY_ID
+		WHERE L.LECTURE_ID = #{lectureId}
+	</select>
+
+	<select id="selectLectureForView" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			<include refid="lectureColumns"/>,
+			COALESCE(P.WATCHED_SEC, 0) AS WATCHED_SEC,
+			COALESCE(P.VIDEO_COMPLETED_YN, 'N') AS VIDEO_COMPLETED_YN,
+			COALESCE(P.SURVEY_COMPLETED_YN, 'N') AS SURVEY_COMPLETED_YN,
+			COALESCE(P.COMPLETED_YN, 'N') AS COMPLETED_YN,
+			CASE WHEN S.SURVEY_ID IS NOT NULL AND EXISTS (
+				SELECT 1 FROM SURVEY_PARTICIPATION SP
+				WHERE SP.SURVEY_ID = S.SURVEY_ID AND SP.USER_ID = #{userId}
+			) THEN 'Y' ELSE 'N' END AS SURVEY_PARTICIPATED_YN
+		FROM LECTURE L
+		LEFT JOIN SURVEY S ON S.SURVEY_ID = L.SURVEY_ID
+		LEFT JOIN LECTURE_PROGRESS P ON P.LECTURE_ID = L.LECTURE_ID AND P.USER_ID = #{userId}
+		WHERE L.LECTURE_ID = #{lectureId}
+			AND L.STATUS = 'OPEN'
+			AND L.USE_YN = 'Y'
+	</select>
+
+	<insert id="insertLecture" parameterType="egovMap">
+		INSERT INTO LECTURE (
+			LECTURE_ID, TITLE, DESCRIPTION, VIDEO_PATH, VIDEO_ORIGINAL_NM, DURATION_SEC,
+			SURVEY_ID, COMPLETE_RATE, STATUS, USE_YN, REGIST_DT
+		) VALUES (
+			#{lectureId}, #{title}, #{description}, #{videoPath,jdbcType=VARCHAR},
+			#{videoOriginalNm,jdbcType=VARCHAR}, #{durationSec},
+			NULLIF(CAST(#{surveyId} AS VARCHAR(30)), ''), #{completeRate}, #{status}, #{useYn}, CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<update id="updateLecture" parameterType="egovMap">
+		UPDATE LECTURE
+		SET TITLE = #{title},
+			DESCRIPTION = #{description},
+			VIDEO_PATH = #{videoPath,jdbcType=VARCHAR},
+			VIDEO_ORIGINAL_NM = #{videoOriginalNm,jdbcType=VARCHAR},
+			DURATION_SEC = #{durationSec},
+			SURVEY_ID = NULLIF(CAST(#{surveyId} AS VARCHAR(30)), ''),
+			COMPLETE_RATE = #{completeRate},
+			USE_YN = #{useYn},
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE LECTURE_ID = #{lectureId}
+			AND STATUS = 'DRAFT'
+	</update>
+
+	<delete id="deleteLecture" parameterType="string">
+		DELETE FROM LECTURE WHERE LECTURE_ID = #{lectureId} AND STATUS = 'DRAFT'
+	</delete>
+
+	<update id="openLecture" parameterType="string">
+		UPDATE LECTURE
+		SET STATUS = 'OPEN', UPDT_DT = CURRENT_TIMESTAMP
+		WHERE LECTURE_ID = #{lectureId} AND STATUS = 'DRAFT'
+	</update>
+
+	<update id="closeLecture" parameterType="string">
+		UPDATE LECTURE
+		SET STATUS = 'CLOSED', UPDT_DT = CURRENT_TIMESTAMP
+		WHERE LECTURE_ID = #{lectureId} AND STATUS = 'OPEN'
+	</update>
+
+	<select id="selectProgress" parameterType="egovMap" resultType="egovMap">
+		SELECT LECTURE_ID, USER_ID, WATCHED_SEC, VIDEO_COMPLETED_YN, SURVEY_COMPLETED_YN,
+			COMPLETED_YN, COMPLETED_DT, REGIST_DT, UPDT_DT
+		FROM LECTURE_PROGRESS
+		WHERE LECTURE_ID = #{lectureId} AND USER_ID = #{userId}
+	</select>
+
+	<insert id="insertProgress" parameterType="egovMap">
+		INSERT INTO LECTURE_PROGRESS (
+			LECTURE_ID, USER_ID, WATCHED_SEC, VIDEO_COMPLETED_YN, SURVEY_COMPLETED_YN,
+			COMPLETED_YN, COMPLETED_DT, REGIST_DT
+		) VALUES (
+			#{lectureId}, #{userId}, #{watchedSec}, #{videoCompletedYn}, #{surveyCompletedYn},
+			#{completedYn}, #{completedDt,jdbcType=TIMESTAMP}, CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<update id="updateProgress" parameterType="egovMap">
+		UPDATE LECTURE_PROGRESS
+		SET WATCHED_SEC = #{watchedSec},
+			VIDEO_COMPLETED_YN = #{videoCompletedYn},
+			SURVEY_COMPLETED_YN = #{surveyCompletedYn},
+			COMPLETED_YN = 'N',
+			COMPLETED_DT = NULL,
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE LECTURE_ID = #{lectureId} AND USER_ID = #{userId}
+	</update>
+
+	<update id="updateProgressCompleted" parameterType="egovMap">
+		UPDATE LECTURE_PROGRESS
+		SET WATCHED_SEC = #{watchedSec},
+			VIDEO_COMPLETED_YN = #{videoCompletedYn},
+			SURVEY_COMPLETED_YN = #{surveyCompletedYn},
+			COMPLETED_YN = 'Y',
+			COMPLETED_DT = CASE WHEN COMPLETED_YN = 'Y' THEN COMPLETED_DT ELSE CURRENT_TIMESTAMP END,
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE LECTURE_ID = #{lectureId} AND USER_ID = #{userId}
+	</update>
+
+	<select id="selectCompletionList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			L.LECTURE_ID,
+			L.TITLE,
+			L.DURATION_SEC,
+			L.COMPLETE_RATE,
+			L.SURVEY_ID,
+			S.TITLE AS SURVEY_TITLE,
+			P.USER_ID,
+			U.USER_NM,
+			P.WATCHED_SEC,
+			CASE WHEN L.DURATION_SEC > 0
+				AND P.WATCHED_SEC * 100 >= L.DURATION_SEC * L.COMPLETE_RATE
+				THEN 'Y' ELSE 'N' END AS VIDEO_COMPLETED_YN,
+			CASE WHEN L.SURVEY_ID IS NULL OR S.SURVEY_ID IS NULL THEN 'N'
+				WHEN EXISTS (
+					SELECT 1 FROM SURVEY_PARTICIPATION SP
+					WHERE SP.SURVEY_ID = L.SURVEY_ID AND SP.USER_ID = P.USER_ID
+				) THEN 'Y' ELSE 'N' END AS SURVEY_PARTICIPATED_YN,
+			CASE WHEN L.DURATION_SEC > 0
+				AND P.WATCHED_SEC * 100 >= L.DURATION_SEC * L.COMPLETE_RATE
+				AND (
+				L.SURVEY_ID IS NULL
+				OR S.SURVEY_ID IS NULL
+				OR EXISTS (
+					SELECT 1 FROM SURVEY_PARTICIPATION SP
+					WHERE SP.SURVEY_ID = L.SURVEY_ID AND SP.USER_ID = P.USER_ID
+				)
+			) THEN 'Y' ELSE 'N' END AS COMPLETED_YN,
+			P.COMPLETED_DT,
+			P.UPDT_DT
+		FROM LECTURE_PROGRESS P
+		JOIN LECTURE L ON L.LECTURE_ID = P.LECTURE_ID
+		LEFT JOIN SURVEY S ON S.SURVEY_ID = L.SURVEY_ID
+		LEFT JOIN APP_USER U ON U.USER_ID = P.USER_ID
+		<where>
+			<if test="lectureId != null and lectureId != ''">
+				AND L.LECTURE_ID = #{lectureId}
+			</if>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (P.USER_ID LIKE '%' || #{searchKeyword} || '%'
+					OR U.USER_NM LIKE '%' || #{searchKeyword} || '%'
+					OR L.TITLE LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+		ORDER BY L.TITLE, U.USER_NM, P.USER_ID
+		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<select id="selectCompletionListTotCnt" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM LECTURE_PROGRESS P
+		JOIN LECTURE L ON L.LECTURE_ID = P.LECTURE_ID
+		LEFT JOIN APP_USER U ON U.USER_ID = P.USER_ID
+		<where>
+			<if test="lectureId != null and lectureId != ''">
+				AND L.LECTURE_ID = #{lectureId}
+			</if>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (P.USER_ID LIKE '%' || #{searchKeyword} || '%'
+					OR U.USER_NM LIKE '%' || #{searchKeyword} || '%'
+					OR L.TITLE LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+	</select>
+
+</mapper>

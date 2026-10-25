@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import arkive.admin.board.BoardFixtures;
 import arkive.admin.board.service.impl.BoardMapper;
+import arkive.admin.comm.web.KoreanSearchUtil;
 import arkive.support.ArkiveIntegrationTest;
 
 /**
@@ -82,5 +83,24 @@ class SearchMapperTest {
 		assertThat(secondPage).hasSize(1);
 		assertThat(searchMapper.selectSearchListTotCnt(param("페이징 검색", 0, 2)))
 				.isGreaterThanOrEqualTo(3);
+	}
+
+	@Test
+	@Rollback
+	void chosungKeywordShouldMatchStoredChosungIndex() throws Exception {
+		EgovMap indexed = BoardFixtures.board(
+				"BDSRCH00000000000021", "CK", "초성검색 공지", "<p>indexed</p>");
+		indexed.put("searchChosung", KoreanSearchUtil.toChosung("초성검색 공지"));
+		boardMapper.insertBoard(indexed);
+		insert("BDSRCH00000000000022", "TOAST", "다른 자료", "<p>other</p>");
+
+		EgovMap param = param("ㅊㅅ", 0, 10);
+		param.put("searchChosung", "ㅊㅅ");
+
+		assertThat(searchMapper.selectSearchList(param))
+				.extracting(row -> String.valueOf(row.get("boardId")))
+				.contains("BDSRCH00000000000021")
+				.doesNotContain("BDSRCH00000000000022");
+		assertThat(searchMapper.selectSearchListTotCnt(param)).isGreaterThanOrEqualTo(1);
 	}
 }

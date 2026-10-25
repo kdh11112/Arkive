@@ -7,6 +7,7 @@ import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.springframework.stereotype.Service;
 
 import arkive.admin.address.service.AddressService;
+import arkive.admin.comm.service.PiiFieldService;
 import jakarta.annotation.Resource;
 
 /**
@@ -18,9 +19,14 @@ public class AddressServiceImpl extends EgovAbstractServiceImpl implements Addre
 	@Resource(name = "addressMapper")
 	private AddressMapper addressMapper;
 
+	@Resource(name = "piiFieldService")
+	private PiiFieldService piiFieldService;
+
 	@Override
 	public List<EgovMap> selectAddressList(EgovMap egovMap) throws Exception {
-		return addressMapper.selectAddressList(egovMap);
+		List<EgovMap> rows = addressMapper.selectAddressList(egovMap);
+		piiFieldService.decrypt(rows);
+		return rows;
 	}
 
 	@Override
@@ -30,16 +36,20 @@ public class AddressServiceImpl extends EgovAbstractServiceImpl implements Addre
 
 	@Override
 	public EgovMap selectAddressDetail(String addrId) throws Exception {
-		return addressMapper.selectAddressDetail(addrId);
+		EgovMap row = addressMapper.selectAddressDetail(addrId);
+		piiFieldService.decrypt(row);
+		return row;
 	}
 
 	@Override
 	public void insertAddress(EgovMap egovMap) throws Exception {
+		piiFieldService.encrypt(egovMap);
 		addressMapper.insertAddress(egovMap);
 	}
 
 	@Override
 	public void updateAddress(EgovMap egovMap) throws Exception {
+		piiFieldService.encrypt(egovMap);
 		addressMapper.updateAddress(egovMap);
 	}
 

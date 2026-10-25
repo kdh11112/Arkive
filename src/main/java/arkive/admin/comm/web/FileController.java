@@ -31,7 +31,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
-import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -260,15 +259,17 @@ public class FileController extends FormBasedFileUtil{
 						}
 					}
 					zos.putNextEntry(new ZipEntry(entryName));
+					// FileCopyUtils.copy는 출력 스트림까지 닫아 다음 ZIP 항목을 쓸 수 없다.
+					// ZIP 스트림은 계속 열어 두고 입력 스트림만 닫는다.
 					try (InputStream fis = new FileInputStream(savedFile)) {
-						FileCopyUtils.copy(fis, zos);
+						fis.transferTo(zos);
 					}
 					zos.closeEntry();
 				}
 				zos.finish();
 			}
 		} catch (IOException e) {
-			logger.error("downloadFile2 :: IOException");
+			logger.error("downloadFile2 :: IOException", e);
 		}
 	}
 	
@@ -342,7 +343,7 @@ public class FileController extends FormBasedFileUtil{
 				response.setContentLengthLong(savedFile.length());
 				// 파일 내용을 스트리밍한다. 메모리에 안 올린다.
 				try (InputStream fis = new FileInputStream(savedFile)) {
-					FileCopyUtils.copy(fis, response.getOutputStream());
+					fis.transferTo(response.getOutputStream());
 				}
 				response.getOutputStream().flush();
 			} else {
@@ -355,7 +356,7 @@ public class FileController extends FormBasedFileUtil{
 				response.setHeader("Content-Disposition", "attachment; filename=\"" + downloadName + "\"");
 				response.setHeader("Content-Transfer-Encoding", "binary");
 				try (InputStream fis = new FileInputStream(savedFile)) {
-					FileCopyUtils.copy(fis, response.getOutputStream());
+					fis.transferTo(response.getOutputStream());
 				} catch (IOException e) {
 					logger.debug("file copy fail");
 				}

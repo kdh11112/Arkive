@@ -36,6 +36,34 @@
                     <p style="font-size: 12px; color: #666; margin-top: 4px;">소셜 계정의 이메일이 없으면 동의할 수 없습니다.</p>
                 </div>
             </div>
+            <div class="form-group">
+                <div class="form-tit"><label for="phone">휴대전화 (신규 생성 시)</label></div>
+                <div class="form-conts"><input type="text" id="phone" class="krds-input" maxlength="20" autocomplete="tel" placeholder="010-0000-0000"></div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit">SMS 수신 (신규 생성 시)</div>
+                <div class="form-conts">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 14px;">
+                        <input type="checkbox" id="smsYn">
+                        <span>공지·중요글 알림 SMS 수신에 동의합니다. (선택)</span>
+                    </label>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-tit">약관 동의 (신규 생성 시)</div>
+                <div class="form-conts">
+                    <div th:each="term : ${termsList}" style="margin-bottom: 6px;">
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 14px;">
+                            <input type="checkbox" class="terms-check" th:value="${term['termsId']}"
+                                   th:attr="data-required=${term['requiredYn']}">
+                            <span th:text="${term['title'] + ' (v' + term['version'] + ', ' + (term['requiredYn'] == 'Y' ? '필수' : '선택') + ')'}"></span>
+                        </label>
+                    </div>
+                    <p style="font-size: 12px; color: #666; margin-top: 4px;">
+                        <a th:href="@{/terms}" target="_blank">약관 전문 보기</a>
+                    </p>
+                </div>
+            </div>
         </div>
         <div style="display: flex; gap: 8px; margin-top: 12px;">
             <button type="button" class="krds-btn medium secondary" style="flex: 1;" onclick="fnLink('link')">기존 계정 연결</button>
@@ -45,12 +73,30 @@
 </div>
 <script>
     function fnLink(mode) {
+        var termsIds = [];
+        $('.terms-check:checked').each(function() { termsIds.push($(this).val()); });
+        var smsYn = $('#smsYn').is(':checked') ? 'Y' : 'N';
+        var phone = ($('#phone').val() || '').trim();
+        if (mode === 'create' && smsYn === 'Y' && !/^01[016789]-?[0-9]{3,4}-?[0-9]{4}$/.test(phone)) {
+            alert('SMS 수신에 동의하려면 올바른 휴대전화 번호를 입력하세요.');
+            $('#phone').focus();
+            return;
+        }
+        if (mode === 'create') {
+            var requiredCount = $('.terms-check[data-required="Y"]').length;
+            if ($('.terms-check[data-required="Y"]:checked').length !== requiredCount) {
+                alert('필수 약관에 모두 동의해야 가입할 수 있습니다.');
+                return;
+            }
+        }
         $.ajax({
             type: 'post',
             url: '/login/oauth/link.json',
-            data: { mode: mode, userId: $('#userId').val(), userNm: $('#userNm').val(), password: $('#password').val(), mailYn: $('#mailYn').is(':checked') ? 'Y' : 'N' },
+            traditional: true,
+            data: { mode: mode, userId: $('#userId').val(), userNm: $('#userNm').val(), password: $('#password').val(), mailYn: $('#mailYn').is(':checked') ? 'Y' : 'N', phone: phone, smsYn: smsYn, termsIds: termsIds },
             success: function(res) {
-                if (res.success) { location.href = res.isAdmin ? '/dashboard' : '/user/userMain'; }
+                if (res.success && res.totpRequired) { location.href = '/login/login?totp=1'; }
+                else if (res.success) { location.href = res.isAdmin ? '/dashboard' : '/user/userMain'; }
                 else { alert(res.message || '연결에 실패했습니다.'); }
             },
             error: function() { alert('연결 중 오류가 발생했습니다.'); }

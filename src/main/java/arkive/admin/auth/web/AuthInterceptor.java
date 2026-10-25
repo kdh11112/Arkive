@@ -22,11 +22,11 @@ public class AuthInterceptor implements HandlerInterceptor {
 	protected final Logger logger = LoggerFactory.getLogger(getClass());
 
 	private static final Set<String> ALLOW_PREFIX = new HashSet<>(Arrays.asList(
-			"/login/", "/user/", "/api/", "/css/", "/js/", "/images/", "/img/", "/vendor/", "/fonts/",
-			"/portal/", "/swagger-ui/", "/v3/api-docs/", "/actuator/"));
+			"/login/", "/user/", "/api/", "/internal/", "/sso/", "/ws/", "/css/", "/js/", "/images/", "/img/",
+			"/vendor/", "/fonts/", "/portal/", "/swagger-ui/", "/v3/api-docs/", "/actuator/"));
 
 	private static final Set<String> ALLOW_EXACT = new HashSet<>(Arrays.asList(
-			"/", "/error", "/favicon.ico",
+			"/", "/error", "/favicon.ico", "/terms",
 			"/board/toastList.json",
 			"/popup/activePopup.json",
 			"/banner/activeBanner.json",
@@ -43,6 +43,11 @@ public class AuthInterceptor implements HandlerInterceptor {
 		String uri = request.getRequestURI();
 		String context = request.getContextPath();
 		String path = uri.startsWith(context) ? uri.substring(context.length()) : uri;
+		// TUS CORS 프리플라이트(OPTIONS)는 쿠키·세션 없이 온다.
+		// 실제 생성·청크·삭제 요청은 아래 로그인 검사를 그대로 탄다.
+		if ("OPTIONS".equalsIgnoreCase(request.getMethod()) && path.startsWith("/system/tus")) {
+			return true;
+		}
 		if (isPublic(path)) {
 			return true;
 		}

@@ -43,6 +43,26 @@ public class MenuPermissionInterceptor implements HandlerInterceptor {
 	private static final String TOAST_MENU = "ME02030200";
 	private static final String SCHEDULE_MENU = "ME02030800";
 	private static final String HOLIDAY_MENU = "ME02030900";
+	private static final String LEAVE_MY_MENU = "ME02090100";
+	private static final String LEAVE_MANAGE_MENU = "ME02090200";
+	private static final String LEAVE_BALANCE_MENU = "ME02090300";
+	private static final String MEETING_ROOM_MENU = "ME02050100";
+	private static final String MEETING_RESERVE_MENU = "ME02050200";
+	private static final String APPROVAL_MENU = "ME02070100";
+	private static final String HR_ANNIVERSARY_MENU = "ME02090400";
+	private static final String HR_EVENT_MENU = "ME02090500";
+	private static final String HR_REWARD_MENU = "ME02090600";
+	private static final String HR_PERSONAL_LEAVE_MENU = "ME02090700";
+	private static final String SURVEY_TEMPLATE_MENU = "ME02031600";
+	private static final String SURVEY_MANAGE_MENU = "ME02031700";
+	private static final String SURVEY_PARTICIPATE_MENU = "ME02031800";
+	private static final String SURVEY_STATS_MENU = "ME02031900";
+	private static final String LECTURE_MANAGE_MENU = "ME020A0100";
+	private static final String LECTURE_MY_MENU = "ME020A0200";
+	private static final String LECTURE_COMPLETE_MENU = "ME020A0300";
+	private static final String MAP_GUIDE_MENU = "ME02040200";
+	private static final String CHAT_MENU = "ME020B0100";
+	private static final String BATCH_MENU = "ME02010800";
 
 	/** 컨트롤러 → 메뉴 ID. 메뉴가 없는 컨트롤러(쪽지·파일·사용자포털 등)는 매핑하지 않는다. */
 	private static final Map<String, String> CONTROLLER_MENU = Map.ofEntries(
@@ -61,7 +81,13 @@ public class MenuPermissionInterceptor implements HandlerInterceptor {
 			Map.entry("arkive.admin.system.web.SystemController", "ME02010100"),
 			Map.entry("arkive.admin.system.web.CommCodeController", "ME02010200"),
 			Map.entry("arkive.admin.auth.web.UserManageController", "ME02010400"),
-			Map.entry("arkive.admin.auth.web.RoleManageController", "ME02010500"));
+			Map.entry("arkive.admin.auth.web.RoleManageController", "ME02010500"),
+			Map.entry("arkive.admin.audit.web.AuditLogController", "ME02010600"),
+			Map.entry("arkive.admin.stats.web.StatsController", "ME02010700"),
+			Map.entry("arkive.admin.approval.web.ApprovalController", APPROVAL_MENU),
+			Map.entry("arkive.admin.map.web.MapController", MAP_GUIDE_MENU),
+			Map.entry("arkive.admin.chat.web.ChatController", CHAT_MENU),
+			Map.entry("arkive.admin.batch.web.BatchController", BATCH_MENU));
 
 	private final PermissionService permissionService;
 	private final BoardService boardService;
@@ -144,6 +170,57 @@ public class MenuPermissionInterceptor implements HandlerInterceptor {
 		if ("arkive.admin.board.web.BoardController".equals(className)) {
 			return resolveBoard(handler, request, path);
 		}
+		if ("arkive.admin.leave.web.LeaveController".equals(className)) {
+			return resolveLeave(handler, request, path);
+		}
+		if ("arkive.admin.meeting.web.MeetingController".equals(className)) {
+			String lower = path.toLowerCase();
+			String menuId = lower.contains("room") ? MEETING_ROOM_MENU : MEETING_RESERVE_MENU;
+			return new Target(List.of(menuId), isWrite(handler, request));
+		}
+		if ("arkive.admin.hr.web.HrController".equals(className)) {
+			String lower = path.toLowerCase();
+			String menuId;
+			if (lower.contains("anniversary")) {
+				menuId = HR_ANNIVERSARY_MENU;
+			} else if (lower.contains("event")) {
+				menuId = HR_EVENT_MENU;
+			} else if (lower.contains("reward")) {
+				menuId = HR_REWARD_MENU;
+			} else {
+				menuId = HR_PERSONAL_LEAVE_MENU;
+			}
+			return new Target(List.of(menuId), isWrite(handler, request));
+		}
+		if ("arkive.admin.survey.web.SurveyController".equals(className)) {
+			String lower = path.toLowerCase();
+			String menuId;
+			if (lower.contains("template")) {
+				menuId = SURVEY_TEMPLATE_MENU;
+			} else if (lower.contains("stats")) {
+				menuId = SURVEY_STATS_MENU;
+			} else if (lower.contains("surveylist") || lower.contains("surveywrite") || lower.contains("question")
+					|| lower.contains("insertsurvey") || lower.contains("updatesurvey")
+					|| lower.contains("deletesurvey") || lower.contains("opensurvey") || lower.contains("closesurvey")) {
+				menuId = SURVEY_MANAGE_MENU;
+			} else {
+				menuId = SURVEY_PARTICIPATE_MENU;
+			}
+			return new Target(List.of(menuId), isWrite(handler, request));
+		}
+		if ("arkive.admin.lecture.web.LectureController".equals(className)) {
+			String lower = path.toLowerCase();
+			String menuId;
+			if (lower.contains("mylecture") || lower.contains("view") || lower.contains("progress")
+					|| lower.contains("stream")) {
+				menuId = LECTURE_MY_MENU;
+			} else if (lower.contains("completion")) {
+				menuId = LECTURE_COMPLETE_MENU;
+			} else {
+				menuId = LECTURE_MANAGE_MENU;
+			}
+			return new Target(List.of(menuId), isWrite(handler, request));
+		}
 		String menuId = CONTROLLER_MENU.get(className);
 		if (menuId == null) {
 			return null;
@@ -154,6 +231,25 @@ public class MenuPermissionInterceptor implements HandlerInterceptor {
 			menuId = HOLIDAY_MENU;
 		}
 		return new Target(List.of(menuId), isWrite(handler, request));
+	}
+
+	/**
+	 * 휴가관리는 한 컨트롤러가 내 휴가·승인·연차 화면을 모두 담당해 URL로 메뉴를 나눈다.
+	 * 일반 역할은 "내 휴가"만 받고, 승인·연차 화면은 해당 메뉴 WRITE 권한이 필요하다.
+	 */
+	private Target resolveLeave(HandlerMethod handler, HttpServletRequest request, String path) {
+		String lower = path.toLowerCase();
+		String menuId;
+		if (lower.contains("balance")) {
+			menuId = LEAVE_BALANCE_MENU;
+		} else if (lower.contains("leavelist") || lower.contains("approveleave") || lower.contains("rejectleave")) {
+			menuId = LEAVE_MANAGE_MENU;
+		} else {
+			menuId = LEAVE_MY_MENU;
+		}
+		// 내 휴가 화면은 연도 검색에 POST를 쓰지만 조회 기능이므로 WRITE를 요구하지 않는다.
+		boolean write = isWrite(handler, request) && !lower.contains("myleave");
+		return new Target(List.of(menuId), write);
 	}
 
 	private Target resolveBoard(HandlerMethod handler, HttpServletRequest request, String path) throws Exception {

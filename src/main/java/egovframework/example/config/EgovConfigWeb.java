@@ -30,7 +30,10 @@ import org.thymeleaf.templatemode.TemplateMode;
 
 import arkive.admin.auth.service.MenuPermission;
 import arkive.admin.auth.service.PermissionService;
+import arkive.admin.audit.web.AuditInterceptor;
 import arkive.admin.auth.web.AuthInterceptor;
+import arkive.admin.comm.web.MaskingInterceptor;
+import arkive.admin.terms.web.TermsInterceptor;
 import arkive.admin.auth.web.LoginController;
 import arkive.admin.auth.web.LoginSessionRegistry;
 import arkive.admin.auth.web.MenuPermissionInterceptor;
@@ -266,19 +269,48 @@ public class EgovConfigWeb implements WebMvcConfigurer, ApplicationContextAware 
                 .addPathPatterns("/**")
                 .excludePathPatterns(
                         "/css/**", "/js/**", "/images/**", "/img/**", "/vendor/**",
-                        "/favicon.ico", "/error",
+                        "/favicon.ico", "/error", "/ws/**",
                         "/swagger-ui/**", "/v3/api-docs/**",
                         "/actuator/**");
         // 로그인 검사는 AuthInterceptor 빈으로 둔다(공개 경로는 클래스 안에서 제외).
         registry.addInterceptor(authInterceptor());
+        // 로그인 후 필수 약관 미동의 사용자는 동의 화면으로 보낸다.
+        registry.addInterceptor(new TermsInterceptor())
+                .addPathPatterns("/**")
+                .excludePathPatterns(
+                        "/css/**", "/js/**", "/images/**", "/img/**", "/vendor/**", "/fonts/**",
+                        "/favicon.ico", "/error", "/ws/**",
+                        "/swagger-ui/**", "/v3/api-docs/**",
+                        "/actuator/**");
         // 메뉴 조회·쓰기 권한은 로그인 검사 뒤에 서버에서 강제한다.
         registry.addInterceptor(menuPermissionInterceptor(permissionService, boardService))
                 .addPathPatterns("/**")
                 .excludePathPatterns(
                         "/css/**", "/js/**", "/images/**", "/img/**", "/vendor/**",
-                        "/favicon.ico", "/error",
+                        "/favicon.ico", "/error", "/ws/**",
                         "/swagger-ui/**", "/v3/api-docs/**",
                         "/actuator/**");
+        // 권한 통과 후 메뉴·개인정보 열람·다운로드 감사 이벤트를 발행한다.
+        registry.addInterceptor(auditInterceptor(applicationContext))
+                .addPathPatterns("/**")
+                .excludePathPatterns(
+                        "/css/**", "/js/**", "/images/**", "/img/**", "/vendor/**",
+                        "/favicon.ico", "/error", "/ws/**",
+                        "/swagger-ui/**", "/v3/api-docs/**",
+                        "/actuator/**");
+        // 목록 화면의 개인정보는 표시 직전에 마스킹한다. 수정 화면 단건 모델은 건드리지 않는다.
+        registry.addInterceptor(new MaskingInterceptor())
+                .addPathPatterns("/**")
+                .excludePathPatterns(
+                        "/css/**", "/js/**", "/images/**", "/img/**", "/vendor/**",
+                        "/favicon.ico", "/error", "/ws/**",
+                        "/swagger-ui/**", "/v3/api-docs/**",
+                        "/actuator/**");
+    }
+
+    @Bean
+    public AuditInterceptor auditInterceptor(org.springframework.context.ApplicationEventPublisher eventPublisher) {
+        return new AuditInterceptor(eventPublisher);
     }
 
     @Bean

@@ -288,6 +288,11 @@ public class ScheduleController {
 			if (holidayDe == null || !holidayDe.matches("^[12][0-9]{3}[01][0-9][0-3][0-9]$")) {
 				throw new IllegalArgumentException("공휴일 날짜를 YYYYMMDD 형식으로 입력하세요.");
 			}
+			try {
+				LocalDate.parse(holidayDe, DateTimeFormatter.BASIC_ISO_DATE);
+			} catch (java.time.format.DateTimeParseException e) {
+				throw new IllegalArgumentException("존재하지 않는 날짜입니다: " + holidayDe);
+			}
 			if (holidayNm == null || holidayNm.trim().isEmpty()) {
 				throw new IllegalArgumentException("공휴일 이름을 입력하세요.");
 			}

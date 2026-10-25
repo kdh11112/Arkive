@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>약식결재</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">약식결재</h2>
+
+    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+        <a th:href="@{/approval/approvalList(scope='my')}" class="krds-btn small"
+           th:classappend="${scope == 'my' ? 'primary' : 'secondary'}">내 기안</a>
+        <a th:href="@{/approval/approvalList(scope='todo')}" class="krds-btn small"
+           th:classappend="${scope == 'todo' ? 'primary' : 'secondary'}">결재할 문서</a>
+        <a th:if="${admin}" th:href="@{/approval/approvalList(scope='all')}" class="krds-btn small"
+           th:classappend="${scope == 'all' ? 'primary' : 'secondary'}">전체</a>
+        <a th:href="@{/approval/approvalWrite}" class="krds-btn medium primary" style="margin-left: auto;">기안 작성</a>
+    </div>
+
+    <form method="post" th:action="@{/approval/approvalList}" style="display: flex; gap: 8px; margin-bottom: 12px;">
+        <input type="hidden" name="scope" th:value="${scope}">
+        <select name="status" class="krds-form-select" style="width: 140px;">
+            <option value="">전체 상태</option>
+            <option value="DRAFT" th:selected="${status == 'DRAFT'}">임시저장</option>
+            <option value="SUBMITTED" th:selected="${status == 'SUBMITTED'}">상신</option>
+            <option value="APPROVED" th:selected="${status == 'APPROVED'}">승인</option>
+            <option value="REJECTED" th:selected="${status == 'REJECTED'}">반려</option>
+            <option value="CANCELLED" th:selected="${status == 'CANCELLED'}">취소</option>
+        </select>
+        <input type="text" name="searchKeyword" class="krds-input" style="width: 240px;"
+               placeholder="제목·기안자" th:value="${searchKeyword}">
+        <button type="submit" class="krds-btn medium secondary">조회</button>
+    </form>
+
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>결재 문서 목록</caption>
+            <colgroup>
+                <col style="width: 10%;">
+                <col>
+                <col style="width: 12%;">
+                <col style="width: 12%;">
+                <col style="width: 9%;">
+                <col style="width: 13%;">
+                <col style="width: 13%;">
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">구분</th>
+                <th scope="col">제목</th>
+                <th scope="col">기안자</th>
+                <th scope="col">결재자</th>
+                <th scope="col">상태</th>
+                <th scope="col">기안일</th>
+                <th scope="col">결재일</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${resultList}">
+                <td th:text="${item['docType'] == 'LEAVE' ? '휴가' : (item['docType'] == 'EXPENSE' ? '지출' : (item['docType'] == 'ETC' ? '기타' : '일반'))}"></td>
+                <td>
+                    <a th:href="@{/approval/approvalView(docId=${item['docId']})}" th:text="${item['title']}"></a>
+                </td>
+                <td th:text="${item['drafterNm'] ?: item['drafterId']}"></td>
+                <td th:text="${item['approverNm'] ?: item['approverId']}"></td>
+                <td>
+                    <span class="krds-badge"
+                          th:text="${item['status'] == 'DRAFT' ? '임시저장' : (item['status'] == 'SUBMITTED' ? '상신' : (item['status'] == 'APPROVED' ? '승인' : (item['status'] == 'REJECTED' ? '반려' : '취소')))}"></span>
+                </td>
+                <td th:text="${item['registDt'] != null ? #dates.format(item['registDt'], 'yyyy-MM-dd HH:mm') : ''}"></td>
+                <td th:text="${item['approvedDt'] != null ? #dates.format(item['approvedDt'], 'yyyy-MM-dd HH:mm') : ''}"></td>
+            </tr>
+            <tr th:if="${resultList == null or resultList.isEmpty()}">
+                <td colspan="7">결재 문서가 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

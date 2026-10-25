@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>2단계 인증</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">2단계 인증 (TOTP)</h2>
+    <p style="color:#555;">인증 앱(Google Authenticator, Microsoft Authenticator 등)으로 로그인할 때 한 번 더 확인합니다.</p>
+
+    <div th:if="${!available}" class="krds-alert danger" style="padding:16px; border:1px solid #d9534f; background:#fff5f5;">
+        서버에 <code>ARKIVE_FIELD_KEY</code>가 설정되지 않아 2단계 인증을 사용할 수 없습니다.
+        운영 담당자가 암호화 키를 설정한 뒤 다시 시도하세요. 키는 저장소에 커밋하지 않습니다.
+    </div>
+
+    <div th:if="${available and enabled}" class="conts-wrap">
+        <p>2단계 인증이 <strong>사용 중</strong>입니다. 남은 복구코드: <strong th:text="${remainingRecoveryCodes}">0</strong>개</p>
+        <p style="font-size:13px; color:#666;">복구코드는 분실 대비용이며, 모두 사용하면 관리자에게 초기화를 요청해야 합니다.</p>
+        <div class="fieldset input-form" style="margin-top:16px;">
+            <div class="form-group">
+                <div class="form-tit"><label for="disableCode">해제할 인증 코드</label></div>
+                <div class="form-conts">
+                    <input type="text" id="disableCode" class="krds-input" maxlength="16" inputmode="numeric" placeholder="6자리 코드 또는 복구코드">
+                </div>
+            </div>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:12px;">
+            <a th:href="@{/}" class="krds-btn medium secondary">돌아가기</a>
+            <button type="button" class="krds-btn medium danger" onclick="fnDisable()">2단계 인증 해제</button>
+        </div>
+    </div>
+
+    <div th:if="${available and !enabled}" class="conts-wrap">
+        <div id="startArea">
+            <p>아직 2단계 인증이 설정되지 않았습니다.</p>
+            <button type="button" class="krds-btn medium primary" onclick="fnStart()">설정 시작</button>
+        </div>
+        <div id="qrArea" style="display:none; margin-top:16px;">
+            <p>인증 앱으로 아래 QR을 스캔하거나, 표시된 비밀키를 직접 입력하세요.</p>
+            <img id="qrImage" alt="TOTP QR 코드" style="width:240px; height:240px; border:1px solid #ddd;">
+            <p style="font-size:13px; word-break:break-all;">비밀키: <code id="secretText"></code></p>
+            <div class="fieldset input-form" style="margin-top:12px;">
+                <div class="form-group">
+                    <div class="form-tit"><label for="confirmCode">인증 앱의 6자리 코드</label></div>
+                    <div class="form-conts">
+                        <input type="text" id="confirmCode" class="krds-input" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="krds-btn medium primary" style="margin-top:8px;" onclick="fnConfirm()">확인하고 사용 시작</button>
+        </div>
+        <div id="recoveryArea" style="display:none; margin-top:16px; border:1px solid #ddd; padding:16px; background:#fafafa;">
+            <h3 class="heading-small">복구코드 (지금 한 번만 표시됩니다)</h3>
+            <p>안전한 곳에 보관하세요. 각 코드는 1회만 사용할 수 있습니다.</p>
+            <pre id="recoveryCodes" style="white-space:pre-wrap;"></pre>
+            <a th:href="@{/}" class="krds-btn medium primary">보관했고, 돌아가기</a>
+        </div>
+    </div>
+
+    <script>
+        function fnStart() {
+            $.ajax({
+                type: 'post',
+                url: '/login/totpSetup.json',
+                success: function(res) {
+                    if (!res.success) { alert(res.message || '설정을 시작할 수 없습니다.'); return; }
+                    $('#qrImage').attr('src', res.qrImage);
+                    $('#secretText').text(res.secret);
+                    $('#startArea').hide();
+                    $('#qrArea').show();
+                },
+                error: function() { alert('설정 시작 중 오류가 발생했습니다.'); }
+            });
+        }
+        function fnConfirm() {
+            var code = ($('#confirmCode').val() || '').trim();
+            if (!/^[0-9]{6}$/.test(code)) { alert('6자리 인증 코드를 입력하세요.'); return; }
+            $.ajax({
+                type: 'post',
+                url: '/login/totpConfirm.json',
+                data: { code: code },
+                success: function(res) {
+                    if (!res.success) { alert(res.message || '인증 코드가 올바르지 않습니다.'); return; }
+                    $('#qrArea').hide();
+                    $('#recoveryArea').show();
+                    $('#recoveryCodes').text((res.recoveryCodes || []).join('\n'));
+                },
+                error: function() { alert('확인 중 오류가 발생했습니다.'); }
+            });
+        }
+        function fnDisable() {
+            var code = ($('#disableCode').val() || '').trim();
+            if (code === '') { alert('인증 코드 또는 복구코드를 입력하세요.'); return; }
+            if (!confirm('2단계 인증을 해제하시겠습니까?')) { return; }
+            $.ajax({
+                type: 'post',
+                url: '/login/totpDisable.json',
+                data: { code: code },
+                success: function(res) {
+                    if (res.success) { alert('2단계 인증이 해제되었습니다.'); location.reload(); }
+                    else { alert(res.message || '해제에 실패했습니다.'); }
+                },
+                error: function() { alert('해제 중 오류가 발생했습니다.'); }
+            });
+        }
+    </script>
+</div>
+</body>
+</html>

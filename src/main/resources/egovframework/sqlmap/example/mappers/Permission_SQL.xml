@@ -172,4 +172,30 @@
 		ORDER BY U.USER_ID
 	</select>
 
+	<!-- SMS 알림 대상. SMS 수신 동의 + 휴대전화 + 활성 사용자 + (관리자 또는 해당 메뉴 조회 권한) -->
+	<select id="selectBoardSmsRecipients" parameterType="string" resultType="egovMap">
+		SELECT
+			U.USER_ID,
+			U.USER_NM,
+			U.PHONE
+		FROM APP_USER U
+		WHERE U.USE_YN = 'Y'
+			AND U.SMS_YN = 'Y'
+			AND U.PHONE IS NOT NULL
+			AND U.PHONE &lt;&gt; ''
+			AND (
+				U.ADMIN_YN = 'Y'
+				OR EXISTS (
+					SELECT 1
+					FROM APP_USER_ROLE UR
+					JOIN APP_ROLE R ON R.ROLE_ID = UR.ROLE_ID AND R.USE_YN = 'Y'
+					JOIN APP_ROLE_MENU RM ON RM.ROLE_ID = R.ROLE_ID
+					WHERE UR.USER_ID = U.USER_ID
+						AND RM.MENU_ID = #{menuId}
+						AND RM.READ_YN = 'Y'
+				)
+			)
+		ORDER BY U.USER_ID
+	</select>
+
 </mapper>

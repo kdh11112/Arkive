@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>강의 수강</title>
+    <style>
+        .lecture-player { width: 100%; max-height: 70vh; background: #000; border-radius: 6px; }
+        .lecture-progress { background: #e5e7eb; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 8px; }
+        .lecture-progress > div { background: #2563eb; height: 10px; }
+        .lecture-meta { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; font-size: 14px; color: #444; }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div th:if="${errorMessage != null}" class="conts-wrap">
+        <h2 class="heading-large">강의 수강</h2>
+        <p th:text="${errorMessage}" style="color: #b91c1c;">수강할 수 없는 강의입니다.</p>
+        <a th:href="@{/lecture/myLecture}" class="krds-btn medium secondary">내 강의로</a>
+    </div>
+
+    <div th:if="${lecture != null}">
+        <h2 class="heading-large" th:text="${lecture['title']}">강의 제목</h2>
+        <p th:if="${lecture['description'] != null and lecture['description'] != ''}"
+           th:text="${lecture['description']}" style="color: #555;"></p>
+
+        <video id="player" class="lecture-player" controls preload="metadata"
+               th:src="@{/lecture/stream(lectureId=${lecture['lectureId']})}">
+            브라우저가 동영상 재생을 지원하지 않습니다.
+        </video>
+
+        <div style="margin-top: 12px;">
+            <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                <strong>진도</strong>
+                <span id="progressPercent"
+                      th:text="${lecture['percent']} + '%'">0%</span>
+            </div>
+            <div class="lecture-progress">
+                <div id="progressBar" th:style="'width: ' + ${lecture['percent']} + '%;'"></div>
+            </div>
+        </div>
+
+        <div class="lecture-meta">
+            <span th:text="'재생 길이 ' + ${lecture['durationSec']} + '초'"></span>
+            <span th:text="'수료 기준 ' + ${lecture['completeRate']} + '%'"></span>
+            <span>
+                수료 상태:
+                <strong id="completedBadge"
+                        th:text="${lecture['completedYn'] == 'Y' ? '수료' : '미수료'}"
+                        th:style="${lecture['completedYn'] == 'Y'} ? 'color: #15803d;' : 'color: #888;'">미수료</strong>
+            </span>
+        </div>
+
+        <div th:if="${lecture['surveyRequiredYn'] == 'Y'}"
+             style="margin-top: 16px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+            <div style="font-size: 14px; color: #444;">
+                연결 설문:
+                <strong th:text="${lecture['surveyTitle']}">설문</strong>
+                <span id="surveyStatus"
+                      th:text="${lecture['surveyCompletedYn'] == 'Y' ? '설문 참여 완료' : '설문 참여 필요'}"
+                      th:style="${lecture['surveyCompletedYn'] == 'Y'} ? 'color: #15803d;' : 'color: #b45309;'">설문 참여 필요</span>
+            </div>
+            <a th:if="${lecture['surveyCompletedYn'] == 'N'}"
+               th:href="@{/survey/surveyTake(surveyId=${lecture['linkedSurveyId']})}"
+               class="krds-btn small primary" style="margin-top: 8px;">설문 참여하기</a>
+            <div th:if="${lecture['surveyCompletedYn'] == 'N'}"
+                 style="font-size: 12px; color: #666; margin-top: 6px;">
+                설문이 공개중이고 참여 기간일 때만 응답할 수 있습니다.
+            </div>
+        </div>
+
+        <div style="margin-top: 16px;">
+            <a th:href="@{/lecture/myLecture}" class="krds-btn medium secondary">내 강의로</a>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        var lectureId = /*[[${lectureId}]]*/ '';
+        var player = document.getElementById('player');
+        var maxWatched = /*[[${lecture != null ? lecture['watchedSec'] : 0}]]*/ 0;
+        var lastSent = 0;
+        var sending = false;
+
+        function sendProgress(beacon) {
+            if (!lectureId || !player) { return; }
+            maxWatched = Math.max(maxWatched, player.currentTime || 0);
+            var formData = new FormData();
+            formData.append('lectureId', lectureId);
+            formData.append('watchedSec', Math.floor(maxWatched));
+            lastSent = Date.now();
+            if (beacon && navigator.sendBeacon) {
+                navigator.sendBeacon('/lecture/progress.json', formData);
+                return;
+            }
+            if (sending) { return; }
+            sending = true;
+            fetch('/lecture/progress.json', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(function(response) { return response.json(); })
+              .then(function(res) { if (res.success) { applyStatus(res); } })
+              .catch(function() { })
+              .finally(function() { sending = false; });
+        }
+
+        function applyStatus(res) {
+            var percent = Math.min(100, Number(res.percent) || 0);
+            var bar = document.getElementById('progressBar');
+            var text = document.getElementById('progressPercent');
+            if (bar) { bar.style.width = percent + '%'; }
+            if (text) { text.textContent = percent + '%'; }
+            var badge = document.getElementById('completedBadge');
+            if (badge) {
+                badge.textContent = res.completedYn === 'Y' ? '수료' : '미수료';
+                badge.style.color = res.completedYn === 'Y' ? '#15803d' : '#888';
+            }
+            var survey = document.getElementById('surveyStatus');
+            if (survey && res.surveyRequiredYn === 'Y') {
+                survey.textContent = res.surveyCompletedYn === 'Y' ? '설문 참여 완료' : '설문 참여 필요';
+                survey.style.color = res.surveyCompletedYn === 'Y' ? '#15803d' : '#b45309';
+            }
+        }
+
+        if (player) {
+            player.addEventListener('timeupdate', function() {
+                maxWatched = Math.max(maxWatched, player.currentTime || 0);
+                if (Date.now() - lastSent >= 10000) { sendProgress(false); }
+            });
+            player.addEventListener('pause', function() { sendProgress(false); });
+            player.addEventListener('ended', function() { sendProgress(false); });
+        }
+        window.addEventListener('pagehide', function() { sendProgress(true); });
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') { sendProgress(true); }
+        });
+    </script>
+</div>
+</body>
+</html>

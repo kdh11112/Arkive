@@ -13,7 +13,10 @@
         <div class="fieldset input-form">
             <div class="form-group">
                 <div class="form-tit">질문</div>
-                <div class="form-conts"><p th:text="${detail['title']}"></p></div>
+                <div class="form-conts">
+                    <span th:if="${detail['askType'] == 'INTERNAL'}" class="krds-badge">내부</span>
+                    <p th:text="${detail['title']}"></p>
+                </div>
             </div>
             <div class="form-group">
                 <div class="form-tit">작성자</div>

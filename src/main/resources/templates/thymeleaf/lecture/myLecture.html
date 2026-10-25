@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>내 강의</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">내 강의</h2>
+    <p style="margin-bottom: 12px; color: #555;">
+        공개된 강의만 표시됩니다. 동영상을 수료 기준까지 시청하고, 연결된 설문이 있으면 참여까지 마쳐야 수료됩니다.
+    </p>
+
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>수강 가능한 강의</caption>
+            <colgroup>
+                <col>
+                <col style="width: 10%;">
+                <col style="width: 22%;">
+                <col style="width: 16%;">
+                <col style="width: 10%;">
+                <col style="width: 12%;">
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">강의</th>
+                <th scope="col">길이</th>
+                <th scope="col">진도</th>
+                <th scope="col">설문</th>
+                <th scope="col">수료</th>
+                <th scope="col">수강</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${resultList}">
+                <td>
+                    <div th:text="${item['title']}" style="font-weight: 600;"></div>
+                    <div th:text="${item['description']}" style="font-size: 12px; color: #666;"></div>
+                </td>
+                <td th:text="${item['durationSec']} + '초'"></td>
+                <td>
+                    <div style="background: #e5e7eb; height: 8px; border-radius: 4px; overflow: hidden;">
+                        <div th:style="'width: ' + ${item['percent']} + '%; background: #2563eb; height: 8px;'"></div>
+                    </div>
+                    <div style="font-size: 12px; color: #555; margin-top: 4px;"
+                         th:text="${item['percent']} + '% (' + ${item['completeRate']} + '% 기준)'"></div>
+                </td>
+                <td>
+                    <span th:if="${item['surveyRequiredYn'] == 'N'}" style="color: #888;">없음</span>
+                    <span th:if="${item['surveyRequiredYn'] == 'Y' and item['surveyCompletedYn'] == 'Y'}"
+                          th:text="${item['surveyTitle']} + ' (참여 완료)'"></span>
+                    <span th:if="${item['surveyRequiredYn'] == 'Y' and item['surveyCompletedYn'] == 'N'}"
+                          th:text="${item['surveyTitle']} + ' (참여 필요)'" style="color: #b45309;"></span>
+                </td>
+                <td>
+                    <span th:if="${item['completedYn'] == 'Y'}" style="color: #15803d; font-weight: 600;">수료</span>
+                    <span th:if="${item['completedYn'] == 'N'}" style="color: #888;">미수료</span>
+                </td>
+                <td>
+                    <a th:href="@{/lecture/view(lectureId=${item['lectureId']})}"
+                       class="krds-btn small primary"
+                       th:text="${item['watchedSec'] > 0 ? '이어보기' : '수강하기'}">수강하기</a>
+                </td>
+            </tr>
+            <tr th:if="${resultList == null or resultList.isEmpty()}">
+                <td colspan="6">수강할 수 있는 강의가 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>휴가관리</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">휴가관리</h2>
+
+    <form id="listForm" method="post" th:action="@{/leave/leaveList}">
+        <input type="hidden" id="pageIndex" name="pageIndex" th:value="${pageIndex}">
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <input type="number" name="leaveYear" class="krds-input" style="width: 120px;"
+                   min="2000" max="2100" placeholder="연도" th:value="${leaveYear}">
+            <select name="status" class="krds-form-select" style="width: 140px;">
+                <option value="" th:selected="${status == ''}">전체 상태</option>
+                <option value="REQUESTED" th:selected="${status == 'REQUESTED'}">대기</option>
+                <option value="APPROVED" th:selected="${status == 'APPROVED'}">승인</option>
+                <option value="REJECTED" th:selected="${status == 'REJECTED'}">반려</option>
+                <option value="CANCELLED" th:selected="${status == 'CANCELLED'}">취소</option>
+            </select>
+            <input type="text" name="searchKeyword" class="krds-input" style="flex: 1;"
+                   placeholder="아이디·이름·사유 검색" th:value="${searchKeyword}">
+            <button type="submit" class="krds-btn medium secondary"
+                    onclick="document.getElementById('pageIndex').value=1;">검색</button>
+        </div>
+    </form>
+
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>휴가 신청 목록</caption>
+            <colgroup>
+                <col style="width: 8%;">
+                <col style="width: 15%;">
+                <col style="width: 7%;">
+                <col style="width: 6%;">
+                <col>
+                <col style="width: 9%;">
+                <col style="width: 10%;">
+                <col style="width: 14%;">
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">신청자</th>
+                <th scope="col">기간</th>
+                <th scope="col">유형</th>
+                <th scope="col">일수</th>
+                <th scope="col">사유</th>
+                <th scope="col">상태</th>
+                <th scope="col">신청일</th>
+                <th scope="col">관리</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${resultList}">
+                <td>
+                    <div th:text="${item['userNm'] != null ? item['userNm'] : item['userId']}"></div>
+                    <div th:text="${item['userId']}" style="font-size: 12px; color: #666;"></div>
+                </td>
+                <td th:text="${item['startDe']} + ' ~ ' + ${item['endDe']}"></td>
+                <td th:text="${item['leaveType'] == 'HALF_AM' ? '오전반차' : (item['leaveType'] == 'HALF_PM' ? '오후반차' : '연차')}"></td>
+                <td th:text="${#numbers.formatDecimal(item['days'], 1, 1)} + '일'"></td>
+                <td th:text="${item['reason']}"></td>
+                <td>
+                    <span class="krds-badge"
+                          th:text="${item['status'] == 'REQUESTED' ? '대기' : (item['status'] == 'APPROVED' ? '승인' : (item['status'] == 'REJECTED' ? '반려' : '취소'))}"></span>
+                    <div th:if="${item['approverNm'] != null and item['status'] == 'APPROVED'}"
+                         th:text="'승인: ' + ${item['approverNm']}"
+                         style="font-size: 12px; color: #555; margin-top: 4px;"></div>
+                    <div th:if="${item['rejectReason'] != null and item['rejectReason'] != ''}"
+                         th:text="'반려사유: ' + ${item['rejectReason']}"
+                         style="font-size: 12px; color: #b42318; margin-top: 4px;"></div>
+                </td>
+                <td th:text="${item['registDt'] != null ? #dates.format(item['registDt'], 'yyyy-MM-dd HH:mm') : ''}"></td>
+                <td>
+                    <div th:if="${item['status'] == 'REQUESTED'}" style="display: flex; gap: 4px;">
+                        <button type="button" class="krds-btn small primary"
+                                th:attr="data-id=${item['leaveId']}"
+                                onclick="fnApprove(this)">승인</button>
+                        <button type="button" class="krds-btn small danger"
+                                th:attr="data-id=${item['leaveId']}"
+                                onclick="fnReject(this)">반려</button>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${resultList == null or resultList.isEmpty()}">
+                <td colspan="8">조회된 휴가가 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="paging" class="krds-pagination w-page"
+         th:utext="${#egovKrdsPaginationRenderer.renderPagination(paginationInfo, 'leavePaging')}"></div>
+    <script>
+        function leavePaging(pageIndex) {
+            document.getElementById('pageIndex').value = pageIndex;
+            document.getElementById('listForm').submit();
+        }
+        function fnApprove(btn) {
+            if (!confirm('이 휴가를 승인하시겠습니까? 승인 시 잔여 연차가 차감됩니다.')) { return; }
+            $.ajax({
+                type: 'post',
+                url: '/leave/approveLeave.json',
+                data: { leaveId: btn.getAttribute('data-id') },
+                success: function(res) {
+                    if (res.success) { location.reload(); }
+                    else { alert(res.message || '승인에 실패했습니다.'); }
+                },
+                error: function() { alert('승인 중 오류가 발생했습니다.'); }
+            });
+        }
+        function fnReject(btn) {
+            var reason = prompt('반려 사유를 입력하세요.');
+            if (reason === null) { return; }
+            reason = reason.trim();
+            if (reason === '') {
+                alert('반려 사유를 입력하세요.');
+                return;
+            }
+            $.ajax({
+                type: 'post',
+                url: '/leave/rejectLeave.json',
+                data: { leaveId: btn.getAttribute('data-id'), rejectReason: reason },
+                success: function(res) {
+                    if (res.success) { location.reload(); }
+                    else { alert(res.message || '반려에 실패했습니다.'); }
+                },
+                error: function() { alert('반려 중 오류가 발생했습니다.'); }
+            });
+        }
+    </script>
+</div>
+</body>
+</html>

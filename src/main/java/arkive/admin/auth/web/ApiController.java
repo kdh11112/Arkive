@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import arkive.admin.auth.service.AuthService;
+import arkive.admin.audit.service.AuditEvent;
 import arkive.admin.board.service.BoardService;
 import arkive.admin.comm.web.CommUtil;
 import arkive.admin.faq.service.FaqService;
@@ -28,7 +29,7 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 @Tag(name = "외부 API", description = "JWT 발급 + 읽기 API")
 @Controller
-@RequestMapping("/api")
+@RequestMapping({ "/api", "/api/v1" })
 public class ApiController {
 
 	protected final Logger logger = LoggerFactory.getLogger(getClass());
@@ -50,6 +51,9 @@ public class ApiController {
 	@Resource
 	private JwtUtil jwtUtil;
 
+	@Resource
+	private org.springframework.context.ApplicationEventPublisher auditEventPublisher;
+
 	private CommUtil cmmUtil = new CommUtil();
 
 	@Operation(summary = "API 로그인 (JWT 발급)")
@@ -58,10 +62,13 @@ public class ApiController {
 	public Map<String, Object> apiLogin(HttpServletRequest request) {
 		// 발급 역할: id·pw 검사는 세션 로그인과 같다(잠금·실패 5회). 통과하면 createToken으로 토큰을 준다.
 		Map<String, Object> result = new HashMap<>();
+		result.put("apiVersion", "v1");
+		String attemptedId = null;
 		try {
 			// 입력값 꺼내기. convertHtml은 XSS 정제된 문자열을 돌려준다.
 			String userId = cmmUtil.convertHtml(request, "userId");
 			String password = cmmUtil.convertHtml(request, "password");
+			attemptedId = userId == null ? null : userId.trim();
 			// 빈값이면 DB까지 안 가고 끝낸다.
 			if (userId == null || userId.trim().isEmpty() || password == null || password.isEmpty()) {
 				throw new IllegalArgumentException("아이디와 비밀번호를 입력하세요.");
@@ -97,6 +104,7 @@ public class ApiController {
 			// 성공하면 실패 기록을 지운다.
 			authService.resetFailCount(userId.trim());
 			String userNm = String.valueOf(user.get("userNm"));
+			auditEventPublisher.publishEvent(AuditEvent.apiLogin(userId.trim(), userNm, request.getRemoteAddr()));
 			result.put("success", true);
 			// 세션 대신 토큰을 준다. 이후 요청은 이 토큰으로 온다.
 			result.put("token", jwtUtil.createToken(userId.trim(), userNm));
@@ -104,6 +112,9 @@ public class ApiController {
 		} catch (Exception e) {
 			// 실패는 로그만 남기고 메시지만 돌려준다. 스택은 안 준다.
 			logger.error("apiLogin failed", e);
+			auditEventPublisher.publishEvent(AuditEvent.of("API_LOGIN_FAIL", attemptedId, null, null, "USER",
+					attemptedId, "/api/login.json", "POST", request.getRemoteAddr(), "FAIL",
+					e.getMessage() == null ? "API_LOGIN_FAIL" : e.getMessage()));
 			result.put("success", false);
 			result.put("message", e.getMessage());
 		}
@@ -115,6 +126,7 @@ public class ApiController {
 	@ResponseBody
 	public Map<String, Object> noticeList() {
 		Map<String, Object> result = new HashMap<>();
+		result.put("apiVersion", "v1");
 		try {
 			EgovMap param = new EgovMap();
 			param.put("boardType", "CK");
@@ -138,10 +150,11 @@ public class ApiController {
 	@ResponseBody
 	public Map<String, Object> noticeDetail(HttpServletRequest request) {
 		Map<String, Object> result = new HashMap<>();
+		result.put("apiVersion", "v1");
 		try {
 			String boardId = cmmUtil.convertHtml(request, "boardId");
 			EgovMap detail = boardService.selectBoardDetail(boardId);
-			if (detail == null) {
+			if (detail == null || !"CK".equals(String.valueOf(detail.get("boardType")))) {
 				throw new IllegalArgumentException("글이 없습니다.");
 			}
 			result.put("success", true);
@@ -157,7 +170,9 @@ public class ApiController {
 	@Operation(summary = "API FAQ 목록 (최신 10건)")
 	@RequestMapping(value = "/faqList.json", method = { RequestMethod.GET, RequestMethod.POST })
 	@ResponseBody
-	public Map<String, Object> faqList() {		Map<String, Object> result = new HashMap<>();
+	public Map<String, Object> faqList() {
+		Map<String, Object> result = new HashMap<>();
+		result.put("apiVersion", "v1");
 		try {
 			EgovMap param = new EgovMap();
 			param.put("searchKeyword", "");

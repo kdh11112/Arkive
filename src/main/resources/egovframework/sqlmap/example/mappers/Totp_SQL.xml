@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.totp.service.impl.TotpMapper">
+
+	<select id="selectTotp" parameterType="string" resultType="egovMap">
+		SELECT USER_ID, SECRET_ENC, ENABLED_YN, REGIST_DT, CONFIRMED_DT, UPDT_DT
+		FROM APP_USER_TOTP
+		WHERE USER_ID = #{userId}
+	</select>
+
+	<insert id="insertTotp" parameterType="egovMap">
+		INSERT INTO APP_USER_TOTP (USER_ID, SECRET_ENC, ENABLED_YN, REGIST_DT)
+		VALUES (#{userId}, #{secretEnc}, 'N', CURRENT_TIMESTAMP)
+	</insert>
+
+	<update id="updateTotpSecret" parameterType="egovMap">
+		UPDATE APP_USER_TOTP
+		SET SECRET_ENC = #{secretEnc},
+			ENABLED_YN = 'N',
+			CONFIRMED_DT = NULL,
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE USER_ID = #{userId}
+	</update>
+
+	<update id="enableTotp" parameterType="string">
+		UPDATE APP_USER_TOTP
+		SET ENABLED_YN = 'Y',
+			CONFIRMED_DT = CURRENT_TIMESTAMP,
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE USER_ID = #{userId}
+	</update>
+
+	<delete id="deleteTotp" parameterType="string">
+		DELETE FROM APP_USER_TOTP
+		WHERE USER_ID = #{userId}
+	</delete>
+
+	<delete id="deleteRecoveryCodes" parameterType="string">
+		DELETE FROM APP_USER_TOTP_RECOVERY
+		WHERE USER_ID = #{userId}
+	</delete>
+
+	<insert id="insertRecoveryCode" parameterType="egovMap">
+		INSERT INTO APP_USER_TOTP_RECOVERY (RECOVERY_ID, USER_ID, CODE_HASH, USED_YN, REGIST_DT)
+		VALUES (#{recoveryId}, #{userId}, #{codeHash}, 'N', CURRENT_TIMESTAMP)
+	</insert>
+
+	<select id="selectRecoveryCode" parameterType="string" resultType="egovMap">
+		SELECT RECOVERY_ID, USER_ID
+		FROM APP_USER_TOTP_RECOVERY
+		WHERE CODE_HASH = #{codeHash}
+			AND USED_YN = 'N'
+	</select>
+
+	<update id="markRecoveryCodeUsed" parameterType="string">
+		UPDATE APP_USER_TOTP_RECOVERY
+		SET USED_YN = 'Y',
+			USED_DT = CURRENT_TIMESTAMP
+		WHERE RECOVERY_ID = #{recoveryId}
+			AND USED_YN = 'N'
+	</update>
+
+	<select id="countUnusedRecoveryCodes" parameterType="string" resultType="int">
+		SELECT COUNT(*)
+		FROM APP_USER_TOTP_RECOVERY
+		WHERE USER_ID = #{userId}
+			AND USED_YN = 'N'
+	</select>
+
+</mapper>

@@ -92,5 +92,17 @@
     </footer>
 </div>
 
+<!-- GA4·Clarity: 설정이 켜지고 ID가 있을 때만 로드한다. 동의 전에는 외부 요청을 보내지 않는다. -->
+<script th:inline="javascript">
+    window.ARKIVE_ANALYTICS = {
+        enabled: /*[[${analyticsEnabled}]]*/ false,
+        ga4Id: /*[[${analyticsConfig['ga4Id']}]]*/ '',
+        clarityId: /*[[${analyticsConfig['clarityId']}]]*/ '',
+        requireConsent: /*[[${analyticsConfig['requireConsent']}]]*/ true,
+        consentVersion: /*[[${analyticsConfig['consentVersion']}]]*/ '1'
+    };
+</script>
+<script th:if="${analyticsEnabled}" th:src="@{/js/arkive-analytics.js}"></script>
+
 </body>
 </html>

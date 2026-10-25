@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>설문참여</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">설문참여</h2>
+    <p style="margin-bottom: 12px; color: #555;">진행중이며 참여 기간인 설문만 표시됩니다. 참여는 설문당 1회만 가능합니다.</p>
+
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>참여 가능한 설문</caption>
+            <colgroup>
+                <col>
+                <col style="width: 22%;">
+                <col style="width: 10%;">
+                <col style="width: 12%;">
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">설문</th>
+                <th scope="col">기간</th>
+                <th scope="col">응답</th>
+                <th scope="col">참여</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${resultList}">
+                <td>
+                    <div th:text="${item['title']}" style="font-weight: 600;"></div>
+                    <div th:text="${item['description']}" style="font-size: 12px; color: #666;"></div>
+                </td>
+                <td th:text="${item['startDe']} + ' ~ ' + ${item['endDe']}"></td>
+                <td th:text="${item['anonymousYn'] == 'Y' ? '익명' : '실명'}"></td>
+                <td>
+                    <a th:if="${item['participatedYn'] == 'N'}"
+                       th:href="@{/survey/surveyTake(surveyId=${item['surveyId']})}"
+                       class="krds-btn small primary">참여하기</a>
+                    <span th:if="${item['participatedYn'] == 'Y'}" style="font-size: 12px; color: #888;">참여 완료</span>
+                </td>
+            </tr>
+            <tr th:if="${resultList == null or resultList.isEmpty()}">
+                <td colspan="4">참여할 수 있는 설문이 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

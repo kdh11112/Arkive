@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;    
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 // (exclude = ...) 시큐리티 기본 로그인 화면 및 Actuator 보안 자동설정 끄기
 @SpringBootApplication(exclude = {
@@ -14,6 +15,8 @@ import org.springframework.context.annotation.ComponentScan;
 })
 // 메뉴 목록 조회 쿼리 중복 실행 방지(캐싱 기능) 활성화
 @EnableCaching
+// 감사 로그 보관 정책 실행용. 실제 삭제는 retention-days > 0일 때만 한다.
+@EnableScheduling
 // 이걸 추가하지 않으면 arkive 아래에 있는 모든 파일을 실행되지않음
 // EgovBootApplication 가 egovframework 패키지에 있어서 arkive는 못읽음 패키지가 다름
 @ComponentScan(basePackages = { "egovframework", "arkive" })

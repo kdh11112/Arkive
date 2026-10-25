@@ -33,7 +33,25 @@ public class PopupServiceImpl extends EgovAbstractServiceImpl implements PopupSe
 	@Override
 	public EgovMap selectPopupDetail(String popupId) throws Exception {
 		EgovMap detail = popupMapper.selectPopupDetail(popupId);
-		if (detail != null && detail.get("content") instanceof Clob clob) {
+		convertClobToString(detail, "content");
+		return detail;
+	}
+
+	@Override
+	public List<EgovMap> selectActivePopupList() throws Exception {
+		List<EgovMap> rows = popupMapper.selectActivePopupList();
+		// JSON 응답에 JDBC CLOB 객체가 그대로 나가면 DB 세션까지 직렬화된다.
+		for (EgovMap row : rows) {
+			convertClobToString(row, "content");
+		}
+		return rows;
+	}
+
+	private void convertClobToString(EgovMap map, String key) throws Exception {
+		if (map == null) {
+			return;
+		}
+		if (map.get(key) instanceof Clob clob) {
 			try (Reader reader = clob.getCharacterStream()) {
 				StringBuilder sb = new StringBuilder();
 				char[] buf = new char[8192];
@@ -41,15 +59,9 @@ public class PopupServiceImpl extends EgovAbstractServiceImpl implements PopupSe
 				while ((len = reader.read(buf)) != -1) {
 					sb.append(buf, 0, len);
 				}
-				detail.put("content", sb.toString());
+				map.put(key, sb.toString());
 			}
 		}
-		return detail;
-	}
-
-	@Override
-	public List<EgovMap> selectActivePopupList() throws Exception {
-		return popupMapper.selectActivePopupList();
 	}
 
 	@Override

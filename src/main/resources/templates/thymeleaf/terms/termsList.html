@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>약관</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">약관</h2>
+    <p style="color:#555;">현재 적용 중인 버전입니다. 새 버전이 등록되면 기존 동의와 별도로 다시 동의해야 합니다.</p>
+
+    <section th:each="term : ${termsList}" style="margin-bottom: 24px;">
+        <h3 class="heading-small">
+            <span th:text="${term['title']}"></span>
+            <span style="font-size: 13px; color:#666;"
+                  th:text="${'v' + term['version'] + (term['requiredYn'] == 'Y' ? ' · 필수' : ' · 선택')}"></span>
+        </h3>
+        <div style="white-space: pre-wrap; border:1px solid #ddd; padding:16px; background:#fff;"
+             th:text="${term['content']}"></div>
+    </section>
+
+    <p style="font-size: 13px; color:#666;">
+        본문은 이식용 자리표시자입니다. 실제 문구는 법무·개인정보 담당자 검토 후 DB의 TERMS 새 버전으로 등록하세요.
+    </p>
+</div>
+</body>
+</html>

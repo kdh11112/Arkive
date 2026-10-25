@@ -15,16 +15,49 @@
 			REGIST_DT
 		FROM BOARD
 		WHERE BOARD_TYPE IN ('CK', 'TOAST', 'FAQ', 'QNA')
-			AND TITLE LIKE '%' || #{searchKeyword} || '%'
+			AND (
+				TITLE LIKE '%' || #{searchKeyword} || '%'
+				<if test="searchChosung != null and searchChosung != ''">
+					OR SEARCH_CHOSUNG LIKE '%' || #{searchChosung} || '%'
+				</if>
+			)
 		ORDER BY REGIST_DT DESC, BOARD_ID DESC
 		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+
+	<!-- 초성 색인 누락분. 검색 시 소량씩 채워 기존 데이터도 초성 검색되게 한다. -->
+	<select id="selectBoardsMissingChosung" parameterType="int" resultType="egovMap">
+		SELECT BOARD_ID, TITLE
+		FROM BOARD
+		WHERE SEARCH_CHOSUNG IS NULL
+			AND BOARD_TYPE IN ('CK', 'TOAST', 'FAQ', 'QNA')
+		ORDER BY BOARD_ID
+		LIMIT #{limit}
+	</select>
+
+	<update id="updateSearchChosung" parameterType="egovMap">
+		UPDATE BOARD
+		SET SEARCH_CHOSUNG = #{searchChosung}
+		WHERE BOARD_ID = #{boardId}
+	</update>
+
+	<select id="selectIndexableBoardIds" resultType="string">
+		SELECT BOARD_ID
+		FROM BOARD
+		WHERE BOARD_TYPE IN ('CK', 'TOAST', 'FAQ', 'QNA')
+		ORDER BY BOARD_ID
 	</select>
 
 	<select id="selectSearchListTotCnt" parameterType="egovMap" resultType="int">
 		SELECT COUNT(*)
 		FROM BOARD
 		WHERE BOARD_TYPE IN ('CK', 'TOAST', 'FAQ', 'QNA')
-			AND TITLE LIKE '%' || #{searchKeyword} || '%'
+			AND (
+				TITLE LIKE '%' || #{searchKeyword} || '%'
+				<if test="searchChosung != null and searchChosung != ''">
+					OR SEARCH_CHOSUNG LIKE '%' || #{searchChosung} || '%'
+				</if>
+			)
 	</select>
 
 </mapper>

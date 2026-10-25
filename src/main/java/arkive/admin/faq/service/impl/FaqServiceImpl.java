@@ -6,9 +6,12 @@ import java.util.List;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import arkive.admin.comm.web.KoreanSearchUtil;
 import arkive.admin.faq.service.FaqService;
+import arkive.admin.search.event.SearchIndexEvent;
 import jakarta.annotation.Resource;
 
 /**
@@ -19,6 +22,9 @@ public class FaqServiceImpl extends EgovAbstractServiceImpl implements FaqServic
 
 	@Resource(name = "faqMapper")
 	private FaqMapper faqMapper;
+
+	@Resource
+	private ApplicationEventPublisher eventPublisher;
 
 	@Override
 	public List<EgovMap> selectFaqList(EgovMap egovMap) throws Exception {
@@ -62,16 +68,38 @@ public class FaqServiceImpl extends EgovAbstractServiceImpl implements FaqServic
 
 	@Override
 	public void insertFaq(EgovMap egovMap) throws Exception {
+		updateChosung(egovMap);
 		faqMapper.insertFaq(egovMap);
+		publishIndex(String.valueOf(egovMap.get("boardId")));
 	}
 
 	@Override
 	public void updateFaq(EgovMap egovMap) throws Exception {
+		updateChosung(egovMap);
 		faqMapper.updateFaq(egovMap);
+		publishIndex(String.valueOf(egovMap.get("boardId")));
+	}
+
+	private void updateChosung(EgovMap egovMap) {
+		Object title = egovMap.get("title");
+		egovMap.put("searchChosung", KoreanSearchUtil.toChosung(title == null ? "" : String.valueOf(title)));
 	}
 
 	@Override
 	public void deleteFaq(String boardId) throws Exception {
 		faqMapper.deleteFaq(boardId);
+		publishDeleteIndex(boardId);
+	}
+
+	private void publishIndex(String boardId) {
+		if (eventPublisher != null && boardId != null && !"null".equals(boardId)) {
+			eventPublisher.publishEvent(SearchIndexEvent.index(boardId));
+		}
+	}
+
+	private void publishDeleteIndex(String boardId) {
+		if (eventPublisher != null && boardId != null && !"null".equals(boardId)) {
+			eventPublisher.publishEvent(SearchIndexEvent.delete(boardId));
+		}
 	}
 }

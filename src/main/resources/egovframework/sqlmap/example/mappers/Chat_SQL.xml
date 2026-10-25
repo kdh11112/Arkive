@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.chat.service.impl.ChatMapper">
+
+	<select id="selectRecentMessages" parameterType="egovMap" resultType="egovMap">
+		SELECT MESSAGE_ID, USER_ID, USER_NM, MESSAGE, REGIST_DT
+		FROM CHAT_MESSAGE
+		ORDER BY REGIST_DT DESC, MESSAGE_ID DESC
+		LIMIT #{limit}
+	</select>
+
+	<insert id="insertMessage" parameterType="egovMap">
+		INSERT INTO CHAT_MESSAGE (MESSAGE_ID, USER_ID, USER_NM, MESSAGE, REGIST_DT)
+		VALUES (#{messageId}, #{userId}, #{userNm}, #{message}, CURRENT_TIMESTAMP)
+	</insert>
+
+</mapper>

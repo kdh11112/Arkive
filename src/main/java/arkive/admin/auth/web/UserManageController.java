@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import arkive.admin.auth.service.AuthService;
 import arkive.admin.auth.service.PermissionService;
 import arkive.admin.comm.web.CommUtil;
+import arkive.admin.comm.web.PhoneNumberUtil;
 import arkive.admin.mail.service.MailAsyncService;
+import arkive.admin.totp.service.TotpService;
 import egovframework.com.cmm.util.EgovDoubleSubmitHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,6 +49,9 @@ public class UserManageController {
 
 	@Resource(name = "mailAsyncService")
 	private MailAsyncService mailAsyncService;
+
+	@Resource(name = "totpService")
+	private TotpService totpService;
 
 	private CommUtil cmmUtil = new CommUtil();
 
@@ -153,12 +158,19 @@ public class UserManageController {
 				throw new IllegalArgumentException("이미 등록된 아이디입니다.");
 			}
 			String mailYn = "Y".equals(cmmUtil.convertHtml(request, "mailYn")) ? "Y" : "N";
+			String smsYn = "Y".equals(cmmUtil.convertHtml(request, "smsYn")) ? "Y" : "N";
+			String phone = PhoneNumberUtil.normalizeMobile(cmmUtil.convertHtml(request, "phone"));
+			if ("Y".equals(smsYn) && phone == null) {
+				throw new IllegalArgumentException("SMS 수신에 동의하려면 올바른 휴대전화 번호를 입력하세요.");
+			}
 			EgovMap param = new EgovMap();
 			param.put("userId", userId);
 			param.put("password", passwordEncoder.encode(password));
 			param.put("userNm", userNm.trim());
 			param.put("email", checkEmail(cmmUtil.convertHtml(request, "email"), mailYn));
 			param.put("mailYn", mailYn);
+			param.put("phone", "Y".equals(smsYn) ? phone : null);
+			param.put("smsYn", smsYn);
 			authService.insertUser(param);
 			// 관리자가 역할을 따로 배정하지 않아도 최소 기본 역할은 갖게 한다.
 			permissionService.assignDefaultRole(userId);
@@ -190,6 +202,13 @@ public class UserManageController {
 			String mailYn = "Y".equals(cmmUtil.convertHtml(request, "mailYn")) ? "Y" : "N";
 			param.put("email", checkEmail(cmmUtil.convertHtml(request, "email"), mailYn));
 			param.put("mailYn", mailYn);
+			String smsYn = "Y".equals(cmmUtil.convertHtml(request, "smsYn")) ? "Y" : "N";
+			String phone = PhoneNumberUtil.normalizeMobile(cmmUtil.convertHtml(request, "phone"));
+			if ("Y".equals(smsYn) && phone == null) {
+				throw new IllegalArgumentException("SMS 수신에 동의하려면 올바른 휴대전화 번호를 입력하세요.");
+			}
+			param.put("phone", phone);
+			param.put("smsYn", smsYn);
 			String useYn = cmmUtil.convertHtml(request, "useYn");
 			param.put("useYn", "N".equals(useYn) ? "N" : "Y");
 			String adminYn = cmmUtil.convertHtml(request, "adminYn");
@@ -230,6 +249,26 @@ public class UserManageController {
 			result.put("success", true);
 		} catch (Exception e) {
 			logger.error("unlockUser failed", e);
+			result.put("success", false);
+			result.put("message", e.getMessage());
+		}
+		return result;
+	}
+
+	@Operation(summary = "2단계 인증 초기화 (관리자)")
+	@RequestMapping(value = "/resetTotp.json", method = RequestMethod.POST)
+	@ResponseBody
+	public Map<String, Object> resetTotp(HttpServletRequest request) {
+		Map<String, Object> result = new HashMap<>();
+		try {
+			String userId = cmmUtil.convertHtml(request, "userId");
+			if (userId == null || userId.trim().isEmpty()) {
+				throw new IllegalArgumentException("사용자 아이디가 필요합니다.");
+			}
+			totpService.reset(userId.trim());
+			result.put("success", true);
+		} catch (Exception e) {
+			logger.error("resetTotp failed", e);
 			result.put("success", false);
 			result.put("message", e.getMessage());
 		}

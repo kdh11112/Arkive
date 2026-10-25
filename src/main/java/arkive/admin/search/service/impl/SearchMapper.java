@@ -14,4 +14,10 @@ public interface SearchMapper {
 	List<EgovMap> selectSearchList(EgovMap egovMap) throws Exception;
 
 	int selectSearchListTotCnt(EgovMap egovMap) throws Exception;
+
+	List<EgovMap> selectBoardsMissingChosung(int limit) throws Exception;
+
+	int updateSearchChosung(EgovMap egovMap) throws Exception;
+
+	List<String> selectIndexableBoardIds() throws Exception;
 }

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>채팅</title>
+    <style>
+        .chat-panel { border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; }
+        .chat-messages { height: 460px; overflow-y: auto; padding: 12px; }
+        .chat-row { margin-bottom: 10px; }
+        .chat-name { font-size: 12px; color: #475569; margin-bottom: 2px; }
+        .chat-row.mine .chat-name { color: #1d4ed8; font-weight: 600; }
+        .chat-bubble { display: inline-block; max-width: 75%; padding: 8px 10px; border-radius: 8px;
+            background: #fff; border: 1px solid #e2e8f0; white-space: pre-wrap; word-break: break-word; }
+        .chat-row.mine { text-align: right; }
+        .chat-row.mine .chat-bubble { background: #dbeafe; border-color: #bfdbfe; text-align: left; }
+        .chat-time { font-size: 11px; color: #94a3b8; margin-left: 6px; }
+        .chat-input { display: flex; gap: 8px; padding: 10px; border-top: 1px solid #e2e8f0; background: #fff; }
+        .chat-status { font-size: 12px; color: #64748b; padding: 8px 12px 0; }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">채팅</h2>
+    <p style="margin-bottom: 12px; color: #555;">
+        로그인 사용자 전체가 참여하는 샘플 채팅방입니다. 메시지는 서버에 저장되며 최근 100건을 보여줍니다.
+    </p>
+
+    <div id="chatApp" class="chat-panel"
+         th:attr="data-ws-path=@{/ws/chat},data-user-id=${loginUserId},data-user-nm=${loginUserNm}">
+        <div class="chat-status" id="chatStatus">연결 중...</div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input">
+            <input type="text" id="chatInput" class="krds-input" style="flex: 1;"
+                   maxlength="1000" placeholder="메시지를 입력하세요 (Enter 전송)" disabled>
+            <button type="button" id="sendBtn" class="krds-btn medium primary" disabled onclick="sendMessage()">전송</button>
+        </div>
+    </div>
+
+    <script>
+        var chatApp = document.getElementById('chatApp');
+        var wsPath = chatApp.getAttribute('data-ws-path');
+        var myUserId = chatApp.getAttribute('data-user-id');
+        var messages = document.getElementById('chatMessages');
+        var input = document.getElementById('chatInput');
+        var sendBtn = document.getElementById('sendBtn');
+        var statusLabel = document.getElementById('chatStatus');
+        var socket = null;
+        var attempts = 0;
+
+        function connect() {
+            var protocol = location.protocol === 'https:' ? 'wss://' : 'ws://';
+            socket = new WebSocket(protocol + location.host + wsPath);
+
+            socket.onopen = function() {
+                attempts = 0;
+                statusLabel.textContent = '연결됨';
+                statusLabel.style.color = '#15803d';
+                input.disabled = false;
+                sendBtn.disabled = false;
+                input.focus();
+            };
+            socket.onmessage = function(event) {
+                try {
+                    var payload = JSON.parse(event.data);
+                    if (payload.type === 'history') {
+                        messages.innerHTML = '';
+                        (payload.messages || []).forEach(renderMessage);
+                        scrollToBottom();
+                    } else if (payload.type === 'message') {
+                        renderMessage(payload);
+                        scrollToBottom();
+                    } else if (payload.type === 'error') {
+                        alert(payload.message || '메시지를 보내지 못했습니다.');
+                    }
+                } catch (e) {
+                    statusLabel.textContent = '메시지 형식을 읽지 못했습니다.';
+                }
+            };
+            socket.onclose = function() {
+                input.disabled = true;
+                sendBtn.disabled = true;
+                attempts += 1;
+                if (attempts > 5) {
+                    statusLabel.textContent = '연결이 끊겼습니다. 화면을 새로고침하세요.';
+                    statusLabel.style.color = '#b91c1c';
+                    return;
+                }
+                statusLabel.textContent = '연결 끊김 - 재연결 중...';
+                statusLabel.style.color = '#b45309';
+                setTimeout(connect, 3000);
+            };
+            socket.onerror = function() {
+                if (socket) { socket.close(); }
+            };
+        }
+
+        function renderMessage(payload) {
+            var row = document.createElement('div');
+            row.className = 'chat-row' + (payload.userId === myUserId ? ' mine' : '');
+
+            var name = document.createElement('div');
+            name.className = 'chat-name';
+            name.textContent = payload.userNm || payload.userId || '';
+
+            var bubble = document.createElement('span');
+            bubble.className = 'chat-bubble';
+            bubble.textContent = payload.message || '';
+
+            var time = document.createElement('span');
+            time.className = 'chat-time';
+            time.textContent = payload.sentAt || '';
+
+            row.appendChild(name);
+            row.appendChild(bubble);
+            row.appendChild(time);
+            messages.appendChild(row);
+        }
+
+        function sendMessage() {
+            var text = (input.value || '').trim();
+            if (text === '') { return; }
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+                alert('연결이 끊겼습니다. 잠시 뒤 다시 시도하세요.');
+                return;
+            }
+            socket.send(JSON.stringify({ message: text }));
+            input.value = '';
+            input.focus();
+        }
+
+        function scrollToBottom() {
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        input.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+
+        connect();
+    </script>
+</div>
+</body>
+</html>

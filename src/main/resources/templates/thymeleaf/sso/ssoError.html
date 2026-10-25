@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>SSO 로그인 실패</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">SSO 로그인 실패</h2>
+    <div class="conts-wrap">
+        <p th:text="${errorMessage}" style="color: #b91c1c;">SSO 인증에 실패했습니다.</p>
+        <p style="color: #555; font-size: 14px;">
+            문제가 계속되면 관리자에게 문의하세요. 외부 SSO 계약과 계정 연결 상태를 확인해야 합니다.
+        </p>
+        <a th:href="@{/login/login}" class="krds-btn medium secondary">로그인 화면으로</a>
+    </div>
+</div>
+</body>
+</html>

@@ -34,6 +34,8 @@ public interface BoardService {
 
 	int claimBoardMail(String boardId) throws Exception;
 
+	int claimBoardSms(String boardId) throws Exception;
+
 	List<EgovMap> selectCommentList(String boardId) throws Exception;
 
 	int selectCommentCount(String boardId) throws Exception;

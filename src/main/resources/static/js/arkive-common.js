@@ -45,6 +45,25 @@ function storeSavedId(userId, checked) {
         }
     } catch (e) {}
 }
+/* 날짜·월·일시 입력은 칸을 눌러도 달력을 연다.
+   type=date/month/datetime-local의 기본 동작은 달력 아이콘을 눌러야 열리므로,
+   입력칸 어디를 눌러도 열리게 공통으로 처리한다. */
+document.addEventListener('click', function (event) {
+    var target = event.target instanceof Element ? event.target : null;
+    if (!target) {
+        return;
+    }
+    var input = target.closest('input[type="date"], input[type="month"], input[type="datetime-local"]');
+    if (!input || input.disabled || input.readOnly || typeof input.showPicker !== 'function') {
+        return;
+    }
+    try {
+        input.showPicker();
+    } catch (e) {
+        // 구형 브라우저·이미 열린 달력은 브라우저 기본 동작을 따른다.
+    }
+});
+
 /* POST 이동. URL 쿼리스트링 노출 없이 값을 넘긴다.
    a[data-post]를 누르면 href로 POST 폼을 만들어 보낸다.
    값은 data-name/data-value에 담는다. (th:attr="data-name='boardId',data-value=${item['boardId']}")

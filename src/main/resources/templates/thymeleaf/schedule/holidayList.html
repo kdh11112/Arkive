@@ -12,14 +12,14 @@
 
     <form id="listForm" method="post" th:action="@{/schedule/holidayList}">
         <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-            <input type="month" name="yyyymm" class="krds-input" onclick="this.showPicker()" th:value="${#strings.substring(yyyymm,0,4) + '-' + #strings.substring(yyyymm,4,6)}">
+            <input type="month" name="yyyymm" class="krds-input" th:value="${#strings.substring(yyyymm,0,4) + '-' + #strings.substring(yyyymm,4,6)}">
             <button type="submit" class="krds-btn medium secondary">검색</button>
         </div>
     </form>
 
     <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-        <input type="date" id="holidayDe" class="krds-input" onclick="this.showPicker()">
-        <input type="text" id="holidayNm" class="krds-input" style="flex: 1;" placeholder="공휴일 이름" maxlength="100">
+        <input type="date" id="holidayDe" class="krds-input" style="flex: 0 0 200px; width: auto;">
+        <input type="text" id="holidayNm" class="krds-input" style="flex: 1; width: auto;" placeholder="공휴일 이름" maxlength="100">
         <button type="button" class="krds-btn medium primary" onclick="fnSaveHoliday()">등록</button>
     </div>
 

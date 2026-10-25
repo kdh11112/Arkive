@@ -331,6 +331,30 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+
+		<!-- WebSocket 채팅. 단일 인스턴스 in-memory 브로커. 다중 인스턴스는 공유 브로커 필요. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<!-- Spring Batch. Job/Step 인프라와 일일 집계 예제. ResourcelessJobRepository 사용. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-batch</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
 		
 		<!-- 엑셀 -->
 		<dependency>

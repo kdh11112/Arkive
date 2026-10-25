@@ -1,0 +1,19 @@
+-- 3단계: Spring Batch 일일 집계 결과.
+-- Job 실행 이력은 ResourcelessJobRepository를 쓰므로 BATCH_* 메타데이터 테이블을 만들지 않는다.
+-- 이 테이블은 화면에서 조회하는 집계 결과만 보관한다. 같은 날짜를 다시 실행하면 해당 날짜 행을 지우고 새로 넣는다.
+CREATE TABLE IF NOT EXISTS STAT_DAILY (
+    STAT_DATE DATE NOT NULL,
+    STAT_TYPE VARCHAR(30) NOT NULL,
+    STAT_KEY VARCHAR(50) NOT NULL,
+    STAT_VALUE BIGINT DEFAULT 0 NOT NULL,
+    REGIST_DT TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT PK_STAT_DAILY PRIMARY KEY (STAT_DATE, STAT_TYPE, STAT_KEY)
+);
+
+CREATE INDEX IF NOT EXISTS IDX_STAT_DAILY_TYPE ON STAT_DAILY(STAT_TYPE, STAT_DATE);
+
+INSERT INTO MENU (menu_id, menu_nm, menu_cours, grad, up_menu_id, ordr, use_yn, regist_dt, register, updt_dt, updusr) VALUES
+    ('ME02010800','배치관리','/batch/batchList',3,'ME02010000',8,'Y',CURRENT_TIMESTAMP,NULL,NULL,NULL);
+
+INSERT INTO APP_ROLE_MENU (ROLE_ID, MENU_ID, READ_YN, WRITE_YN, REGIST_DT) VALUES
+    ('ROLE_ADMIN','ME02010800','Y','Y',CURRENT_TIMESTAMP);

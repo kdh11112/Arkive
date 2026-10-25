@@ -28,6 +28,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import arkive.admin.comm.web.CommUtil;
 import arkive.admin.comm.web.ExcelUtil;
+import arkive.admin.comm.web.MaskingUtil;
 import arkive.admin.duty.service.DutyService;
 import egovframework.com.cmm.util.EgovDoubleSubmitHelper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -96,6 +97,11 @@ public class DutyController {
 		String dutyUser = String.valueOf(param.get("dutyUser"));
 		if (dutyDe == null || !dutyDe.matches(ExcelUtil.YYYYMMDD_PATTERN)) {
 			throw new IllegalArgumentException("당직 날짜를 YYYYMMDD 형식으로 입력하세요.");
+		}
+		try {
+			LocalDate.parse(dutyDe, DateTimeFormatter.BASIC_ISO_DATE);
+		} catch (java.time.format.DateTimeParseException e) {
+			throw new IllegalArgumentException("존재하지 않는 날짜입니다: " + dutyDe);
 		}
 		if (dutyUser == null || dutyUser.trim().isEmpty()) {
 			throw new IllegalArgumentException("당직자를 입력하세요.");
@@ -188,6 +194,13 @@ public class DutyController {
 		param.put("yyyymm", yyyymm);
 		param.put("searchKeyword", "");
 		List<EgovMap> list = dutyService.selectDutyList(param);
+		// 엑셀은 목록과 같은 표시용 마스킹을 적용한다. 저장 원본은 바꾸지 않는다.
+		for (EgovMap row : list) {
+			Object dutyUser = row.get("dutyUser");
+			if (dutyUser != null) {
+				row.put("dutyUser", MaskingUtil.mask("dutyUser", String.valueOf(dutyUser)));
+			}
+		}
 
 		HSSFWorkbook wb = ExcelUtil.createWorkBook("당직", yyyymm + " 당직표", EXCEL_HEADER, EXCEL_COLS, list);
 		String fileName = URLEncoder.encode(yyyymm + "_당직표.xls", StandardCharsets.UTF_8).replace("+", "%20");
@@ -238,7 +251,18 @@ public class DutyController {
 			if (lastRow > 1000) {
 				throw new IllegalArgumentException("한 번에 1000행까지만 등록할 수 있습니다.");
 			}
-			for (int i = 1; i <= lastRow; i++) {
+			// 내려받은 양식은 제목·공백·헤더 순서라 1행부터 읽으면 헤더가 데이터로 들어간다.
+			// 헤더 행을 찾아 그 다음부터 읽는다.
+			int headerRow = -1;
+			for (int i = 0; i <= Math.min(lastRow, 20); i++) {
+				Row candidate = sheet.getRow(i);
+				if (candidate != null && cellStr(candidate, 0).startsWith("날짜")) {
+					headerRow = i;
+					break;
+				}
+			}
+			int startRow = headerRow >= 0 ? headerRow + 1 : 1;
+			for (int i = startRow; i <= lastRow; i++) {
 				Row row = sheet.getRow(i);
 				if (row == null) {
 					continue;

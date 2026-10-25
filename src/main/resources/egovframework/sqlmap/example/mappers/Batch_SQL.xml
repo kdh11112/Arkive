@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.batch.service.impl.BatchMapper">
+
+	<!-- 같은 날짜 재실행을 멱등하게 만든다. -->
+	<delete id="deleteDailyStats" parameterType="egovMap">
+		DELETE FROM STAT_DAILY
+		WHERE STAT_DATE = CAST(#{statDate} AS DATE)
+	</delete>
+
+	<insert id="insertBoardStats" parameterType="egovMap">
+		INSERT INTO STAT_DAILY (STAT_DATE, STAT_TYPE, STAT_KEY, STAT_VALUE, REGIST_DT)
+		SELECT CAST(#{statDate} AS DATE), 'BOARD', BOARD_TYPE, COUNT(*), CURRENT_TIMESTAMP
+		FROM BOARD
+		WHERE BOARD_TYPE IS NOT NULL
+		GROUP BY BOARD_TYPE
+	</insert>
+
+	<insert id="insertLoginStats" parameterType="egovMap">
+		INSERT INTO STAT_DAILY (STAT_DATE, STAT_TYPE, STAT_KEY, STAT_VALUE, REGIST_DT)
+		SELECT CAST(#{statDate} AS DATE), 'LOGIN', 'TOTAL', COUNT(*), CURRENT_TIMESTAMP
+		FROM AUDIT_LOG
+		WHERE EVENT_TYPE IN ('LOGIN_SUCCESS', 'API_LOGIN')
+			AND REGIST_DT &gt;= #{startDate} AND REGIST_DT &lt; #{endDate}
+	</insert>
+
+	<insert id="insertAccessStats" parameterType="egovMap">
+		INSERT INTO STAT_DAILY (STAT_DATE, STAT_TYPE, STAT_KEY, STAT_VALUE, REGIST_DT)
+		SELECT CAST(#{statDate} AS DATE), 'ACCESS', 'TOTAL', COUNT(*), CURRENT_TIMESTAMP
+		FROM AUDIT_LOG
+		WHERE EVENT_TYPE IN ('MENU_ACCESS', 'PII_VIEW', 'PII_DOWNLOAD', 'API_ACCESS')
+			AND REGIST_DT &gt;= #{startDate} AND REGIST_DT &lt; #{endDate}
+	</insert>
+
+	<insert id="insertLectureCompleteStats" parameterType="egovMap">
+		INSERT INTO STAT_DAILY (STAT_DATE, STAT_TYPE, STAT_KEY, STAT_VALUE, REGIST_DT)
+		SELECT CAST(#{statDate} AS DATE), 'LECTURE_COMPLETE', 'TOTAL', COUNT(*), CURRENT_TIMESTAMP
+		FROM LECTURE_PROGRESS
+		WHERE COMPLETED_YN = 'Y'
+			AND COMPLETED_DT &gt;= #{startDate} AND COMPLETED_DT &lt; #{endDate}
+	</insert>
+
+	<insert id="insertSurveyParticipationStats" parameterType="egovMap">
+		INSERT INTO STAT_DAILY (STAT_DATE, STAT_TYPE, STAT_KEY, STAT_VALUE, REGIST_DT)
+		SELECT CAST(#{statDate} AS DATE), 'SURVEY_PARTICIPATION', 'TOTAL', COUNT(*), CURRENT_TIMESTAMP
+		FROM SURVEY_PARTICIPATION
+		WHERE SUBMIT_DT &gt;= #{startDate} AND SUBMIT_DT &lt; #{endDate}
+	</insert>
+
+	<select id="selectDailyStats" parameterType="egovMap" resultType="egovMap">
+		SELECT STAT_DATE, STAT_TYPE, STAT_KEY, STAT_VALUE, REGIST_DT
+		FROM STAT_DAILY
+		WHERE STAT_DATE = CAST(#{statDate} AS DATE)
+		ORDER BY STAT_TYPE, STAT_KEY
+	</select>
+
+</mapper>

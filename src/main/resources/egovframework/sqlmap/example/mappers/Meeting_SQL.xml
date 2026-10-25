@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.meeting.service.impl.MeetingMapper">
+
+	<select id="selectRoomList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			ROOM_ID,
+			ROOM_NM,
+			LOCATION,
+			CAPACITY,
+			USE_YN,
+			REMARK,
+			REGIST_DT,
+			UPDT_DT,
+			(SELECT COUNT(*) FROM MEETING_RESERVATION R WHERE R.ROOM_ID = M.ROOM_ID) AS RESERVE_CNT
+		FROM MEETING_ROOM M
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (ROOM_NM LIKE '%' || #{searchKeyword} || '%'
+					OR LOCATION LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+		ORDER BY USE_YN DESC, ROOM_NM, ROOM_ID
+	</select>
+
+	<select id="selectRoomDetail" parameterType="string" resultType="egovMap">
+		SELECT ROOM_ID, ROOM_NM, LOCATION, CAPACITY, USE_YN, REMARK, REGIST_DT, UPDT_DT
+		FROM MEETING_ROOM
+		WHERE ROOM_ID = #{roomId}
+	</select>
+
+	<select id="selectActiveRoomList" resultType="egovMap">
+		SELECT ROOM_ID, ROOM_NM, LOCATION, CAPACITY
+		FROM MEETING_ROOM
+		WHERE USE_YN = 'Y'
+		ORDER BY ROOM_NM, ROOM_ID
+	</select>
+
+	<insert id="insertRoom" parameterType="egovMap">
+		INSERT INTO MEETING_ROOM (ROOM_ID, ROOM_NM, LOCATION, CAPACITY, USE_YN, REMARK, REGIST_DT)
+		VALUES (#{roomId}, #{roomNm}, #{location}, #{capacity}, #{useYn}, #{remark}, CURRENT_TIMESTAMP)
+	</insert>
+
+	<update id="updateRoom" parameterType="egovMap">
+		UPDATE MEETING_ROOM
+		SET ROOM_NM = #{roomNm},
+			LOCATION = #{location},
+			CAPACITY = #{capacity},
+			USE_YN = #{useYn},
+			REMARK = #{remark},
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE ROOM_ID = #{roomId}
+	</update>
+
+	<delete id="deleteRoom" parameterType="string">
+		DELETE FROM MEETING_ROOM WHERE ROOM_ID = #{roomId}
+	</delete>
+
+	<select id="countReservationsByRoom" parameterType="string" resultType="int">
+		SELECT COUNT(*) FROM MEETING_RESERVATION WHERE ROOM_ID = #{roomId}
+	</select>
+
+	<select id="selectReservationList" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			R.RESERVE_ID,
+			R.ROOM_ID,
+			M.ROOM_NM,
+			M.LOCATION,
+			R.USER_ID,
+			U.USER_NM,
+			R.RESERVE_DE,
+			R.START_TIME,
+			R.END_TIME,
+			R.TITLE,
+			R.PURPOSE,
+			R.REGIST_DT
+		FROM MEETING_RESERVATION R
+		JOIN MEETING_ROOM M ON M.ROOM_ID = R.ROOM_ID
+		LEFT JOIN APP_USER U ON U.USER_ID = R.USER_ID
+		<where>
+			<if test="reserveDe != null and reserveDe != ''">
+				AND R.RESERVE_DE = #{reserveDe}
+			</if>
+			<if test="roomId != null and roomId != ''">
+				AND R.ROOM_ID = #{roomId}
+			</if>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND (R.TITLE LIKE '%' || #{searchKeyword} || '%'
+					OR R.USER_ID LIKE '%' || #{searchKeyword} || '%'
+					OR U.USER_NM LIKE '%' || #{searchKeyword} || '%')
+			</if>
+		</where>
+		ORDER BY R.RESERVE_DE DESC, R.START_TIME, R.ROOM_ID
+	</select>
+
+	<select id="selectReservationDetail" parameterType="string" resultType="egovMap">
+		SELECT RESERVE_ID, ROOM_ID, USER_ID, RESERVE_DE, START_TIME, END_TIME, TITLE, PURPOSE
+		FROM MEETING_RESERVATION
+		WHERE RESERVE_ID = #{reserveId}
+	</select>
+
+	<!-- 시간대 겹침: 기존 시작 &lt; 새 종료 AND 기존 종료 &gt; 새 시작 -->
+	<select id="countOverlappingReservation" parameterType="egovMap" resultType="int">
+		SELECT COUNT(*)
+		FROM MEETING_RESERVATION
+		WHERE ROOM_ID = #{roomId}
+			AND RESERVE_DE = #{reserveDe}
+			AND START_TIME &lt; #{endTime}
+			AND END_TIME &gt; #{startTime}
+	</select>
+
+	<insert id="insertReservation" parameterType="egovMap">
+		INSERT INTO MEETING_RESERVATION (
+			RESERVE_ID, ROOM_ID, USER_ID, RESERVE_DE, START_TIME, END_TIME, TITLE, PURPOSE, REGIST_DT
+		) VALUES (
+			#{reserveId}, #{roomId}, #{userId}, #{reserveDe}, #{startTime}, #{endTime}, #{title}, #{purpose}, CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<delete id="deleteReservation" parameterType="egovMap">
+		DELETE FROM MEETING_RESERVATION
+		WHERE RESERVE_ID = #{reserveId}
+		<if test="!admin">
+			AND USER_ID = #{userId}
+		</if>
+	</delete>
+
+</mapper>

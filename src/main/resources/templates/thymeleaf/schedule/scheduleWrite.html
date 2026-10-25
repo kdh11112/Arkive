@@ -31,9 +31,9 @@
             <div class="form-group">
                 <div class="form-tit"><label for="startDt">기간</label></div>
                 <div class="form-conts" style="display: flex; flex-direction: row; gap: 8px; align-items: center; flex-wrap: nowrap;">
-                    <input type="datetime-local" id="startDt" class="krds-input" style="flex: 1; min-width: 0;" onclick="this.showPicker()" th:value="${detail != null ? #strings.replace(detail['startDt'],' ','T') : (defaultDate != null ? defaultDate + 'T09:00' : '')}">
+                    <input type="datetime-local" id="startDt" class="krds-input" style="flex: 1; min-width: 0;" th:value="${detail != null ? #strings.replace(detail['startDt'],' ','T') : (defaultDate != null ? defaultDate + 'T09:00' : '')}">
                     <span>~</span>
-                    <input type="datetime-local" id="endDt" class="krds-input" style="flex: 1; min-width: 0;" onclick="this.showPicker()" th:value="${detail != null ? #strings.replace(detail['endDt'],' ','T') : (defaultDate != null ? defaultDate + 'T18:00' : '')}">
+                    <input type="datetime-local" id="endDt" class="krds-input" style="flex: 1; min-width: 0;" th:value="${detail != null ? #strings.replace(detail['endDt'],' ','T') : (defaultDate != null ? defaultDate + 'T18:00' : '')}">
                 </div>
             </div>
             <div class="form-group">

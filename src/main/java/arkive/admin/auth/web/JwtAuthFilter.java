@@ -41,8 +41,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 		String context = request.getContextPath();
 		// 컨텍스트 경로를 뗀 순수 경로로 판단한다.
 		String path = uri.startsWith(context) ? uri.substring(context.length()) : uri;
-		// 로그인 발급은 토큰 없이 통과시킨다.
-		if ("/api/login.json".equals(path)) {
+		// 로그인 발급은 토큰 없이 통과시킨다. 버전 경로도 같은 규칙을 적용한다.
+		if ("/api/login.json".equals(path) || "/api/v1/login.json".equals(path)) {
 			chain.doFilter(request, response);
 			return;
 		}
@@ -72,7 +72,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 		// 401 + JSON. 화면 리다이렉트는 안 한다(API라서).
 		response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		response.setContentType("application/json;charset=UTF-8");
-		response.getWriter().write("{\"success\":false,\"message\":\"" + message + "\"}");
+		response.getWriter().write("{\"success\":false,\"apiVersion\":\"v1\",\"message\":\"" + message + "\"}");
 	}
 
 	@Override

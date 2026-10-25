@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>기념일관리</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">기념일관리</h2>
+
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+        <a th:href="@{/hr/anniversaryWrite}" class="krds-btn medium primary">등록</a>
+    </div>
+
+    <form id="listForm" method="get" th:action="@{/hr/anniversaryList}">
+        <input type="hidden" id="pageIndex" name="pageIndex" th:value="${pageIndex}">
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <select name="month" class="krds-form-select" style="width: 120px;">
+                <option value="" th:selected="${month == ''}">전체 월</option>
+                <option th:each="m : ${#numbers.sequence(1, 12)}" th:value="${#numbers.formatInteger(m, 2)}"
+                        th:text="${m} + '월'" th:selected="${month == #numbers.formatInteger(m, 2)}"></option>
+            </select>
+            <select name="useYn" class="krds-form-select" style="width: 120px;">
+                <option value="" th:selected="${useYn == ''}">전체</option>
+                <option value="Y" th:selected="${useYn == 'Y'}">사용</option>
+                <option value="N" th:selected="${useYn == 'N'}">중지</option>
+            </select>
+            <input type="text" name="searchKeyword" class="krds-input" style="flex: 1;"
+                   placeholder="기념일명·사용자 검색" th:value="${searchKeyword}">
+            <button type="submit" class="krds-btn medium secondary"
+                    onclick="document.getElementById('pageIndex').value=1;">검색</button>
+        </div>
+    </form>
+
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>기념일 목록</caption>
+            <colgroup>
+                <col style="width: 10%;">
+                <col style="width: 16%;">
+                <col style="width: 10%;">
+                <col>
+                <col style="width: 10%;">
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">기념일</th>
+                <th scope="col">대상자</th>
+                <th scope="col">구분</th>
+                <th scope="col">기념일명</th>
+                <th scope="col">사용</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${resultList}">
+                <td><a th:href="@{/hr/anniversaryWrite}" data-post th:attr="data-name='annivId',data-value=${item['annivId']}" th:text="${item['annivDe']}"></a></td>
+                <td>
+                    <div th:text="${item['userNm']}"></div>
+                    <div th:text="${item['userId']}" style="font-size: 12px; color: #666;"></div>
+                </td>
+                <td th:switch="${item['annivType']}">
+                    <span th:case="'BIRTH'">생일</span>
+                    <span th:case="'WEDDING'">결혼기념일</span>
+                    <span th:case="'HIRE'">입사기념일</span>
+                    <span th:case="*">기타</span>
+                </td>
+                <td th:text="${item['title']}"></td>
+                <td th:text="${item['useYn'] == 'Y' ? '사용' : '중지'}"></td>
+            </tr>
+            <tr th:if="${resultList == null or resultList.isEmpty()}">
+                <td colspan="5">조회된 기념일이 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="paging" class="krds-pagination w-page"
+         th:utext="${#egovKrdsPaginationRenderer.renderPagination(paginationInfo, 'anniversaryPaging')}"></div>
+    <script>
+        function anniversaryPaging(pageIndex) {
+            document.getElementById('pageIndex').value = pageIndex;
+            document.getElementById('listForm').submit();
+        }
+    </script>
+</div>
+</body>
+</html>

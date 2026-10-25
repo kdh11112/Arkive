@@ -15,7 +15,7 @@
             <div th:replace="~{cmm/doubleSubmit :: token}"></div>
             <div class="form-group">
                 <div class="form-tit"><label for="dutyDe">날짜</label></div>
-                <div class="form-conts"><input type="date" id="dutyDe" class="krds-input" onclick="this.showPicker()" th:value="${detail != null ? #strings.substring(detail['dutyDe'],0,4) + '-' + #strings.substring(detail['dutyDe'],4,6) + '-' + #strings.substring(detail['dutyDe'],6,8) : ''}"></div>
+                <div class="form-conts"><input type="date" id="dutyDe" class="krds-input" th:value="${detail != null ? #strings.substring(detail['dutyDe'],0,4) + '-' + #strings.substring(detail['dutyDe'],4,6) + '-' + #strings.substring(detail['dutyDe'],6,8) : ''}"></div>
             </div>
             <div class="form-group">
                 <div class="form-tit"><label for="dutyUser">당직자</label></div>

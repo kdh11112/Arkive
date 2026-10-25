@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import arkive.admin.auth.service.AuthService;
+import arkive.admin.comm.service.PiiFieldService;
 import jakarta.annotation.Resource;
 
 /**
@@ -34,6 +35,9 @@ public class AuthServiceImpl extends EgovAbstractServiceImpl implements AuthServ
 	@Resource(name = "permissionMapper")
 	private PermissionMapper permissionMapper;
 
+	@Resource(name = "piiFieldService")
+	private PiiFieldService piiFieldService;
+
 	@Override
 	public EgovMap selectLoginUser(String userId) throws Exception {
 		return authMapper.selectLoginUser(userId);
@@ -51,7 +55,9 @@ public class AuthServiceImpl extends EgovAbstractServiceImpl implements AuthServ
 
 	@Override
 	public EgovMap selectUserDetail(String userId) throws Exception {
-		return authMapper.selectUserDetail(userId);
+		EgovMap user = authMapper.selectUserDetail(userId);
+		piiFieldService.decryptUserPhone(user);
+		return user;
 	}
 
 	public EgovMap selectFindUserId(EgovMap egovMap) throws Exception {
@@ -60,11 +66,13 @@ public class AuthServiceImpl extends EgovAbstractServiceImpl implements AuthServ
 
 	@Override
 	public void insertUser(EgovMap egovMap) throws Exception {
+		piiFieldService.encryptUserPhone(egovMap);
 		authMapper.insertUser(egovMap);
 	}
 
 	@Override
 	public void updateUser(EgovMap egovMap) throws Exception {
+		piiFieldService.encryptUserPhone(egovMap);
 		authMapper.updateUser(egovMap);
 	}
 

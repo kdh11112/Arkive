@@ -60,11 +60,17 @@ public class QnaController {
 		paginationInfo.setRecordCountPerPage(10);
 		paginationInfo.setPageSize(10);
 
+		String askType = cmmUtil.convertHtml(request, "askType");
+		if (!"PUBLIC".equals(askType) && !"INTERNAL".equals(askType)) {
+			askType = "";
+		}
 		EgovMap param = new EgovMap();
 		param.put("searchKeyword", cmmUtil.convertHtml(request, "searchKeyword"));
+		param.put("askType", askType);
 		param.put("firstIndex", paginationInfo.getFirstRecordIndex());
 		param.put("recordCountPerPage", paginationInfo.getRecordCountPerPage());
 		model.put("searchKeyword", param.get("searchKeyword"));
+		model.put("askType", askType);
 		model.put("pageIndex", pageIndex);
 		model.put("resultList", qnaService.selectQnaList(param));
 		paginationInfo.setTotalRecordCount(qnaService.selectQnaListTotCnt(param));
@@ -83,12 +89,14 @@ public class QnaController {
 		return "qna/qnaWrite";
 	}
 
-	@Operation(summary = "Q&A 상세 (질문 + 답변, 답변 폼 포함)")
+	@Operation(summary = "Q&A 상세 (질문 + 답변, 답변 폼은 관리자만)")
 	@RequestMapping(value = "/qnaDetail", method = { RequestMethod.GET, RequestMethod.POST })
 	public String qnaDetail(HttpServletRequest request, ModelMap model) throws Exception {
 		String boardId = cmmUtil.convertHtml(request, "boardId");
 		model.put("detail", qnaService.selectQnaDetail(boardId));
 		model.put("answer", qnaService.selectQnaAnswer(boardId));
+		model.put("canAnswer", request.getSession(false) != null
+				&& request.getSession(false).getAttribute(arkive.admin.auth.web.LoginController.ADMIN_KEY) != null);
 		model.put("answerToken", EgovDoubleSubmitHelper.setToken(request.getSession(), "BOARD_QNA_ANS"));
 		return "qna/qnaDetail";
 	}
@@ -116,12 +124,17 @@ public class QnaController {
 			if (register == null || register.trim().isEmpty()) {
 				register = "익명";
 			}
+			String askType = cmmUtil.convertHtml(request, "askType");
+			if (!"INTERNAL".equals(askType)) {
+				askType = "PUBLIC";
+			}
 			EgovMap param = new EgovMap();
 			param.put("boardId", "BD" + CommUtil.getFileId());
 			param.put("title", title.trim());
 			String content = request.getParameter("content") == null ? "" : request.getParameter("content");
 			param.put("content", htmlSanitizer.sanitizeBoardContent(content));
 			param.put("register", register.trim());
+			param.put("askType", askType);
 			qnaService.insertQna(param);
 			result.put("success", true);
 			result.put("boardId", param.get("boardId"));
@@ -148,6 +161,8 @@ public class QnaController {
 			param.put("title", title.trim());
 			String content = request.getParameter("content") == null ? "" : request.getParameter("content");
 			param.put("content", htmlSanitizer.sanitizeBoardContent(content));
+			String askType = cmmUtil.convertHtml(request, "askType");
+			param.put("askType", "INTERNAL".equals(askType) ? "INTERNAL" : "PUBLIC");
 			param.put("updusr", "SYSTEM");
 			qnaService.updateQna(param);
 			result.put("success", true);
@@ -181,6 +196,10 @@ public class QnaController {
 	public Map<String, Object> saveAnswer(HttpServletRequest request) {
 		Map<String, Object> result = new HashMap<>();
 		try {
+			if (request.getSession(false) == null
+					|| request.getSession(false).getAttribute(arkive.admin.auth.web.LoginController.ADMIN_KEY) == null) {
+				throw new IllegalStateException("답변 권한이 없습니다.");
+			}
 			boolean valid;
 			try {
 				valid = EgovDoubleSubmitHelper.checkAndSaveToken("BOARD_QNA_ANS");
@@ -193,6 +212,9 @@ public class QnaController {
 			String boardId = cmmUtil.convertHtml(request, "boardId");
 			if (boardId == null || boardId.isEmpty()) {
 				throw new IllegalArgumentException("질문 정보가 없습니다.");
+			}
+			if (qnaService.selectQnaDetail(boardId) == null) {
+				throw new IllegalArgumentException("Q&A 질문을 찾을 수 없습니다.");
 			}
 			String answer = request.getParameter("answerContent") == null ? "" : request.getParameter("answerContent");
 			if (answer.trim().isEmpty()) {

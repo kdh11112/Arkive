@@ -10,6 +10,8 @@ import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.springframework.stereotype.Service;
 
+import arkive.admin.comm.web.KoreanSearchUtil;
+import arkive.admin.search.service.SearchIndexService;
 import arkive.admin.search.service.SearchService;
 import jakarta.annotation.Resource;
 
@@ -35,8 +37,18 @@ public class SearchServiceImpl extends EgovAbstractServiceImpl implements Search
 	@Resource(name = "searchMapper")
 	private SearchMapper searchMapper;
 
+	@Resource(name = "searchIndexService")
+	private SearchIndexService searchIndexService;
+
 	@Override
 	public List<EgovMap> selectSearchList(EgovMap egovMap) throws Exception {
+		SearchIndexService.SearchResult indexed = searchIndex(egovMap);
+		if (indexed != null) {
+			egovMap.put("esTotal", indexed.total());
+			return indexed.list();
+		}
+		ensureChosungIndex();
+		prepareChosung(egovMap);
 		List<EgovMap> list = searchMapper.selectSearchList(egovMap);
 		for (EgovMap row : list) {
 			String boardType = row.get("boardType") == null ? "" : String.valueOf(row.get("boardType"));
@@ -48,7 +60,60 @@ public class SearchServiceImpl extends EgovAbstractServiceImpl implements Search
 
 	@Override
 	public int selectSearchListTotCnt(EgovMap egovMap) throws Exception {
+		if (egovMap.get("esTotal") instanceof Integer indexedTotal) {
+			return indexedTotal;
+		}
+		SearchIndexService.SearchResult indexed = searchIndex(egovMap);
+		if (indexed != null) {
+			return indexed.total();
+		}
+		ensureChosungIndex();
+		prepareChosung(egovMap);
 		return searchMapper.selectSearchListTotCnt(egovMap);
+	}
+
+	private SearchIndexService.SearchResult searchIndex(EgovMap egovMap) {
+		if (searchIndexService == null || !searchIndexService.isEnabled()) {
+			return null;
+		}
+		try {
+			return searchIndexService.search(egovMap);
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	/**
+	 * 기존 글의 초성 색인을 요청당 최대 5회(1,000건)까지 채운다. 나머지는 다음 검색에서 이어서 채운다.
+	 * 색인 갱신 실패가 검색 자체를 막지 않도록 예외를 삼킨다.
+	 */
+	private void ensureChosungIndex() {
+		for (int batch = 0; batch < 5; batch++) {
+			try {
+				List<EgovMap> missing = searchMapper.selectBoardsMissingChosung(200);
+				if (missing == null || missing.isEmpty()) {
+					return;
+				}
+				for (EgovMap row : missing) {
+					EgovMap param = new EgovMap();
+					param.put("boardId", String.valueOf(row.get("boardId")));
+					param.put("searchChosung", KoreanSearchUtil.toChosung(String.valueOf(row.get("title"))));
+					searchMapper.updateSearchChosung(param);
+				}
+			} catch (Exception e) {
+				return;
+			}
+		}
+	}
+
+	private void prepareChosung(EgovMap egovMap) {
+		Object keyword = egovMap.get("searchKeyword");
+		String value = keyword == null ? "" : String.valueOf(keyword).trim();
+		if (KoreanSearchUtil.containsHangul(value)) {
+			egovMap.put("searchChosung", KoreanSearchUtil.toChosung(value));
+		} else {
+			egovMap.put("searchChosung", null);
+		}
 	}
 
 	/**

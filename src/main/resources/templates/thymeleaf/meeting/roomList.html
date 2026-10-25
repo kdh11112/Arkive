@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>회의실관리</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">회의실관리</h2>
+
+    <form method="post" th:action="@{/meeting/roomList}" style="display: flex; gap: 8px; margin-bottom: 12px;">
+        <input type="text" name="searchKeyword" class="krds-input" style="width: 240px;"
+               placeholder="회의실명·위치" th:value="${searchKeyword}">
+        <button type="submit" class="krds-btn medium secondary">조회</button>
+        <a th:href="@{/meeting/roomWrite}" class="krds-btn medium primary" style="margin-left: auto;">회의실 등록</a>
+    </form>
+
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>회의실 목록</caption>
+            <colgroup>
+                <col style="width: 20%;">
+                <col style="width: 20%;">
+                <col style="width: 10%;">
+                <col style="width: 10%;">
+                <col style="width: 10%;">
+                <col>
+                <col style="width: 16%;">
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">회의실명</th>
+                <th scope="col">위치</th>
+                <th scope="col">수용인원</th>
+                <th scope="col">사용여부</th>
+                <th scope="col">예약건수</th>
+                <th scope="col">비고</th>
+                <th scope="col">관리</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${resultList}">
+                <td th:text="${item['roomNm']}"></td>
+                <td th:text="${item['location']}"></td>
+                <td th:text="${item['capacity']}"></td>
+                <td th:text="${item['useYn'] == 'Y' ? '사용' : '중지'}"></td>
+                <td th:text="${item['reserveCnt']}"></td>
+                <td th:text="${item['remark']}"></td>
+                <td>
+                    <a th:href="@{/meeting/roomWrite(roomId=${item['roomId']})}" class="krds-btn small secondary">수정</a>
+                    <button type="button" class="krds-btn small danger"
+                            th:attr="data-id=${item['roomId']},data-name=${item['roomNm']}"
+                            onclick="fnDeleteRoom(this)">삭제</button>
+                </td>
+            </tr>
+            <tr th:if="${resultList == null or resultList.isEmpty()}">
+                <td colspan="7">등록된 회의실이 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function fnDeleteRoom(btn) {
+            if (!confirm('"' + btn.getAttribute('data-name') + '" 회의실을 삭제하시겠습니까?')) { return; }
+            $.ajax({
+                type: 'post',
+                url: '/meeting/deleteRoom.json',
+                data: { roomId: btn.getAttribute('data-id') },
+                success: function(res) {
+                    if (res.success) { location.reload(); }
+                    else { alert(res.message || '삭제에 실패했습니다.'); }
+                },
+                error: function() { alert('삭제 중 오류가 발생했습니다.'); }
+            });
+        }
+    </script>
+</div>
+</body>
+</html>

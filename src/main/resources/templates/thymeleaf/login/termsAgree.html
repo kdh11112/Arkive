@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>약관 동의</title>
+    <link rel="stylesheet" type="text/css" th:href="@{/css/component/output.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/css/krds-local.css}">
+    <script th:src="@{/js/jquery.min.js}"></script>
+</head>
+<body>
+<div class="inner" style="max-width: 720px; margin: 60px auto;">
+    <h2 class="heading-large">필수 약관 동의</h2>
+    <p style="color:#555;">서비스를 계속 사용하려면 아래 필수 약관에 동의해야 합니다.</p>
+
+    <section th:each="term : ${termsList}" style="margin-bottom: 20px;">
+        <h3 class="heading-small">
+            <span th:text="${term['title']}"></span>
+            <span style="font-size: 13px; color:#666;" th:text="${'v' + term['version']}"></span>
+        </h3>
+        <div style="white-space: pre-wrap; border:1px solid #ddd; padding:16px; background:#fff; max-height:220px; overflow:auto;"
+             th:text="${term['content']}"></div>
+        <label style="display:flex; gap:6px; align-items:center; margin-top:8px;">
+            <input type="checkbox" class="terms-check" th:value="${term['termsId']}">
+            <span>위 약관에 동의합니다. (필수)</span>
+        </label>
+    </section>
+
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <a th:href="@{/login/logout}" class="krds-btn medium secondary">로그아웃</a>
+        <button type="button" class="krds-btn medium primary" onclick="fnAgree()">동의하고 계속</button>
+    </div>
+</div>
+<script>
+    function fnAgree() {
+        var ids = [];
+        $('.terms-check:checked').each(function() { ids.push($(this).val()); });
+        if (ids.length !== $('.terms-check').length) {
+            alert('필수 약관에 모두 동의해야 합니다.');
+            return;
+        }
+        $.ajax({
+            type: 'post',
+            url: '/login/termsAgree.json',
+            traditional: true,
+            data: { termsIds: ids },
+            success: function(res) {
+                if (res.success) { location.href = '/'; }
+                else { alert(res.message || '약관 동의 저장에 실패했습니다.'); }
+            },
+            error: function(xhr) {
+                if (xhr.status === 409) { alert('필수 약관에 동의해야 합니다.'); }
+                else { alert('처리 중 오류가 발생했습니다.'); }
+            }
+        });
+    }
+</script>
+</body>
+</html>

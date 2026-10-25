@@ -3,20 +3,26 @@
 <mapper namespace="arkive.admin.qna.service.impl.QnaMapper">
 
 	<!-- Q&A 목록. 질문(BOARD_TYPE='QNA') + 답변 존재 여부로 상태 판정한다.
-	     참고: BLMS qnaList(bbsId=03, rlsYnCd/inqCnt), pony QUESTION(answerStatus '미답변').
-	     개선점: 상태 컬럼을 두지 않고 LEFT JOIN으로 판정 → 상태 동기화 불일치 원천 제거, COM028 불필요.
-	     1단계(비로그인)라 공개여부·비밀번호 조건은 제외한다. -->
+	     ASK_TYPE=PUBLIC은 비로그인도, INTERNAL은 로그인 사용자만 열람한다.
+	     publicOnly=true는 외부 공개 목록(비로그인)에만 적용한다. -->
 	<select id="selectQnaList" parameterType="egovMap" resultType="egovMap">
 		SELECT
 			B.BOARD_ID,
 			B.TITLE,
 			B.REGISTER,
 			B.REGIST_DT,
+			B.ASK_TYPE,
 			CASE WHEN A.BOARD_ID IS NULL THEN '미답변' ELSE '답변완료' END AS ANSWER_STATUS
 		FROM BOARD B
 		LEFT JOIN QNA_ANSWER A
 			ON B.BOARD_ID = A.BOARD_ID
 		WHERE B.BOARD_TYPE = 'QNA'
+		<if test="publicOnly == true">
+			AND B.ASK_TYPE = 'PUBLIC'
+		</if>
+		<if test="askType != null and askType != ''">
+			AND B.ASK_TYPE = #{askType}
+		</if>
 		<if test="searchKeyword != null and searchKeyword != ''">
 			AND B.TITLE LIKE '%' || #{searchKeyword} || '%'
 		</if>
@@ -29,19 +35,26 @@
 		SELECT COUNT(*)
 		FROM BOARD
 		WHERE BOARD_TYPE = 'QNA'
+		<if test="publicOnly == true">
+			AND ASK_TYPE = 'PUBLIC'
+		</if>
+		<if test="askType != null and askType != ''">
+			AND ASK_TYPE = #{askType}
+		</if>
 		<if test="searchKeyword != null and searchKeyword != ''">
 			AND TITLE LIKE '%' || #{searchKeyword} || '%'
 		</if>
 	</select>
 
-	<!-- Q&A 질문 상세 -->
+	<!-- Q&A 질문 상세. ASK_TYPE은 컨트롤러에서 열람 권한을 판정한다. -->
 	<select id="selectQnaDetail" parameterType="string" resultType="egovMap">
 		SELECT
 			BOARD_ID,
 			TITLE,
 			CONTENT,
 			REGISTER,
-			REGIST_DT
+			REGIST_DT,
+			ASK_TYPE
 		FROM BOARD
 		WHERE BOARD_ID = #{boardId}
 			AND BOARD_TYPE = 'QNA'
@@ -64,18 +77,22 @@
 			BOARD_ID,
 			BOARD_TYPE,
 			TITLE,
+			SEARCH_CHOSUNG,
 			CONTENT,
 			VIEW_CNT,
 			REGIST_DT,
-			REGISTER
+			REGISTER,
+			ASK_TYPE
 		) VALUES (
 			#{boardId},
 			'QNA',
 			#{title},
+			#{searchChosung},
 			#{content},
 			0,
 			CURRENT_TIMESTAMP,
-			#{register}
+			#{register},
+			#{askType}
 		)
 	</insert>
 
@@ -84,7 +101,9 @@
 		UPDATE BOARD
 		SET
 			TITLE = #{title},
+			SEARCH_CHOSUNG = #{searchChosung},
 			CONTENT = #{content},
+			ASK_TYPE = #{askType},
 			UPDT_DT = CURRENT_TIMESTAMP,
 			UPDUSR = #{updusr}
 		WHERE BOARD_ID = #{boardId}

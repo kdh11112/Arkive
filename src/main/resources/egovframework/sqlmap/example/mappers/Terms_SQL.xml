@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.terms.service.impl.TermsMapper">
+
+	<select id="selectCurrentTerms" resultType="egovMap">
+		SELECT
+			TERMS_ID, TERMS_TYPE, VERSION, TITLE, CONTENT, REQUIRED_YN, EFFECTIVE_DT, USE_YN, REGIST_DT
+		FROM TERMS
+		WHERE USE_YN = 'Y'
+			AND (EFFECTIVE_DT IS NULL OR EFFECTIVE_DT &lt;= CURRENT_DATE)
+		ORDER BY CASE WHEN REQUIRED_YN = 'Y' THEN 0 ELSE 1 END, TERMS_TYPE, VERSION
+	</select>
+
+	<select id="selectCurrentTerm" parameterType="string" resultType="egovMap">
+		SELECT TERMS_ID, TERMS_TYPE, VERSION, TITLE, REQUIRED_YN
+		FROM TERMS
+		WHERE TERMS_ID = #{termsId}
+			AND USE_YN = 'Y'
+			AND (EFFECTIVE_DT IS NULL OR EFFECTIVE_DT &lt;= CURRENT_DATE)
+	</select>
+
+	<select id="selectPendingRequiredTerms" parameterType="string" resultType="egovMap">
+		SELECT
+			T.TERMS_ID, T.TERMS_TYPE, T.VERSION, T.TITLE, T.CONTENT, T.REQUIRED_YN, T.EFFECTIVE_DT
+		FROM TERMS T
+		WHERE T.USE_YN = 'Y'
+			AND T.REQUIRED_YN = 'Y'
+			AND (T.EFFECTIVE_DT IS NULL OR T.EFFECTIVE_DT &lt;= CURRENT_DATE)
+			AND NOT EXISTS (
+				SELECT 1
+				FROM USER_TERMS_CONSENT C
+				WHERE C.USER_ID = #{userId}
+					AND C.TERMS_ID = T.TERMS_ID
+					AND C.CONSENT_YN = 'Y'
+			)
+		ORDER BY T.TERMS_TYPE, T.VERSION
+	</select>
+
+	<select id="selectConsentHistory" parameterType="string" resultType="egovMap">
+		SELECT
+			C.USER_ID, C.TERMS_ID, C.CONSENT_YN, C.CONSENT_DT,
+			T.TERMS_TYPE, T.VERSION, T.TITLE
+		FROM USER_TERMS_CONSENT C
+		JOIN TERMS T ON T.TERMS_ID = C.TERMS_ID
+		WHERE C.USER_ID = #{userId}
+		ORDER BY C.CONSENT_DT DESC
+	</select>
+
+	<!-- 같은 약관에 다시 동의해도 이력 행을 늘리지 않고 최신 동의 시각만 갱신한다.
+	     MERGE는 DB 제품별 문법 차이가 있어 UPDATE 후 INSERT로 처리한다. -->
+	<update id="updateConsent" parameterType="egovMap">
+		UPDATE USER_TERMS_CONSENT
+		SET CONSENT_YN = 'Y',
+			CONSENT_DT = CURRENT_TIMESTAMP
+		WHERE USER_ID = #{userId}
+			AND TERMS_ID = #{termsId}
+	</update>
+
+	<insert id="insertConsent" parameterType="egovMap">
+		INSERT INTO USER_TERMS_CONSENT (USER_ID, TERMS_ID, CONSENT_YN, CONSENT_DT)
+		VALUES (#{userId}, #{termsId}, 'Y', CURRENT_TIMESTAMP)
+	</insert>
+
+</mapper>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="arkive.admin.stats.service.impl.StatsMapper">
+
+	<select id="selectBoardStats" resultType="egovMap">
+		SELECT BOARD_TYPE, COUNT(*) AS CNT
+		FROM BOARD
+		GROUP BY BOARD_TYPE
+		ORDER BY BOARD_TYPE
+	</select>
+
+	<select id="selectEventStats" parameterType="egovMap" resultType="egovMap">
+		SELECT EVENT_TYPE, COUNT(*) AS CNT
+		FROM AUDIT_LOG
+		WHERE REGIST_DT &gt;= #{startDate} AND REGIST_DT &lt; #{endDate}
+		GROUP BY EVENT_TYPE
+		ORDER BY CNT DESC, EVENT_TYPE
+	</select>
+
+	<select id="selectDailyLoginStats" parameterType="egovMap" resultType="egovMap">
+		SELECT CAST(REGIST_DT AS DATE) AS STAT_DATE, COUNT(*) AS CNT
+		FROM AUDIT_LOG
+		WHERE EVENT_TYPE IN ('LOGIN_SUCCESS', 'API_LOGIN')
+			AND REGIST_DT &gt;= #{startDate} AND REGIST_DT &lt; #{endDate}
+		GROUP BY CAST(REGIST_DT AS DATE)
+		ORDER BY STAT_DATE
+	</select>
+
+	<select id="selectDailyAccessStats" parameterType="egovMap" resultType="egovMap">
+		SELECT CAST(REGIST_DT AS DATE) AS STAT_DATE, COUNT(*) AS CNT
+		FROM AUDIT_LOG
+		WHERE EVENT_TYPE IN ('MENU_ACCESS', 'PII_VIEW', 'PII_DOWNLOAD', 'API_ACCESS')
+			AND REGIST_DT &gt;= #{startDate} AND REGIST_DT &lt; #{endDate}
+		GROUP BY CAST(REGIST_DT AS DATE)
+		ORDER BY STAT_DATE
+	</select>
+
+	<select id="selectDownloadStats" parameterType="egovMap" resultType="egovMap">
+		SELECT TARGET_TYPE, COUNT(*) AS CNT
+		FROM AUDIT_LOG
+		WHERE EVENT_TYPE = 'PII_DOWNLOAD'
+			AND REGIST_DT &gt;= #{startDate} AND REGIST_DT &lt; #{endDate}
+		GROUP BY TARGET_TYPE
+		ORDER BY CNT DESC
+	</select>
+
+</mapper>

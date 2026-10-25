@@ -17,7 +17,7 @@
 
     <form id="listForm" method="post" th:action="@{/duty/dutyList}">
         <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-            <input type="month" name="yyyymm" class="krds-input" onclick="this.showPicker()" th:value="${#strings.substring(yyyymm,0,4) + '-' + #strings.substring(yyyymm,4,6)}">
+            <input type="month" name="yyyymm" class="krds-input" th:value="${#strings.substring(yyyymm,0,4) + '-' + #strings.substring(yyyymm,4,6)}">
             <input type="text" name="searchKeyword" class="krds-input" style="flex: 1;" placeholder="당직자 검색" th:value="${searchKeyword}">
             <button type="submit" class="krds-btn medium secondary">검색</button>
             <button type="submit" class="krds-btn medium secondary" formaction="/duty/downloadDutyExcel.do" formmethod="get">엑셀 다운로드</button>

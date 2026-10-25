@@ -10,6 +10,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import arkive.admin.auth.service.PermissionService;
 import arkive.admin.board.service.BoardSseService;
 import arkive.admin.mail.service.MailAsyncService;
+import arkive.admin.sms.service.SmsAsyncService;
 import jakarta.annotation.Resource;
 
 /**
@@ -32,6 +33,9 @@ public class BoardNotificationEventListener {
 
 	@Resource(name = "mailAsyncService")
 	private MailAsyncService mailAsyncService;
+
+	@Resource(name = "smsAsyncService")
+	private SmsAsyncService smsAsyncService;
 
 	@TransactionalEventListener(fallbackExecution = true)
 	public void handleSse(BoardNotificationEvent event) {
@@ -58,6 +62,19 @@ public class BoardNotificationEventListener {
 		} catch (Exception e) {
 			// 메일 발송 실패가 게시글 저장 실패로 번지지 않게 분리한다.
 			logger.warn("board mail dispatch skipped", e);
+		}
+	}
+
+	@TransactionalEventListener(fallbackExecution = true)
+	public void handleSms(BoardNotificationEvent event) {
+		if (!event.notifySms()) {
+			return;
+		}
+		try {
+			smsAsyncService.sendBoardNotification(event.boardId());
+		} catch (Exception e) {
+			// SMS 발송 실패가 게시글 저장 실패로 번지지 않게 분리한다.
+			logger.warn("board SMS dispatch skipped", e);
 		}
 	}
 

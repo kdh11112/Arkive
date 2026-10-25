@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>설문 통계</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">설문 통계</h2>
+
+    <form method="get" th:action="@{/survey/stats}" style="display: flex; gap: 8px; margin-bottom: 16px;">
+        <select name="surveyId" class="krds-form-select" style="width: 420px;">
+            <option value="">설문 선택</option>
+            <option th:each="s : ${surveyList}" th:value="${s['surveyId']}"
+                    th:selected="${surveyId == s['surveyId']}"
+                    th:text="${s['title']} + ' (' + ${s['status']} + ')'"></option>
+        </select>
+        <button type="submit" class="krds-btn medium secondary">조회</button>
+        <a th:href="@{/survey/surveyList}" class="krds-btn medium secondary">설문관리</a>
+    </form>
+
+    <div th:if="${survey == null}" style="color: #666;">설문을 선택하면 통계가 표시됩니다.</div>
+
+    <th:block th:if="${survey != null}">
+        <div class="conts-wrap" style="margin-bottom: 16px;">
+            <h3 style="margin: 0 0 6px 0;" th:text="${survey['title']}"></h3>
+            <div style="font-size: 12px; color: #666;"
+                 th:text="'기간: ' + ${survey['startDe']} + ' ~ ' + ${survey['endDe']} + ' / 질문 ' + ${survey['questionCnt']} + '개'"></div>
+            <div style="margin-top: 8px; font-size: 15px;">
+                참여자 <strong th:text="${participationCount}">0</strong>명
+            </div>
+        </div>
+
+        <div class="conts-wrap" th:if="${statGroups == null or statGroups.isEmpty()}"
+             style="margin-bottom: 12px; color: #666;">
+            객관식 질문이 없거나 아직 응답이 없습니다.
+        </div>
+
+        <div class="conts-wrap" th:each="group : ${statGroups}" style="margin-bottom: 12px;">
+            <div style="margin-bottom: 8px;">
+                <strong th:text="${group['questionNo']} + '. ' + ${group['questionTxt']}"></strong>
+                <span th:switch="${group['questionType']}" style="margin-left: 6px; font-size: 12px; color: #666;">
+                    <span th:case="'SINGLE'">단일선택</span>
+                    <span th:case="*">복수선택</span>
+                </span>
+            </div>
+            <table class="tbl col data">
+                <caption>보기별 응답</caption>
+                <colgroup>
+                    <col>
+                    <col style="width: 12%;">
+                    <col style="width: 12%;">
+                    <col style="width: 30%;">
+                </colgroup>
+                <thead>
+                <tr>
+                    <th scope="col">보기</th>
+                    <th scope="col">응답</th>
+                    <th scope="col">비율</th>
+                    <th scope="col">분포</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${group['items']}">
+                    <td th:text="${item['itemTxt']}"></td>
+                    <td th:text="${item['answerCnt']} + '명'"></td>
+                    <td th:text="${item['rate']} + '%'"></td>
+                    <td>
+                        <div style="background: #e9eef7; height: 10px; border-radius: 5px; overflow: hidden;">
+                            <div style="background: #2f7cf6; height: 10px;"
+                                 th:style="'width: ' + ${item['rate']} + '%;'"></div>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="conts-wrap" th:if="${textAnswers != null and !textAnswers.isEmpty()}">
+            <div style="margin-bottom: 8px;"><strong>주관식 응답</strong></div>
+            <table class="tbl col data">
+                <caption>주관식 응답</caption>
+                <colgroup>
+                    <col style="width: 8%;">
+                    <col style="width: 30%;">
+                    <col>
+                </colgroup>
+                <thead>
+                <tr>
+                    <th scope="col">번호</th>
+                    <th scope="col">질문</th>
+                    <th scope="col">응답</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="answer : ${textAnswers}">
+                    <td th:text="${answer['questionNo']}"></td>
+                    <td th:text="${answer['questionTxt']}"></td>
+                    <td style="white-space: pre-wrap;" th:text="${answer['answerTxt']}"></td>
+                </tr>
+                </tbody>
+            </table>
+            <p style="margin-top: 6px; font-size: 12px; color: #666;">주관식 응답은 최근 200건까지 표시합니다.</p>
+        </div>
+    </th:block>
+</div>
+</body>
+</html>

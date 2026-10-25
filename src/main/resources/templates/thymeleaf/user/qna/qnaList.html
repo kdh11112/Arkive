@@ -11,6 +11,7 @@
     <h2 class="heading-large">Q&A</h2>
 
     <div class="user-list-toolbar">
+        <span th:unless="${loggedIn}" style="color:#555; font-size:14px;">내부 질문은 로그인 후에 볼 수 있습니다.</span>
         <a th:href="@{/user/qna/qnaWrite}" class="krds-btn medium primary">질문등록</a>
     </div>
 
@@ -44,7 +45,10 @@
             <tbody>
             <tr th:each="item, stat : ${resultList}">
                 <td th:text="${paginationInfo.totalRecordCount + 1 - ((pageIndex - 1) * paginationInfo.recordCountPerPage + stat.count)}"></td>
-                <td><a th:href="@{/user/qna/qnaDetail}" data-post th:attr="data-name='boardId',data-value=${item['boardId']}" th:text="${item['title']}"></a></td>
+                <td>
+                    <a th:href="@{/user/qna/qnaDetail}" data-post th:attr="data-name='boardId',data-value=${item['boardId']}" th:text="${item['title']}"></a>
+                    <span th:if="${item['askType'] == 'INTERNAL'}" class="krds-badge" style="margin-left:6px;">내부</span>
+                </td>
                 <td th:text="${item['register']}"></td>
                 <td th:text="${item['registDt'] != null ? #dates.format(item['registDt'], 'yyyy-MM-dd') : ''}"></td>
                 <td th:text="${item['answerStatus']}"></td>

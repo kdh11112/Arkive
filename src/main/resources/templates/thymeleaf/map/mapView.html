@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>약도</title>
+    <style>
+        #map { width: 100%; height: 400px; border: 1px solid #ddd; border-radius: 6px; margin-top: 12px; }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large" th:text="${detail['title']}">약도</h2>
+
+    <div class="conts-wrap">
+        <table class="tbl col">
+            <caption>약도 정보</caption>
+            <tbody>
+            <tr>
+                <th scope="row" style="width: 120px;">주소</th>
+                <td th:text="${detail['address'] != null and detail['address'] != '' ? detail['address'] : '-'}"></td>
+            </tr>
+            <tr>
+                <th scope="row">좌표</th>
+                <td>
+                    <span th:if="${detail['latitude'] == null}" style="color: #888;">미지정</span>
+                    <span th:if="${detail['latitude'] != null}"
+                          th:text="${detail['latitude']} + ', ' + ${detail['longitude']}"></span>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">사용여부</th>
+                <td th:text="${detail['useYn'] == 'Y' ? '사용' : '중지'}"></td>
+            </tr>
+            <tr th:if="${detail['description'] != null and detail['description'] != ''}">
+                <th scope="row">설명</th>
+                <td th:text="${detail['description']}" style="white-space: pre-line;"></td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div th:if="${detail['latitude'] != null and mapKeyConfigured}">
+            <div id="map"></div>
+        </div>
+        <div th:if="${detail['latitude'] != null and !mapKeyConfigured}"
+             style="margin-top: 12px; padding: 12px; background: #fffbeb; color: #92400e;">
+            카카오 지도 키가 설정되지 않아 지도를 표시할 수 없습니다. KAKAO_MAP_KEY 환경값을 설정하세요.
+        </div>
+        <div th:if="${detail['latitude'] == null}"
+             style="margin-top: 12px; padding: 12px; background: #f5f5f5; color: #666;">
+            위·경도가 등록되지 않아 지도를 표시할 수 없습니다.
+        </div>
+
+        <div style="display: flex; justify-content: center; gap: 8px; margin-top: 16px;">
+            <a th:href="@{/map/mapList}" class="krds-btn medium secondary">목록</a>
+            <a th:href="@{/map/mapWrite}" data-post
+               th:attr="data-name='mapId',data-value=${detail['mapId']}"
+               class="krds-btn medium primary">수정</a>
+        </div>
+    </div>
+
+    <script th:if="${detail['latitude'] != null and mapKeyConfigured}"
+            th:src="'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + ${kakaoMapKey} + '&autoload=false'"></script>
+    <script th:inline="javascript">
+        var latitude = /*[[${detail['latitude']}]]*/ null;
+        var longitude = /*[[${detail['longitude']}]]*/ null;
+        var mapKeyConfigured = /*[[${mapKeyConfigured}]]*/ false;
+
+        if (mapKeyConfigured && latitude != null && longitude != null
+                && window.kakao && kakao.maps) {
+            kakao.maps.load(function() {
+                var container = document.getElementById('map');
+                var position = new kakao.maps.LatLng(Number(latitude), Number(longitude));
+                var map = new kakao.maps.Map(container, { center: position, level: 3 });
+                new kakao.maps.Marker({ position: position }).setMap(map);
+            });
+        }
+    </script>
+</div>
+</body>
+</html>

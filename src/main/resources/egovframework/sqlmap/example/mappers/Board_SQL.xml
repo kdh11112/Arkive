@@ -104,6 +104,7 @@
 			BOARD_ID,
 			BOARD_TYPE,
 			TITLE,
+			SEARCH_CHOSUNG,
 			CONTENT,
 			ATCH_FILE_GRPID,
 			NOTICE_YN,
@@ -115,6 +116,7 @@
 			#{boardId},
 			#{boardType},
 			#{title},
+			#{searchChosung},
 			#{content},
 			#{atchFileGrpid},
 			COALESCE(#{noticeYn}, 'N'),
@@ -130,6 +132,7 @@
 		UPDATE BOARD
 		SET
 			TITLE = #{title},
+			SEARCH_CHOSUNG = #{searchChosung},
 			CONTENT = #{content},
 			ATCH_FILE_GRPID = #{atchFileGrpid},
 			<if test="importantYn != null">
@@ -145,6 +148,15 @@
 		DELETE FROM BOARD
 		WHERE BOARD_ID = #{boardId}
 	</delete>
+
+	<!-- SMS 발송 선점. 같은 글을 중복 발송하지 않도록 원자적으로 Y로 바꾼다. -->
+	<update id="claimBoardSms" parameterType="string">
+		UPDATE BOARD
+		SET SMS_SENT_YN = 'Y',
+			SMS_SENT_DT = CURRENT_TIMESTAMP
+		WHERE BOARD_ID = #{boardId}
+			AND COALESCE(SMS_SENT_YN, 'N') = 'N'
+	</update>
 
 	<!-- 조회수 증가 -->
 	<update id="updateViewCnt" parameterType="string">

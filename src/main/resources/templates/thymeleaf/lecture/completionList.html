@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>수료현황</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">수료현황</h2>
+    <p style="margin-bottom: 12px; color: #555;">
+        수료는 영상 수료와 연결 설문 참여를 함께 판정합니다. 설문이 없으면 영상 수료만으로 인정합니다.
+    </p>
+
+    <form id="listForm" method="get" th:action="@{/lecture/completionList}">
+        <input type="hidden" id="pageIndex" name="pageIndex" th:value="${pageIndex}">
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <select name="lectureId" class="krds-form-select" style="width: 280px;">
+                <option value="">전체 강의</option>
+                <option th:each="lecture : ${lectureList}" th:value="${lecture['lectureId']}"
+                        th:selected="${lectureId == lecture['lectureId']}"
+                        th:text="${lecture['title']}"></option>
+            </select>
+            <input type="text" name="searchKeyword" class="krds-input" style="flex: 1;"
+                   placeholder="사용자ID·이름·강의명 검색" th:value="${searchKeyword}">
+            <button type="submit" class="krds-btn medium secondary"
+                    onclick="document.getElementById('pageIndex').value=1;">검색</button>
+        </div>
+    </form>
+
+    <div class="krds-table-wrap">
+        <table class="tbl col data">
+            <caption>수료 현황</caption>
+            <colgroup>
+                <col style="width: 24%;">
+                <col style="width: 14%;">
+                <col style="width: 14%;">
+                <col style="width: 9%;">
+                <col style="width: 12%;">
+                <col style="width: 9%;">
+                <col>
+            </colgroup>
+            <thead>
+            <tr>
+                <th scope="col">강의</th>
+                <th scope="col">사용자</th>
+                <th scope="col">진도</th>
+                <th scope="col">영상</th>
+                <th scope="col">설문</th>
+                <th scope="col">수료</th>
+                <th scope="col">수료일</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${resultList}">
+                <td th:text="${item['title']}"></td>
+                <td>
+                    <div th:text="${item['userNm'] != null ? item['userNm'] : item['userId']}"></div>
+                    <div th:text="${item['userId']}" style="font-size: 12px; color: #888;"></div>
+                </td>
+                <td th:text="${item['percent']} + '%'"></td>
+                <td th:text="${item['videoCompletedYn'] == 'Y' ? '완료' : '미완료'}"></td>
+                <td>
+                    <span th:if="${item['surveyTitle'] == null}" style="color: #888;">없음</span>
+                    <span th:if="${item['surveyTitle'] != null}"
+                          th:text="${item['surveyParticipatedYn'] == 'Y' ? '참여 완료' : '미참여'}"
+                          th:style="${item['surveyParticipatedYn'] == 'Y'} ? 'color: #15803d;' : 'color: #b45309;'"></span>
+                </td>
+                <td>
+                    <span th:if="${item['completedYn'] == 'Y'}" style="color: #15803d; font-weight: 600;">수료</span>
+                    <span th:if="${item['completedYn'] == 'N'}" style="color: #888;">미수료</span>
+                </td>
+                <td>
+                    <span th:if="${item['completedDt'] != null}"
+                          th:text="${#dates.format(item['completedDt'], 'yyyy-MM-dd HH:mm')}"></span>
+                    <span th:if="${item['completedDt'] == null}" style="color: #888;">-</span>
+                </td>
+            </tr>
+            <tr th:if="${resultList == null or resultList.isEmpty()}">
+                <td colspan="7">조회된 수료 현황이 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="paging" class="krds-pagination w-page"
+         th:utext="${#egovKrdsPaginationRenderer.renderPagination(paginationInfo, 'completionPaging')}"></div>
+    <script>
+        function completionPaging(pageIndex) {
+            document.getElementById('pageIndex').value = pageIndex;
+            document.getElementById('listForm').submit();
+        }
+    </script>
+</div>
+</body>
+</html>

@@ -30,17 +30,20 @@
         </div>
 
         <h3 class="heading-small" style="margin-top: 16px;">답변<div th:replace="~{cmm/doubleSubmit :: badge}"></div></h3>
+        <p th:if="${detail['askType'] == 'INTERNAL'}" style="color:#555;">내부 질문입니다. 로그인 사용자에게만 공개됩니다.</p>
         <div th:if="${answer != null}">
             <p th:text="${answer['answerContent']}" style="white-space: pre-wrap; border: 1px solid #ddd; border-radius: 8px; padding: 8px 12px;"></p>
         </div>
         <p th:if="${answer == null}">등록된 답변이 없습니다.</p>
-        <!-- 1단계 제약: 답변 권한 미분리. 2단계 권한관리에서 관리자만 보이게 분리 예정. -->
-        <input type="hidden" id="answerToken" name="egovframework.double.submit.preventer.parameter.name" th:value="${answerToken}">
-        <div class="form-group" style="margin-top: 8px;">
-            <div class="form-conts"><textarea id="answerContent" class="krds-input" rows="6" style="width: 100%;" th:text="${answer != null ? answer['answerContent'] : ''}"></textarea></div>
-        </div>
-        <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
-            <button type="button" id="answerBtn" class="krds-btn medium primary" onclick="fnSaveAnswer()">답변저장</button>
+        <p th:if="${!canAnswer}" style="color:#555;">답변은 관리자만 등록할 수 있습니다.</p>
+        <div th:if="${canAnswer}">
+            <input type="hidden" id="answerToken" name="egovframework.double.submit.preventer.parameter.name" th:value="${answerToken}">
+            <div class="form-group" style="margin-top: 8px;">
+                <div class="form-conts"><textarea id="answerContent" class="krds-input" rows="6" style="width: 100%;" th:text="${answer != null ? answer['answerContent'] : ''}"></textarea></div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+                <button type="button" id="answerBtn" class="krds-btn medium primary" onclick="fnSaveAnswer()">답변저장</button>
+            </div>
         </div>
     </div>
     <div style="margin-top: 12px;">

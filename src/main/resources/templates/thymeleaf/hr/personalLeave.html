@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>개인연차</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">개인연차</h2>
+
+    <form method="get" th:action="@{/hr/personalLeave}">
+        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+            <select name="userId" class="krds-form-select" style="width: 260px;">
+                <option value="">사용자 선택</option>
+                <option th:each="user : ${userList}" th:value="${user['userId']}"
+                        th:text="${user['userNm']} + ' (' + ${user['userId']} + ')'"
+                        th:selected="${userId == user['userId']}"></option>
+            </select>
+            <input type="number" name="leaveYear" class="krds-input" style="width: 110px;"
+                   min="2000" max="2100" th:value="${leaveYear}">
+            <button type="submit" class="krds-btn medium secondary">조회</button>
+        </div>
+    </form>
+
+    <div th:if="${selectedUser == null}" style="color: #666; margin-bottom: 16px;">
+        사용자를 선택하면 연차 현황·휴가 신청·당직 내역을 함께 조회합니다.
+    </div>
+
+    <div th:if="${selectedUser != null}">
+        <input type="hidden" id="selectedUserId" th:value="${selectedUser['userId']}">
+        <input type="hidden" id="selectedLeaveYear" th:value="${leaveYear}">
+        <h3 class="heading-medium" th:text="${selectedUser['userNm']} + ' (' + ${selectedUser['userId']} + ')'"></h3>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 12px; align-items: center;">
+            <span>총 연차</span>
+            <input type="number" id="totalDays" class="krds-input" style="width: 120px;"
+                   min="0" max="999.9" step="0.5"
+                   th:value="${balance != null ? balance['totalDays'] : 0}">
+            <button type="button" class="krds-btn medium primary" onclick="fnSaveBalance()">연차 부여·수정</button>
+            <span style="font-size: 12px; color: #666;">이미 사용한 일수보다 적게는 부여할 수 없습니다.</span>
+        </div>
+
+        <div class="krds-table-wrap" style="margin-bottom: 20px;">
+            <table class="tbl col data">
+                <caption>연차 현황</caption>
+                <thead>
+                <tr>
+                    <th scope="col">연도</th>
+                    <th scope="col">총 연차</th>
+                    <th scope="col">사용</th>
+                    <th scope="col">잔여</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${balance != null}">
+                    <td th:text="${balance['leaveYear']}"></td>
+                    <td th:text="${#numbers.formatDecimal(balance['totalDays'], 1, 1)} + '일'"></td>
+                    <td th:text="${#numbers.formatDecimal(balance['usedDays'], 1, 1)} + '일'"></td>
+                    <td th:text="${#numbers.formatDecimal(balance['remainDays'], 1, 1)} + '일'"></td>
+                </tr>
+                <tr th:if="${balance == null}">
+                    <td colspan="4">해당 연도의 연차 정보가 없습니다. 위에서 총 연차를 부여하세요.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="heading-medium">휴가 신청 내역</h3>
+        <div class="krds-table-wrap" style="margin-bottom: 20px;">
+            <table class="tbl col data">
+                <caption>휴가 신청 내역</caption>
+                <colgroup>
+                    <col style="width: 22%;">
+                    <col style="width: 12%;">
+                    <col style="width: 10%;">
+                    <col style="width: 14%;">
+                    <col>
+                </colgroup>
+                <thead>
+                <tr>
+                    <th scope="col">기간</th>
+                    <th scope="col">유형</th>
+                    <th scope="col">일수</th>
+                    <th scope="col">상태</th>
+                    <th scope="col">사유</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${leaveList}">
+                    <td th:text="${item['startDe']} + ' ~ ' + ${item['endDe']}"></td>
+                    <td th:text="${item['leaveType'] == 'HALF_AM' ? '오전반차' : (item['leaveType'] == 'HALF_PM' ? '오후반차' : '연차')}"></td>
+                    <td th:text="${#numbers.formatDecimal(item['days'], 1, 1)} + '일'"></td>
+                    <td th:switch="${item['status']}">
+                        <span th:case="'REQUESTED'">신청중</span>
+                        <span th:case="'APPROVED'">승인</span>
+                        <span th:case="'REJECTED'">반려</span>
+                        <span th:case="*">취소</span>
+                    </td>
+                    <td th:text="${item['reason']}"></td>
+                </tr>
+                <tr th:if="${leaveList == null or leaveList.isEmpty()}">
+                    <td colspan="5">해당 연도의 휴가 신청이 없습니다.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="heading-medium">당직 내역</h3>
+        <div class="krds-table-wrap">
+            <table class="tbl col data">
+                <caption>당직 내역</caption>
+                <colgroup>
+                    <col style="width: 20%;">
+                    <col style="width: 20%;">
+                    <col>
+                </colgroup>
+                <thead>
+                <tr>
+                    <th scope="col">당직일</th>
+                    <th scope="col">당직자</th>
+                    <th scope="col">비고</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${dutyList}">
+                    <td th:text="${item['dutyDe']}"></td>
+                    <td th:text="${item['dutyUser']}"></td>
+                    <td th:text="${item['note']}"></td>
+                </tr>
+                <tr th:if="${dutyList == null or dutyList.isEmpty()}">
+                    <td colspan="3">해당 연도의 당직 내역이 없습니다. (당직자 이름이 사용자 이름과 같은 건만 표시)</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function fnSaveBalance() {
+            var userId = $('#selectedUserId').val();
+            var leaveYear = $('#selectedLeaveYear').val();
+            var totalDays = ($('#totalDays').val() || '').trim();
+            if (!userId) { alert('사용자를 선택하세요.'); return; }
+            if (!/^[0-9]{4}$/.test(leaveYear)) { alert('연도는 YYYY 형식이어야 합니다.'); return; }
+            if (totalDays === '') { alert('총 연차 일수를 입력하세요.'); return; }
+            $.ajax({
+                type: 'post',
+                url: '/hr/savePersonalLeave.json',
+                data: { userId: userId, leaveYear: leaveYear, totalDays: totalDays },
+                success: function(res) {
+                    if (res.success) { location.reload(); }
+                    else { alert(res.message || '저장에 실패했습니다.'); }
+                },
+                error: function() { alert('저장 중 오류가 발생했습니다.'); }
+            });
+        }
+    </script>
+</div>
+</body>
+</html>

@@ -59,6 +59,7 @@
                 <td>
                     <button type="button" class="krds-btn xsmall secondary" th:attr="data-id=${item['userId']}" onclick="fnUnlock(this)">잠금해제</button>
                     <button type="button" class="krds-btn xsmall secondary" th:attr="data-id=${item['userId']}" onclick="fnResetPw(this)">비번초기화</button>
+                    <button type="button" class="krds-btn xsmall secondary" th:attr="data-id=${item['userId']}" onclick="fnResetTotp(this)">2FA초기화</button>
                 </td>
             </tr>
             <tr th:if="${resultList == null or resultList.isEmpty()}">
@@ -81,6 +82,19 @@
             data: { userId: btn.getAttribute('data-id') },
             success: function(res) {
                 if (res.success) { location.reload(); }
+                else { alert(res.message || '처리에 실패했습니다.'); }
+            },
+            error: function() { alert('처리 중 오류가 발생했습니다.'); }
+        });
+    }
+    function fnResetTotp(btn) {
+        if (!confirm('2단계 인증을 초기화합니다. 사용자는 다음 로그인에서 다시 설정해야 합니다. 계속하시겠습니까?')) { return; }
+        $.ajax({
+            type: 'post',
+            url: '/auth/resetTotp.json',
+            data: { userId: btn.getAttribute('data-id') },
+            success: function(res) {
+                if (res.success) { alert('2단계 인증이 초기화되었습니다.'); location.reload(); }
                 else { alert(res.message || '처리에 실패했습니다.'); }
             },
             error: function() { alert('처리 중 오류가 발생했습니다.'); }

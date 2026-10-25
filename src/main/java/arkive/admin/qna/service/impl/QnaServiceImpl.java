@@ -6,9 +6,12 @@ import java.util.List;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import arkive.admin.comm.web.KoreanSearchUtil;
 import arkive.admin.qna.service.QnaService;
+import arkive.admin.search.event.SearchIndexEvent;
 import jakarta.annotation.Resource;
 
 /**
@@ -19,6 +22,9 @@ public class QnaServiceImpl extends EgovAbstractServiceImpl implements QnaServic
 
 	@Resource(name = "qnaMapper")
 	private QnaMapper qnaMapper;
+
+	@Resource
+	private ApplicationEventPublisher eventPublisher;
 
 	@Override
 	public List<EgovMap> selectQnaList(EgovMap egovMap) throws Exception {
@@ -46,17 +52,39 @@ public class QnaServiceImpl extends EgovAbstractServiceImpl implements QnaServic
 
 	@Override
 	public void insertQna(EgovMap egovMap) throws Exception {
+		updateChosung(egovMap);
 		qnaMapper.insertQna(egovMap);
+		publishIndex(String.valueOf(egovMap.get("boardId")));
 	}
 
 	@Override
 	public void updateQna(EgovMap egovMap) throws Exception {
+		updateChosung(egovMap);
 		qnaMapper.updateQna(egovMap);
+		publishIndex(String.valueOf(egovMap.get("boardId")));
+	}
+
+	private void updateChosung(EgovMap egovMap) {
+		Object title = egovMap.get("title");
+		egovMap.put("searchChosung", KoreanSearchUtil.toChosung(title == null ? "" : String.valueOf(title)));
 	}
 
 	@Override
 	public void deleteQna(String boardId) throws Exception {
 		qnaMapper.deleteQna(boardId);
+		publishDeleteIndex(boardId);
+	}
+
+	private void publishIndex(String boardId) {
+		if (eventPublisher != null && boardId != null && !"null".equals(boardId)) {
+			eventPublisher.publishEvent(SearchIndexEvent.index(boardId));
+		}
+	}
+
+	private void publishDeleteIndex(String boardId) {
+		if (eventPublisher != null && boardId != null && !"null".equals(boardId)) {
+			eventPublisher.publishEvent(SearchIndexEvent.delete(boardId));
+		}
 	}
 
 	@Override

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <meta charset="utf-8">
+    <title>통계</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2 class="heading-large">통계</h2>
+    <p style="color:#555;">감사 로그 기준의 접속·로그인·다운로드 현황과 게시판 건수입니다.</p>
+
+    <form method="get" th:action="@{/stats/statsList}" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
+        <input type="date" name="startDate" class="krds-input" style="width:160px;" th:value="${startDate}">
+        <input type="date" name="endDate" class="krds-input" style="width:160px;" th:value="${endDate}">
+        <button type="submit" class="krds-btn medium secondary">조회</button>
+        <a th:href="@{/stats/downloadStatsExcel.do(startDate=${startDate},endDate=${endDate})}" class="krds-btn medium primary">엑셀</a>
+    </form>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <section>
+            <h3 class="heading-small">게시판 건수</h3>
+            <table class="tbl col data">
+                <thead><tr><th>게시판</th><th>건수</th></tr></thead>
+                <tbody>
+                <tr th:each="item : ${boardStats}">
+                    <td th:text="${item['boardType']}"></td>
+                    <td th:text="${item['cnt']}"></td>
+                </tr>
+                <tr th:if="${boardStats == null or boardStats.isEmpty()}"><td colspan="2">데이터 없음</td></tr>
+                </tbody>
+            </table>
+        </section>
+        <section>
+            <h3 class="heading-small">이벤트 건수</h3>
+            <table class="tbl col data">
+                <thead><tr><th>이벤트</th><th>건수</th></tr></thead>
+                <tbody>
+                <tr th:each="item : ${eventStats}">
+                    <td th:text="${item['eventType']}"></td>
+                    <td th:text="${item['cnt']}"></td>
+                </tr>
+                <tr th:if="${eventStats == null or eventStats.isEmpty()}"><td colspan="2">데이터 없음</td></tr>
+                </tbody>
+            </table>
+        </section>
+        <section>
+            <h3 class="heading-small">일별 로그인</h3>
+            <table class="tbl col data">
+                <thead><tr><th>일자</th><th>건수</th></tr></thead>
+                <tbody>
+                <tr th:each="item : ${dailyLoginStats}">
+                    <td th:text="${item['statDate'] != null ? #dates.format(item['statDate'], 'yyyy-MM-dd') : ''}"></td>
+                    <td th:text="${item['cnt']}"></td>
+                </tr>
+                <tr th:if="${dailyLoginStats == null or dailyLoginStats.isEmpty()}"><td colspan="2">데이터 없음</td></tr>
+                </tbody>
+            </table>
+        </section>
+        <section>
+            <h3 class="heading-small">일별 접속</h3>
+            <table class="tbl col data">
+                <thead><tr><th>일자</th><th>건수</th></tr></thead>
+                <tbody>
+                <tr th:each="item : ${dailyAccessStats}">
+                    <td th:text="${item['statDate'] != null ? #dates.format(item['statDate'], 'yyyy-MM-dd') : ''}"></td>
+                    <td th:text="${item['cnt']}"></td>
+                </tr>
+                <tr th:if="${dailyAccessStats == null or dailyAccessStats.isEmpty()}"><td colspan="2">데이터 없음</td></tr>
+                </tbody>
+            </table>
+        </section>
+        <section>
+            <h3 class="heading-small">다운로드 현황</h3>
+            <table class="tbl col data">
+                <thead><tr><th>대상</th><th>건수</th></tr></thead>
+                <tbody>
+                <tr th:each="item : ${downloadStats}">
+                    <td th:text="${item['targetType'] != null ? item['targetType'] : '-'}"></td>
+                    <td th:text="${item['cnt']}"></td>
+                </tr>
+                <tr th:if="${downloadStats == null or downloadStats.isEmpty()}"><td colspan="2">데이터 없음</td></tr>
+                </tbody>
+            </table>
+        </section>
+    </div>
+</div>
+</body>
+</html>

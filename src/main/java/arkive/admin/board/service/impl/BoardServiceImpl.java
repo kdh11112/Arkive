@@ -6,9 +6,12 @@ import java.util.List;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import arkive.admin.board.service.BoardService;
+import arkive.admin.comm.web.KoreanSearchUtil;
+import arkive.admin.search.event.SearchIndexEvent;
 import jakarta.annotation.Resource;
 
 /**
@@ -19,6 +22,9 @@ public class BoardServiceImpl extends EgovAbstractServiceImpl implements BoardSe
 
 	@Resource(name = "boardMapper")
 	private BoardMapper boardMapper;
+
+	@Resource
+	private ApplicationEventPublisher eventPublisher;
 
 	@Override
 	public List<EgovMap> selectBoardList(EgovMap egovMap) throws Exception {
@@ -58,17 +64,39 @@ public class BoardServiceImpl extends EgovAbstractServiceImpl implements BoardSe
 
 	@Override
 	public void insertBoard(EgovMap egovMap) throws Exception {
+		updateChosung(egovMap);
 		boardMapper.insertBoard(egovMap);
+		publishIndex(String.valueOf(egovMap.get("boardId")));
 	}
 
 	@Override
 	public void updateBoard(EgovMap egovMap) throws Exception {
+		updateChosung(egovMap);
 		boardMapper.updateBoard(egovMap);
+		publishIndex(String.valueOf(egovMap.get("boardId")));
+	}
+
+	private void updateChosung(EgovMap egovMap) {
+		Object title = egovMap.get("title");
+		egovMap.put("searchChosung", KoreanSearchUtil.toChosung(title == null ? "" : String.valueOf(title)));
 	}
 
 	@Override
 	public void deleteBoard(String boardId) throws Exception {
 		boardMapper.deleteBoard(boardId);
+		publishDeleteIndex(boardId);
+	}
+
+	private void publishIndex(String boardId) {
+		if (eventPublisher != null && boardId != null && !"null".equals(boardId)) {
+			eventPublisher.publishEvent(SearchIndexEvent.index(boardId));
+		}
+	}
+
+	private void publishDeleteIndex(String boardId) {
+		if (eventPublisher != null && boardId != null && !"null".equals(boardId)) {
+			eventPublisher.publishEvent(SearchIndexEvent.delete(boardId));
+		}
 	}
 
 	@Override
@@ -84,6 +112,11 @@ public class BoardServiceImpl extends EgovAbstractServiceImpl implements BoardSe
 	@Override
 	public int claimBoardMail(String boardId) throws Exception {
 		return boardMapper.claimBoardMail(boardId);
+	}
+
+	@Override
+	public int claimBoardSms(String boardId) throws Exception {
+		return boardMapper.claimBoardSms(boardId);
 	}
 
 	@Override
