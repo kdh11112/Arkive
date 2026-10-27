@@ -76,8 +76,61 @@ main 설정을 덮어쓰므로 테스트에 필요한 키만 둔다.
 | `MenuPermissionControllerTest` | 5 | 조회 전용/쓰기 역할, 역할 없음 거부, 관리자 우회, 사이드바 필터 | 중간(URL·메시지·세션) |
 | `MailServiceImplTest` | 10 | 비활성·발신자 없음, 수신 동의, 환영/재설정/공지 메일, HTML escape, 1회 선점, SMTP 실패 무시 | 낮음~중간(Mockito·메일 본문) |
 | `PasswordResetControllerTest` | 5 | 토큰 발급 조건·1회 사용·만료·입력 검증·쿨다운 | 중간(URL·메시지·DB) |
+| `BoardControllerTest` | 5 | CK/TOAST 저장·sanitize·이중등록·조회수·에디터 이미지 | 중간(URL·메시지·세션) |
+| `BoardPagingControllerTest` | — | 오프셋/커서 페이징 | 중간(URL·세션) |
+| `BoardServiceImplTest` | — | CLOB 변환·초성·색인 이벤트 | 낮음(Mockito) |
+| `BoardSseServiceTest` | 5 | 게시판 유형·ALL 채널·대상 역할 없음·미전송 | 낮음~중간(Mockito) |
+| `FileControllerTest` | 7 | temp→확정·다운로드·삭제, TUS 전체 흐름, 묶음 ZIP, 경로 이탈 | 중간(URL·세션·파일) |
+| `OpenApiDocsTest` | 2 | Swagger `/v3/api-docs` 경로·제목, `/swagger-ui` 응답 | 낮음(거의 그대로) |
+| `FaqControllerTest` | — | FAQ 초성·sanitize·이중등록·제목 누락 | 중간(URL·메시지·세션) |
+| `QnaControllerTest` | — | 관리자 답변 저장·권한·답변 폼 | 중간(URL·메시지·세션) |
+| `QnaMapperTest` | — | QNA 조회 조건 | 높음(스키마·SQL) |
+| `UserQnaControllerTest` | 6 | 익명 등록 PUBLIC 강제·sanitize·이중등록·내부글 | 중간(URL·메시지·세션) |
+| `MemoControllerTest` | — | 메모보고 상태 전이·이중등록·필수값 | 중간(URL·메시지·세션) |
+| `PopupControllerTest` | — | 팝업 게시기간·사용여부·날짜 역전·이중등록 | 중간(URL·메시지·세션) |
+| `BannerControllerTest` | — | 배너 노출위치·정렬·게시중 필터 | 중간(URL·메시지·세션) |
+| `ScheduleControllerTest` | — | 일정 유형·일자 필터·공휴일 병합·삭제 | 중간(URL·메시지·세션) |
+| `AddressControllerTest` | — | 연락처 암호화·마스킹·평문 복원·이중등록·이름 필수 | 중간(URL·암호화) |
+| `CardControllerTest` | — | 명함 공개/내 명함·사용등록·이중등록·필수값 | 중간(URL·메시지·세션) |
+| `CounselControllerTest` | — | 상담 비밀번호 확인·답변·등록·첨부 필수값 | 중간(URL·메시지·세션) |
+| `PollControllerTest` | — | POLL 세션당 1회 투표·항목 초기화·투표기간 | 중간(URL·메시지·세션) |
+| `DutyControllerTest` | — | 당직 저장·이중등록·엑셀 양식·업로드·다운로드 마스킹 | 중간(URL·엑셀) |
+| `CommCodeControllerTest` | — | 공통코드 마스터·상세·연쇄 삭제·필수값 | 중간(URL·메시지·세션) |
+| `UserManageControllerTest` | — | 사용자 관리 CRUD·기본 역할·잠금 해제·임시 비밀번호 | 중간(URL·메시지·세션) |
+| `AuditInterceptorIntegrationTest` | 4 | 인터셉터→이벤트→AUDIT_LOG 적재, PII_VIEW·PII_DOWNLOAD | 중간(세션·인터셉터) |
+| `AuditLogControllerTest` | — | 감사 로그 조회·엑셀 다운로드 | 중간(URL·세션) |
+| `AuditLogServiceTest` | — | 감사 로그 서비스·보관 정리 | 낮음(Mockito) |
+| `MaskingUtilTest` | — | 마스킹 규칙 | 낮음(거의 그대로) |
+| `FieldCryptoServiceTest` | — | AES-GCM 암복호화·키 미설정 거부·이중 암호화 방지 | 낮음(거의 그대로) |
+| `PiiFieldServiceTest` | — | PII 필드 서비스·평문 통과 | 낮음(거의 그대로) |
+| `OauthControllerTest` | — | OAuth 미지원·미설정·잘못된 state 거부 | 중간(URL·세션) |
+| `ApiControllerTest` | — | `/api/**` JWT 토큰 검증 | 낮음~중간(URL·JWT) |
+| `InternalApiControllerTest` | — | 내부 API 토큰 401·health UP·개인정보 미포함 | 낮음~중간(URL·토큰) |
+| `TotpServiceTest` | — | TOTP 설정·복구코드 1회 사용·초기화·잘못된 코드 | 낮음~중간(Mockito) |
+| `LoginTotpFlowTest` | — | 로그인 후 TOTP 요구·5회 실패 잠금 | 중간(세션·로그인) |
+| `TermsInterceptorTest` | — | 약관 미동의 시 리다이렉트 | 중간(세션·인터셉터) |
+| `TermsServiceTest` | — | 약관 버전·동의 이력 | 낮음(Mockito) |
+| `SignupControllerTest` | — | 회원가입·아이디 찾기 마스킹·비밀번호 재설정 토큰 | 중간(URL·메시지·세션) |
+| `StatsControllerTest` | — | 통계 집계·역순 기간 보정·엑셀 다운로드 | 중간(URL·세션) |
+| `AnalyticsModelAdviceTest` | — | GA4/Clarity ID 미설정·형식 오류·동의값 | 낮음(Mockito) |
+| `AligoSmsSenderTest` | — | 알리고 비활성·자격증명·LMS 전환·실패 응답 | 낮음~중간(Mockito) |
+| `SmsServiceImplTest` | — | SMS 수신 대상 필터·중복 발송 차단 | 낮음~중간(Mockito) |
+| `NiceVerifyControllerTest` | — | NICE 미설정 시 5xx, 미인증 상태 | 중간(URL·세션) |
+| `KoreanSearchUtilTest` | — | 한글 초성 검색 유틸 | 낮음(거의 그대로) |
+| `LeaveControllerTest` | — | 휴가 신청·승인·차감·환원·잔여 초과 금지 | 중간(URL·메시지·세션) |
+| `LeaveDaysCalculatorTest` | — | 평일 일수·반차 0.5일 계산 | 낮음(거의 그대로) |
+| `MeetingControllerTest` | — | 회의실 CRUD·예약 시간 중복·역전·취소 | 중간(URL·메시지·세션) |
+| `ApprovalControllerTest` | — | 약식결재 기안→상신→승인/반려·결재자 확인·이력 | 중간(URL·메시지·세션) |
+| `HrControllerTest` | — | HR 기념일·경조사·포상·개인연차 | 중간(URL·메시지·세션) |
+| `SurveyControllerTest` | — | 설문 템플릿·질문·항목·참여·통계 | 중간(URL·메시지·세션) |
+| `LectureControllerTest` | — | 강의 시청 위치·수료 판정·이어보기·스트리밍 | 중간(URL·메시지·세션) |
+| `FfmpegVideoEncodingServiceTest` | — | FFmpeg 비활성 mp4 저장·확장자/길이/크기 거부 | 낮음~중간(Mockito) |
+| `MapControllerTest` | — | 약도 CRUD·사용여부·좌표 검증·이중등록 | 중간(URL·메시지·세션) |
+| `SsoControllerTest` | — | SSO 비활성 시 404 | 중간(URL·세션) |
+| `ChatWebSocketTest` | — | WebSocket 세션·권한·Origin·이력·브로드캐스트 | 높음(WebSocket) |
+| `BatchControllerTest` | — | 일일 통계 집계·멱등 재집계·날짜·토큰 검증 | 중간(URL·메시지·세션) |
 
-합계 105개, 테스트 클래스 25개. 전체 커버리지는 instruction 16.5%, branch 15.0%, line 17.4% (2026-10-24 `verify.cmd` 기준).
+합계 314개, 테스트 클래스 78개. 전체 커버리지는 instruction ~51%, branch ~51% (2026-10-25 `verify.cmd` 기준).
 JaCoCo 게이트는 검증된 일부 클래스만 강제하며, 메일은 `MailServiceImpl`(branch 70%·line 80%), 게시판 알림은 `BoardNotificationEventListener`(branch 80%·line 90%), 통합검색은 `SearchServiceImpl`(branch 80%·line 90%)를 추가로 검사한다.
 
 ## 5. 실행

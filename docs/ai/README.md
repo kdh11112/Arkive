@@ -91,13 +91,13 @@
 | 1차 공통 규칙 | common 5 + portable 6. 기술·작업 방식이 바뀌면 갱신 |
 | Boot/클래식 트랙 | Boot 2종 적용됨(코드 실측). 클래식 2종은 관례 기준, 대상에서 확인 |
 | Arkive 기록 | project 9종. 복사 금지, 구현·분석 근거로 유지 |
-| 테스트 | JUnit5 105개 통과, JaCoCo 게이트는 검증된 일부 클래스만 강제, GitHub Actions `verify` 추가 |
+| 테스트 | JUnit5 314개 통과(테스트 클래스 78개), JaCoCo 게이트는 검증된 일부 클래스만 강제, GitHub Actions `verify` 추가 |
 | 3차·4차 | 도구·Runbook은 대상 프로젝트에서 필요할 때 작성 |
 
 ## 테스트 현황
 
-- 전체: 105개 테스트 통과 (`ArkiveSmokeTest`, `BoardMapperTest`, `BoardCommentControllerTest`, `BoardNoticeMapperTest`, `BoardNoticeControllerTest`, `BoardNotificationEventListenerTest`, `BoardNotificationControllerTest`, `MessageMapperTest`, `MessageControllerTest`, `HtmlSanitizerTest`, `FileTypeUtilTest`, `JwtUtilTest`, `LoginSessionRegistryTest`, `LoginSessionControllerTest`, `AuthInterceptorTest`, `ErrorResponseTest`, `PermissionMapperTest`, `RoleManageControllerTest`, `MenuPermissionControllerTest`, `SitemapControllerTest`, `SearchMapperTest`, `SearchServiceImplTest`, `SearchControllerTest`, `MailServiceImplTest`, `PasswordResetControllerTest`)
-- 커버리지: instruction 16.5%, branch 15.0%, line 17.4% (2026-10-24 `verify.cmd` 기준). 전체 19k LOC 대비 아직 낮다.
+- 전체: 314개 테스트 통과, 테스트 클래스 78개 (2026-10-25 `verify.cmd` 기준). 클래스별 상세 목록은 [test-stack-boot.md](boot/test-stack-boot.md)와 [src/test/README.md](../../src/test/README.md)를 참조한다.
+- 커버리지: instruction ~51%, branch ~51% (2026-10-25 `verify.cmd` 기준). 이전 105개 테스트(2026-10-24) 대비 대폭 개선.
 - JaCoCo `check`는 `HtmlSanitizer`, `FileTypeUtil`, `JwtUtil`, `AuthInterceptor`, `MessageController`, `MessageServiceImpl`, `BoardServiceImpl`, `MailServiceImpl`, `BoardNotificationEventListener`, `SearchServiceImpl`만 검사한다.
 - 테스트 DB는 `target/test-db`, 포트 9002를 써서 앱(9001) 실행 중에도 돈다.
 - 상세: [test-stack-boot.md](boot/test-stack-boot.md)
