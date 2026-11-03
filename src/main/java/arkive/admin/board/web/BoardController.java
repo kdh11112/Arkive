@@ -91,6 +91,17 @@ public class BoardController {
 	}
 
 	/**
+	 * 검색 범위값을 화이트리스트로 정리한다. title(기본) / content / all 외 값은 title로 떨어뜨린다.
+	 * SQL의 searchCondition 분기에 사용자 입력이 그대로 들어가지 않게 하는 방어선이다.
+	 */
+	private String normalizeSearchCondition(String raw) {
+		if ("content".equals(raw) || "all".equals(raw)) {
+			return raw;
+		}
+		return "title";
+	}
+
+	/**
 	 * CK 오프셋 목록. 근거: eGov PaginationInfo 표준(페이지당 10건·블록 10개).
 	 */
 	private void putBoardList(String boardType, int pageUnit, int pageSize, HttpServletRequest request, ModelMap model) throws Exception {
@@ -109,12 +120,15 @@ public class BoardController {
 		paginationInfo.setPageSize(pageSize);
 
 		EgovMap param = new EgovMap();
+		String searchCondition = normalizeSearchCondition(cmmUtil.convertHtml(request, "searchCondition"));
 		param.put("boardType", boardType);
 		param.put("searchKeyword", cmmUtil.convertHtml(request, "searchKeyword"));
+		param.put("searchCondition", searchCondition);
 		param.put("firstIndex", paginationInfo.getFirstRecordIndex());
 		param.put("recordCountPerPage", paginationInfo.getRecordCountPerPage());
 		model.put("boardType", boardType);
 		model.put("searchKeyword", param.get("searchKeyword"));
+		model.put("searchCondition", searchCondition);
 		model.put("pageIndex", pageIndex);
 		model.put("resultList", boardService.selectBoardList(param));
 		paginationInfo.setTotalRecordCount(boardService.selectBoardListTotCnt(param));
@@ -149,6 +163,7 @@ public class BoardController {
 		// 토스트는 커서(키셋)+더보기 방식이라 첫 화면은 껍데기만 내려보내고 목록은 toastList.json으로 채운다.
 		model.put("boardType", "TOAST");
 		model.put("searchKeyword", cmmUtil.convertHtml(request, "searchKeyword"));
+		model.put("searchCondition", normalizeSearchCondition(cmmUtil.convertHtml(request, "searchCondition")));
 		return "board/boardList";
 	}
 
@@ -167,6 +182,7 @@ public class BoardController {
 			EgovMap param = new EgovMap();
 			param.put("boardType", "TOAST");
 			param.put("searchKeyword", cmmUtil.convertHtml(request, "searchKeyword"));
+			param.put("searchCondition", normalizeSearchCondition(cmmUtil.convertHtml(request, "searchCondition")));
 			param.put("cursorId", cmmUtil.convertHtml(request, "cursorId"));
 			param.put("limit", pageSize + 1);
 			List<EgovMap> rows = boardService.selectBoardListByCursor(param);
@@ -318,6 +334,9 @@ public class BoardController {
 			param.put("content", htmlSanitizer.sanitizeBoardContent(content));
 			String grpid = cmmUtil.convertHtml(request, "atchFileGrpid");
 			// 글 첨부는 사용하지 않는다. 에디터 본문 이미지는 editorImageUpload.json으로 별도 저장된다.
+			// 업로드 기능(멀티파트·TUS·드롭존)은 시스템 > 업로드 메뉴에서 따로 사용한다.
+			// (/system/multipartUpload, /system/tusUpload, /system/dropzoneUpload)
+			// 이 게시판 화면에서는 에디터 업로드만 사용하므로 글 첨부 그룹을 만들지 않는다.
 			// 빈 값이면 그룹을 만들지 않고 NULL로 둔다.
 			if (grpid == null || grpid.isEmpty() || "undefined".equalsIgnoreCase(grpid) || "null".equalsIgnoreCase(grpid)) {
 				grpid = null;

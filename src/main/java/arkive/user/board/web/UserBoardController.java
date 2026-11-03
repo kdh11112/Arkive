@@ -53,6 +53,17 @@ public class UserBoardController {
 		return viewed;
 	}
 
+	/**
+	 * 검색 범위값을 화이트리스트로 정리한다. title(기본) / content / all 외 값은 title로 떨어뜨린다.
+	 * 내부 BoardController와 같은 규칙을 쓴다.
+	 */
+	private String normalizeSearchCondition(String raw) {
+		if ("content".equals(raw) || "all".equals(raw)) {
+			return raw;
+		}
+		return "title";
+	}
+
 	private void putNoticeList(int pageUnit, int pageSize, HttpServletRequest request, ModelMap model) throws Exception {
 		int pageIndex = 1;
 		try {
@@ -69,11 +80,14 @@ public class UserBoardController {
 		paginationInfo.setPageSize(pageSize);
 
 		EgovMap param = new EgovMap();
+		String searchCondition = normalizeSearchCondition(cmmUtil.convertHtml(request, "searchCondition"));
 		param.put("boardType", "CK");
 		param.put("searchKeyword", cmmUtil.convertHtml(request, "searchKeyword"));
+		param.put("searchCondition", searchCondition);
 		param.put("firstIndex", paginationInfo.getFirstRecordIndex());
 		param.put("recordCountPerPage", paginationInfo.getRecordCountPerPage());
 		model.put("searchKeyword", param.get("searchKeyword"));
+		model.put("searchCondition", searchCondition);
 		model.put("pageIndex", pageIndex);
 		model.put("resultList", boardService.selectBoardList(param));
 		paginationInfo.setTotalRecordCount(boardService.selectBoardListTotCnt(param));
@@ -97,6 +111,7 @@ public class UserBoardController {
 	@RequestMapping(value = "/archiveList", method = { RequestMethod.GET, RequestMethod.POST })
 	public String archiveList(HttpServletRequest request, ModelMap model) throws Exception {
 		model.put("searchKeyword", cmmUtil.convertHtml(request, "searchKeyword"));
+		model.put("searchCondition", normalizeSearchCondition(cmmUtil.convertHtml(request, "searchCondition")));
 		return "user/board/archiveList";
 	}
 
