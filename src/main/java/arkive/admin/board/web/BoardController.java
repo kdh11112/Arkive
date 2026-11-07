@@ -1,5 +1,7 @@
 package arkive.admin.board.web;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -261,6 +263,7 @@ public class BoardController {
 		if (detail != null && boardId != null && !boardId.isEmpty()
 				&& BoardViewTracker.markIfDue(request, response, boardId)) {
 			boardService.updateViewCnt(boardId);
+			boardService.insertViewLog(boardId, String.valueOf(detail.get("boardType")));
 		}
 		model.put("detail", detail);
 		if (detail != null) {
@@ -277,6 +280,48 @@ public class BoardController {
 			model.put("fileList", fileService.getFileInfoList(String.valueOf(detail.get("atchFileGrpid"))));
 		}
 		return "board/boardDetail";
+	}
+
+	@Operation(summary = "게시판 조회수 통계 (최근 14일 그래프 + 숫자 표)")
+	@RequestMapping(value = "/viewStats", method = RequestMethod.GET)
+	public String viewStats(ModelMap model) throws Exception {
+		// 일별 추이: 최근 14일. 조회가 없던 날짜는 0으로 채워 그래프 간격이 비지 않게 한다.
+		int days = 14;
+		LocalDate from = LocalDate.now().minusDays(days - 1L);
+		Map<LocalDate, Long> byDate = new HashMap<>();
+		for (EgovMap row : boardService.selectDailyViewStats(java.sql.Date.valueOf(from))) {
+			LocalDate date = toViewDate(row.get("viewDate"));
+			Object count = row.get("viewCount");
+			if (date != null && count instanceof Number) {
+				byDate.put(date, ((Number) count).longValue());
+			}
+		}
+
+		DateTimeFormatter labelFormat = DateTimeFormatter.ofPattern("MM-dd");
+		List<EgovMap> dailyStats = new ArrayList<>();
+		long total = 0L;
+		long max = 0L;
+		for (int i = 0; i < days; i++) {
+			LocalDate date = from.plusDays(i);
+			long count = byDate.getOrDefault(date, 0L);
+			total += count;
+			max = Math.max(max, count);
+			EgovMap point = new EgovMap();
+			point.put("label", date.format(labelFormat));
+			point.put("count", count);
+			dailyStats.add(point);
+		}
+		// 막대 높이는 최대값을 먼저 구한 뒤 계산한다.
+		for (EgovMap point : dailyStats) {
+			long count = ((Number) point.get("count")).longValue();
+			point.put("heightPct", max == 0L ? 0L : Math.round(count * 100.0 / max));
+		}
+
+		model.put("dailyStats", dailyStats);
+		model.put("dailyTotal", total);
+		model.put("dailyMax", max);
+		model.put("boardRank", boardService.selectBoardViewRank(10));
+		return "board/boardViewStats";
 	}
 
 	@Operation(summary = "게시글 등록 (제목 필수, 본문 HTML 그대로 저장)")
@@ -503,6 +548,22 @@ public class BoardController {
 		}
 		Object user = session.getAttribute(LoginController.SESSION_KEY);
 		return user instanceof EgovMap ? (EgovMap) user : null;
+	}
+
+	/**
+	 * 일별 통계의 날짜 값을 LocalDate로 바꾼다. DB 제품에 따라 Date/LocalDate로 온다.
+	 */
+	private LocalDate toViewDate(Object value) {
+		if (value instanceof LocalDate) {
+			return (LocalDate) value;
+		}
+		if (value instanceof java.sql.Date) {
+			return ((java.sql.Date) value).toLocalDate();
+		}
+		if (value instanceof java.util.Date) {
+			return new java.sql.Date(((java.util.Date) value).getTime()).toLocalDate();
+		}
+		return null;
 	}
 
 	/**

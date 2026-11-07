@@ -105,6 +105,32 @@ public class BoardServiceImpl extends EgovAbstractServiceImpl implements BoardSe
 	}
 
 	@Override
+	public void insertViewLog(String boardId, String boardType) throws Exception {
+		if (boardId == null || boardId.isEmpty()) {
+			return;
+		}
+		EgovMap param = new EgovMap();
+		param.put("logId", "BV" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 20));
+		param.put("boardId", boardId);
+		param.put("boardType", boardType == null ? "" : boardType);
+		boardMapper.insertViewLog(param);
+	}
+
+	@Override
+	public List<EgovMap> selectDailyViewStats(java.util.Date fromDate) throws Exception {
+		EgovMap param = new EgovMap();
+		param.put("fromDate", fromDate);
+		return boardMapper.selectDailyViewStats(param);
+	}
+
+	@Override
+	public List<EgovMap> selectBoardViewRank(int rowLimit) throws Exception {
+		EgovMap param = new EgovMap();
+		param.put("rowLimit", rowLimit);
+		return boardMapper.selectBoardViewRank(param);
+	}
+
+	@Override
 	public int countContentRef(String fileId) throws Exception {
 		if (fileId == null || fileId.isEmpty()) {
 			return 0;

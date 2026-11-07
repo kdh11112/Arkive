@@ -30,7 +30,7 @@
 ## 확인된 연결·초기화 설정 (Arkive 예시)
 
 - `application.properties`는 `Globals.DbType=hsql_server`와 `Globals.hsql_server.Port=9001`을 설정한다. `EgovConfigDatasource.java`는 이 값에서 `./data/ArkiveDB` 파일 HSQLDB 서버를 시작한다. 테스트는 `application-test.properties`에서 경로 `target/test-db`, 포트 9002로 분리한다.
-- 기본 설정은 `spring.sql.init.mode=never`이며 스키마를 `db/versions/`의 `V*__*.sql`로 관리한다. 현재 파일은 V1(baseline), V2(댓글), V3(쪽지), V4(공지 고정), V5(권한), V6(메일·재설정), V7(2단계 Q&A 구분·감사 로그), V8(휴가), V9(TOTP), V10(약관), V11(초성 검색), V12(SMS 동의), V13(회의실), V14(약식결재), V15(연락처 컬럼 확장), V16(설문), V17(SMS 발송 상태), V18(HR), V30(강의), V31(약도), V32(채팅), V33(배치 집계), V34(사용자 휴대전화 암호화 컬럼 확장)이다. V19~V29는 없다. 빈 DB에서 시작기가 번호 순서로 적용하고 `SCHEMA_MIGRATION`에 버전별로 기록한다.
+- 기본 설정은 `spring.sql.init.mode=never`이며 스키마를 `db/versions/`의 `V*__*.sql`로 관리한다. 현재 파일은 V1(baseline), V2(댓글), V3(쪽지), V4(공지 고정), V5(권한), V6(메일·재설정), V7(2단계 Q&A 구분·감사 로그), V8(휴가), V9(TOTP), V10(약관), V11(초성 검색), V12(SMS 동의), V13(회의실), V14(약식결재), V15(연락처 컬럼 확장), V16(설문), V17(SMS 발송 상태), V18(HR), V30(강의), V31(약도), V32(채팅), V33(배치 집계), V34(사용자 휴대전화 암호화 컬럼 확장), V35(게시판 조회 로그·조회수 통계 메뉴)이다. V19~V29는 없다. 빈 DB에서 시작기가 번호 순서로 적용하고 `SCHEMA_MIGRATION`에 버전별로 기록한다.
 - 2026-10-11에 구 체인(V1,V2,V6~V29)을 최종 상태로 합쳐 단일 V1으로 교체했다. 구 버전 이력이 남은 DB에서는 새 V1이 스킵되므로 `data/`를 지우고 시작해야 한다. 2026-10-22에 V2(댓글)·V3(쪽지), 2026-10-23에 V4(공지 고정)·V5(권한)·V6(메일·재설정 토큰), 2026-10-24에 V8(휴가관리)을 추가했다. 현재 저장소에는 2단계 V7·V9~V12와 3단계 V13~V18·V30~V33이 더 있으며, 이후 변경은 V34부터 새 버전으로 추가한다 (적용된 SQL 수정 금지). 3단계 SQL은 파일만 확인했고 실제 적용·검증은 하지 않았다.
 - `db/data.sql`은 시작 마이그레이션이 아니다. `DBJob` 덤프의 대상 파일명 표시용(143바이트 주석)이며 로더는 `db/versions/V*__*.sql`만 읽는다.
 - `db/baseline_schema.sql`(구 복사용 밑그림, V10 시절에서 멈춤)과 `db/sampledb.sql`(레거시, `DROP TABLE` 포함)은 2026-10-11에 삭제했다. `db/system.sql`은 저장소에 이미 없고 문서에만 남아 있던 언급이라 함께 정리했다.
@@ -93,6 +93,7 @@
 | `MAP_GUIDE`, `menu` 1행 | `db/versions/V31__map_guide.sql` | 약도(주소·위도·경도·설명). 메뉴 `ME02040200` | 3단계. 카카오 지도 키는 화면 표시용이며 비어 있으면 지도 없이 표시. 좌표 정밀도 `DECIMAL(10,7)`. `[미검증]` |
 | `CHAT_MESSAGE`, `menu` 2행 | `db/versions/V32__chat.sql` | 채팅 메시지(사용자·표시명·내용·등록일)와 커뮤니케이션 메뉴 `ME020B0000`·`ME020B0100` | 3단계. 브로드캐스트는 단일 JVM 메모리 기반이라 다중 인스턴스 공유 불가. 메시지 보존·정리 정책 미확인. `[미검증]` |
 | `STAT_DAILY`, `menu` 1행 | `db/versions/V33__batch.sql` | 일일 집계 결과(날짜·유형·키·값). 메뉴 `ME02010800`(배치관리) | 3단계. `BATCH_*` 메타데이터 테이블은 만들지 않고 `ResourcelessJobRepository` 사용. 같은 날짜 재실행 시 삭제 후 재삽입. 스케줄러·실행 이력 없음. `[미검증]` |
+| `BOARD_VIEW_LOG`, `menu` 1행 | `db/versions/V35__board_view_log.sql` | 집계된 게시판 조회 1건(`LOG_ID` PK, `BOARD_ID`, `BOARD_TYPE`, `VIEW_DT`)과 '조회수 통계' 메뉴 `ME02032000`. `(VIEW_DT, BOARD_ID)`·`(BOARD_ID, VIEW_DT)` 인덱스 2개 | 일별 추이의 원본이며 순위는 `BOARD.VIEW_CNT`를 쓴다. `VIEW_CNT`는 이 표 도입 전 누적값이라 일별 그래프에는 잡히지 않는다. 로그 보관·정리 정책 없음. `CREATE TABLE/INDEX IF NOT EXISTS`는 HSQLDB 기준이라 대상 DB 문법 확인 필요. 2026-11-07 테스트 DB·로컬 `data/ArkiveDB` 적용 확인 |
 
 - V3는 `MESSAGE`와 함께 `menu`에 `ME02080000`(쪽지관리), `ME02080100`(받은쪽지), `ME02080200`(보낸쪽지), `ME02080300`(쪽지쓰기)을 추가한다.
 - V5는 `ME02010500`(권한관리) 메뉴를 추가하고 `ROLE_ADMIN` 전체 메뉴, `ROLE_USER` 콘텐츠 메뉴 권한을 시드한다. `/system`·`/auth`는 기존 `AuthInterceptor` 정책상 `ADMIN_YN` 관리자만 접근한다.

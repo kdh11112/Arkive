@@ -57,7 +57,7 @@
 
 - 로그인 성공 시 `LoginSessionRegistry`가 사용자별 최신 세션 1개만 유지한다. 같은 계정으로 다시 로그인하면 이전 세션이 만료되며, 이 레지스트리는 단일 애플리케이션 인스턴스의 메모리 기준이다. 다중 인스턴스 운영 시 공유 세션 저장소나 스티키 세션 정책이 필요하다.
 - 일반 사용자의 메뉴 조회·쓰기는 역할(`APP_ROLE`/`APP_ROLE_MENU`)로 판단하고 `MenuPermissionInterceptor`가 서버에서 강제한다. `ADMIN_YN='Y'`는 슈퍼관리자로 통과하며 `/system`·`/auth`는 기존 정책상 관리자만 접근한다. 역할이 없는 사용자는 메뉴 접근이 거부되고, 신규 사용자는 `ROLE_USER`를 기본 배정받는다.
-- DB 스키마와 초기 데이터는 모두 `db/versions/V*__*.sql`로 관리한다. 현재 파일은 V1~V18, V30~V34이며 V19~V29는 없다. V8까지는 기존 검증 이력이 있고, 2단계 V7·V9~V12·V34와 3단계 V13~V18·V30~V33은 2026-10-24 `mvn -o test`의 테스트 DB 기동에서 적용됐다. 운영 DB 적용·데이터 이관은 확인하지 않았다. 다음 신규 변경은 V35부터 추가한다.
+- DB 스키마와 초기 데이터는 모두 `db/versions/V*__*.sql`로 관리한다. 현재 파일은 V1~V18, V30~V35이며 V19~V29는 없다. V8까지는 기존 검증 이력이 있고, 2단계 V7·V9~V12·V34와 3단계 V13~V18·V30~V33은 2026-10-24 `mvn -o test`의 테스트 DB 기동에서 적용됐다. V35는 2026-11-07 테스트 DB와 로컬 `data/ArkiveDB`에서 적용된 상태를 확인했다. 운영 DB 적용·데이터 이관은 확인하지 않았다. 다음 신규 변경은 V36부터 추가한다.
 - 메일은 `arkive.mail.enabled=false`가 기본이다. 켜려면 `MAIL_ENABLED=true`, `MAIL_FROM`, `MAIL_HOST`, `MAIL_PORT`, 인증·TLS 환경값을 설정해야 하며 값이 없으면 발송을 건너뛴다. 테스트 설정은 `arkive.mail.enabled=false`라 실제 SMTP에 연결하지 않는다.
 - 메일 발송은 `MailAsyncService`의 `mailTaskExecutor`에서 비동기로 실행된다. 환영·공지/중요글은 `APP_USER.MAIL_YN='Y'`인 사용자에게만, 비밀번호 재설정은 거래성 메일로 동의와 무관하게 이메일이 있으면 발송한다. 공지/중요글은 `BOARD.MAIL_SENT_YN`을 먼저 선점하므로 같은 글에 두 번 발송하지 않지만, 선점 후 SMTP 실패 시 자동 재시도는 없다. 게시판 저장 API는 `BoardNotificationEvent`만 발행하고, SSE·메일 발송 실패는 리스너에서 격리해 저장 응답을 실패시키지 않는다.
 - `db/system.sql`·`db/sampledb.sql`·`db/baseline_schema.sql`은 현재 저장소에 없다(2026-10-11 정리). 새 스키마 변경에는 버전 마이그레이션을 사용한다.

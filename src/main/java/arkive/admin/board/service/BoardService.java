@@ -1,5 +1,6 @@
 package arkive.admin.board.service;
 
+import java.util.Date;
 import java.util.List;
 
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
@@ -36,6 +37,15 @@ public interface BoardService {
 	 * 본문이 해당 파일을 참조하는 게시글 수. 에디터 이미지 정리 배치에서 저장된 글의 이미지를 보호한다.
 	 */
 	int countContentRef(String fileId) throws Exception;
+
+	/** 조회수 통계용 로그 1건. 집계된 조회에만 남긴다. */
+	void insertViewLog(String boardId, String boardType) throws Exception;
+
+	/** 기준일 이후 일자별 조회수(조회가 없던 날짜는 포함되지 않는다). */
+	List<EgovMap> selectDailyViewStats(Date fromDate) throws Exception;
+
+	/** 게시글별 누적 조회수 상위 목록. */
+	List<EgovMap> selectBoardViewRank(int rowLimit) throws Exception;
 
 	int claimBoardMail(String boardId) throws Exception;
 

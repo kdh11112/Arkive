@@ -122,6 +122,7 @@ public class UserBoardController {
 		if (detail != null && boardId != null && !boardId.isEmpty()
 				&& BoardViewTracker.markIfDue(request, response, boardId)) {
 			boardService.updateViewCnt(boardId);
+			boardService.insertViewLog(boardId, String.valueOf(detail.get("boardType")));
 		}
 		model.put("detail", detail);
 		if (detail != null) {

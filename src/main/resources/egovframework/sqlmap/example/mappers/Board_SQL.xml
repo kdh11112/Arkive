@@ -76,6 +76,37 @@
 	</select>
 
 	<!-- 게시판 전체 건수 (오프셋 페이징용) -->
+	<!-- 조회수 통계: 집계된 조회 1건을 남긴다. 일별 추이와 게시글별 순위의 원본이다. -->
+	<insert id="insertViewLog" parameterType="egovMap">
+		INSERT INTO BOARD_VIEW_LOG (LOG_ID, BOARD_ID, BOARD_TYPE, VIEW_DT)
+		VALUES (#{logId}, #{boardId}, #{boardType}, CURRENT_TIMESTAMP)
+	</insert>
+
+	<!-- 일자별 조회수. 기준일 이후만 모아 일자 순으로 돌려준다. -->
+	<select id="selectDailyViewStats" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			CAST(VIEW_DT AS DATE) AS VIEW_DATE,
+			COUNT(*) AS VIEW_COUNT
+		FROM BOARD_VIEW_LOG
+		WHERE VIEW_DT &gt;= #{fromDate}
+		GROUP BY CAST(VIEW_DT AS DATE)
+		ORDER BY VIEW_DATE
+	</select>
+
+	<!-- 게시글별 누적 조회수 순위. 누적값은 BOARD.VIEW_CNT를 쓴다. -->
+	<select id="selectBoardViewRank" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			BOARD_ID,
+			BOARD_TYPE,
+			TITLE,
+			VIEW_CNT,
+			REGIST_DT
+		FROM BOARD
+		WHERE BOARD_TYPE IN ('CK', 'TOAST')
+		ORDER BY VIEW_CNT DESC, REGIST_DT DESC
+		LIMIT #{rowLimit}
+	</select>
+
 	<select id="selectBoardListTotCnt" parameterType="egovMap" resultType="int">
 		SELECT COUNT(*)
 		FROM BOARD

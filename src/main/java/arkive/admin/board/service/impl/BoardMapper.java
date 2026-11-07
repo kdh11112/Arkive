@@ -33,6 +33,15 @@ public interface BoardMapper {
 
 	int countContentRef(String fileId) throws Exception;
 
+	/** 조회수 통계용 1건 기록. */
+	void insertViewLog(EgovMap egovMap) throws Exception;
+
+	/** 기준일 이후 일자별 조회수. */
+	List<EgovMap> selectDailyViewStats(EgovMap egovMap) throws Exception;
+
+	/** 게시글별 누적 조회수 상위 목록. */
+	List<EgovMap> selectBoardViewRank(EgovMap egovMap) throws Exception;
+
 	int updateNoticeYn(EgovMap egovMap) throws Exception;
 
 	int claimBoardMail(String boardId) throws Exception;

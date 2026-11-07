@@ -49,7 +49,7 @@
 | 소셜 로그인 연계 | `arkive.admin.auth.web.OauthController`, `OAUTH_LINK` | 제공자 연결·콜백·연계 (`/login/oauth`) | 미확인 |
 | NICE 본인 확인 | `NiceCheckController`(`/niceExt`), `NiceVerifyController`(`/login/nice`) | 연계·시작·콜백·상태 | 미확인 (외부 계약은 연계 명세 확인) |
 | 공통 파일 처리 | `arkive.admin.comm.web.FileController`, `FileService*`, `File_SQL.xml` | 멀티파트·TUS·드롭존 업로드, 다운로드, 삭제 (`/system`, `/file`) | 미확인 |
-| 게시판 (관리자) | `arkive.admin.board.*`, `Board_SQL.xml` | CK·토스트 목록·쓰기·상세·등록·수정·삭제·구독 (`/board`) | 미확인 |
+| 게시판 (관리자) | `arkive.admin.board.*`, `Board_SQL.xml`, `V35__board_view_log.sql` | CK·토스트 목록·쓰기·상세·등록·수정·삭제·구독·조회수 통계 (`/board`) | 미확인 (조회 로그 보관·정리 정책) |
 | 팝업·배너·카테고리·일정·POLL·상담·명함·주소록·당직·메모·FAQ·Q&A (관리자) | `arkive.admin.popup/banner/category/schedule/poll/counsel/card/address/duty/memo/faq/qna.*` | 각 `/popup`·`/banner`·`/category`·`/schedule`·`/poll`·`/counsel`·`/card`·`/address`·`/duty`·`/faq`·`/memo`·`/qna` prefix | 미확인 |
 | 외부포털 (사용자) | `arkive.user.board/faq/qna/poll/counsel/main.*` | 공지·자료·FAQ·Q&A·POLL·상담·메인 (`/user/**`) | 미확인 |
 | 샘플 기능 | `egovframework.example.sample.*`, `EgovSample_Sample_SQL.xml` | eGovFrame 샘플 CRUD 및 페이징 코드가 있음 | 샘플 코드, 업무 소유권 해당 없음 |
@@ -71,12 +71,12 @@
 
 ## 테스트 자산 현황 (2026-11-07)
 
-전체 321개 테스트, instruction 51.5% / branch 43.4% / line 52.2% (2026-11-07 `verify.cmd`와 JaCoCo report 기준). 숫자만으로 품질을 판단하지 않고 아래처럼 기능별 검증 범위와 공백을 함께 본다. 2026-11-07 전체 테스트를 실행해 모두 통과했고 클래스별 JaCoCo 게이트도 충족했다. README에서 `[일부검증]`으로 남긴 항목은 외부 계약·실장비·브라우저 저장소에 의존해 자동 테스트로 닫지 못한 기능이다.
+전체 338개 테스트, instruction 52.0% / branch 43.9% / line 52.7% (2026-11-07 `verify.cmd`와 JaCoCo report 기준). 숫자만으로 품질을 판단하지 않고 아래처럼 기능별 검증 범위와 공백을 함께 본다. 2026-11-07 전체 테스트를 실행해 모두 통과했고 클래스별 JaCoCo 게이트도 충족했다. README에서 `[일부검증]`으로 남긴 항목은 외부 계약·실장비·브라우저 저장소에 의존해 자동 테스트로 닫지 못한 기능이다.
 
 | 기능/영역 | 자동 테스트 | 검증 범위 | 남은 공백 |
 | --- | --- | --- | --- |
 | 컨텍스트·MyBatis | `ArkiveSmokeTest` 1 | 컨텍스트 로딩, SqlSessionFactory 배선 | - |
-| 게시판 CRUD·화면 | `BoardMapperTest` 4, `BoardServiceImplTest` 11, `BoardControllerTest` 5, `BoardViewCountDailyWindowTest` 6, `BoardPagingControllerTest` 2, `BoardSearchScopeControllerTest` 7 | insert/select/delete, CLOB 변환, 초성·색인 이벤트, sanitize·이중등록·에디터 이미지·첨부 삭제, 조회수 24시간 1회(세션·쿠키, 23/25시간 경계, `Max-Age=86400`·HttpOnly), 오프셋/커서 페이징, 검색 범위(title/content/all)·폴백 | HWP 복붙 브라우저 동작, 실제 화면 확인 |
+| 게시판 CRUD·화면 | `BoardMapperTest` 4, `BoardServiceImplTest` 11, `BoardControllerTest` 5, `BoardViewCountDailyWindowTest` 6, `BoardPagingControllerTest` 2, `BoardSearchScopeControllerTest` 7, `BoardViewStatsControllerTest` 3 | insert/select/delete, CLOB 변환, 초성·색인 이벤트, sanitize·이중등록·에디터 이미지·첨부 삭제, 조회수 24시간 1회(세션·쿠키, 23/25시간 경계, `Max-Age=86400`·HttpOnly), 오프셋/커서 페이징, 검색 범위(title/content/all)·폴백, 조회수 통계(14칸·막대 높이·합계·순위, 24시간 중복 시 로그 1건, 로그 없을 때 0% 렌더) | HWP 복붙 브라우저 동작, 조회 로그 보관·정리 정책 |
 | 게시글 댓글 API | `BoardCommentControllerTest` 3 | 401, 게시글/내용 검증, 작성자·관리자 삭제 | 수정·신고, 관리자 판정 범위 |
 | 공지 고정 | `BoardNoticeMapperTest` 2, `BoardNoticeControllerTest` 4 | 고정 우선 정렬·해제·CK 외 거부, 401·관리자 권한·입력 검증, 목록 템플릿 렌더링 | 페이지 경계, 다건 고정 정렬, 수동 화면 확인 |
 | 게시판 알림 이벤트·SSE | `BoardNotificationEventListenerTest` 13, `BoardNotificationControllerTest` 4, `BoardSseServiceTest` 5 | 등록 시 SSE·메일 요청 분리, CK/TOAST 메뉴 역할, 중요글 전환 시에만 메일, 채널별 실패 격리, SSE 게시판 유형·ALL 채널 전달·역할 필터 | 실제 브라우저 EventSource 구독 E2E, 실제 SMTP·SMS E2E, 이벤트 비동기 전환 |
