@@ -73,7 +73,7 @@ Arkive 레퍼런스: C:\Users\kdh\Documents\workspace-egov\Arkive
 
 ### 구현 (자동 테스트 통과 · GUI 확인 대기)
 
-- [x] 게시판 (공지사항관리·자료실관리. CK·토스트 에디터, HWP 복붙, 에디터 이미지 업로드, 검색 범위 제목/내용/제목+내용 — GIES `Board_SQL.xml`의 searchType(title/content) 참고. 내용 검색은 CONTENT 원문 LIKE라 table·style 같은 영문 태그 문자열도 걸린다) — `BoardControllerTest`로 CK/TOAST 저장·본문 sanitize·이중등록 차단·조회수 1회 증가·에디터 이미지·첨부 삭제를, `BoardPagingControllerTest`로 오프셋/커서 페이징을, `BoardServiceImplTest`로 CLOB 변환·초성·색인 이벤트를 확인했다. HWP 복붙은 브라우저 동작이라 미확인. 검색 범위(제목/내용/제목+내용)는 위 `구현 및 검증완료`로 분리했다. 글쓰기·상세·댓글·이미지 업로드·HWP 복붙 화면은 GUI 확인 전이다
+- [x] 게시판 (공지사항관리·자료실관리. CK·토스트 에디터, HWP 복붙, 에디터 이미지 업로드, 검색 범위 제목/내용/제목+내용 — GIES `Board_SQL.xml`의 searchType(title/content) 참고. 내용 검색은 CONTENT 원문 LIKE라 table·style 같은 영문 태그 문자열도 걸린다) — `BoardControllerTest`로 CK/TOAST 저장·본문 sanitize·이중등록 차단·조회수 1회 증가·에디터 이미지·첨부 삭제를, `BoardPagingControllerTest`로 오프셋/커서 페이징을, `BoardServiceImplTest`로 CLOB 변환·초성·색인 이벤트를 확인했다. HWP 복붙은 브라우저 동작이라 미확인. 검색 범위(제목/내용/제목+내용)는 위 `구현 및 검증완료`로 분리했다. 사용자 공지사항 목록·상세 화면은 2026-11-07 ego-browser로 확인했다(목록 1건 노출, 상세에서 제목·등록일·조회수·본문·이전/다음글·목록 링크 정상). 관리자 글쓰기·상세·댓글·이미지 업로드·HWP 복붙 화면은 로그인 계정이 없어 GUI 확인 전이다
 - [x] 페이징 (공지사항: 전자정부 오프셋, 자료실: 커서+더보기)
 - [x] 이전글/다음글
 - [x] 공통코드 관리 — `CommCodeControllerTest`로 마스터·상세 관리, 하위 코드 연쇄 삭제, 필수값 검증을 확인했다
@@ -152,4 +152,5 @@ Arkive 레퍼런스: C:\Users\kdh\Documents\workspace-egov\Arkive
 
 - 구획 기준: `구현 및 검증완료`는 `verify.cmd`(자동 테스트)와 ego-browser(화면) 두 축을 모두 마친 항목, `구현`은 자동 테스트만 통과하고 GUI 확인이 남은 항목, `미구현`은 착수하지 않은 항목이다. 2026-11-07 기준 첫 구획에 오른 것은 게시판 검색 범위 하나다.
 - 실행 기록: 2026-11-07 `verify.cmd` 테스트 321개 통과, 실패·오류 0, JaCoCo 기준 충족. 이전 기록: 2026-10-25 테스트 314개 통과.
+- GUI 기록(2026-11-07, ego-browser 0.6.2.7): 공지사항 목록·상세 정상, `/board/*` 관리자 화면은 로그인으로 리다이렉트되어 미확인, 사용자 자료실은 데이터가 0건이라 빈 목록 문구만 확인.
 - 2026-11-03 게시판 검색 범위(제목/내용/제목+내용)를 추가했다. 본문 검색은 CONTENT 원문 LIKE라 `table`·`style` 같은 영문 태그 문자열에 오탐이 날 수 있다(해결: 평문 컬럼 또는 DB별 `REGEXP_REPLACE`).
