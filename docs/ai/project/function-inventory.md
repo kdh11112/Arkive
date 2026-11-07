@@ -76,7 +76,7 @@
 | 기능/영역 | 자동 테스트 | 검증 범위 | 남은 공백 |
 | --- | --- | --- | --- |
 | 컨텍스트·MyBatis | `ArkiveSmokeTest` 1 | 컨텍스트 로딩, SqlSessionFactory 배선 | - |
-| 게시판 CRUD·화면 | `BoardMapperTest` 4, `BoardServiceImplTest` 11, `BoardControllerTest` 5, `BoardPagingControllerTest` 2, `BoardSearchScopeControllerTest` 7 | insert/select/delete, CLOB 변환, 초성·색인 이벤트, sanitize·이중등록·조회수 1회·에디터 이미지·첨부 삭제, 오프셋/커서 페이징, 검색 범위(title/content/all)·폴백 | HWP 복붙 브라우저 동작, 실제 화면 확인 |
+| 게시판 CRUD·화면 | `BoardMapperTest` 4, `BoardServiceImplTest` 11, `BoardControllerTest` 5, `BoardViewCountDailyWindowTest` 6, `BoardPagingControllerTest` 2, `BoardSearchScopeControllerTest` 7 | insert/select/delete, CLOB 변환, 초성·색인 이벤트, sanitize·이중등록·에디터 이미지·첨부 삭제, 조회수 24시간 1회(세션·쿠키, 23/25시간 경계, `Max-Age=86400`·HttpOnly), 오프셋/커서 페이징, 검색 범위(title/content/all)·폴백 | HWP 복붙 브라우저 동작, 실제 화면 확인 |
 | 게시글 댓글 API | `BoardCommentControllerTest` 3 | 401, 게시글/내용 검증, 작성자·관리자 삭제 | 수정·신고, 관리자 판정 범위 |
 | 공지 고정 | `BoardNoticeMapperTest` 2, `BoardNoticeControllerTest` 4 | 고정 우선 정렬·해제·CK 외 거부, 401·관리자 권한·입력 검증, 목록 템플릿 렌더링 | 페이지 경계, 다건 고정 정렬, 수동 화면 확인 |
 | 게시판 알림 이벤트·SSE | `BoardNotificationEventListenerTest` 13, `BoardNotificationControllerTest` 4, `BoardSseServiceTest` 5 | 등록 시 SSE·메일 요청 분리, CK/TOAST 메뉴 역할, 중요글 전환 시에만 메일, 채널별 실패 격리, SSE 게시판 유형·ALL 채널 전달·역할 필터 | 실제 브라우저 EventSource 구독 E2E, 실제 SMTP·SMS E2E, 이벤트 비동기 전환 |

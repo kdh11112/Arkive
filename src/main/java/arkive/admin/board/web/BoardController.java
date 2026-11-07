@@ -34,6 +34,7 @@ import arkive.admin.board.event.BoardNotificationEvent;
 import arkive.admin.board.service.BoardService;
 import arkive.admin.board.service.BoardSseService;
 import arkive.admin.comm.service.FileService;
+import arkive.admin.comm.web.BoardViewTracker;
 import arkive.admin.comm.web.CommUtil;
 import arkive.admin.comm.web.HtmlSanitizer;
 import egovframework.com.cmm.util.EgovDoubleSubmitHelper;
@@ -41,6 +42,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 /**
@@ -74,21 +76,6 @@ public class BoardController {
 	private ApplicationEventPublisher eventPublisher;
 
 	private CommUtil cmmUtil = new CommUtil();
-
-	/**
-	 * 세션에 본 글 ID 집합을 꺼낸다. 없으면 만들어 세션에 넣는다.
-	 */
-	@SuppressWarnings("unchecked")
-	private Set<String> getViewedSet(HttpServletRequest request) {
-		HttpSession session = request.getSession();
-		Object attr = session.getAttribute("viewedBoards");
-		if (attr instanceof Set) {
-			return (Set<String>) attr;
-		}
-		Set<String> viewed = new HashSet<>();
-		session.setAttribute("viewedBoards", viewed);
-		return viewed;
-	}
 
 	/**
 	 * 검색 범위값을 화이트리스트로 정리한다. title(기본) / content / all 외 값은 title로 떨어뜨린다.
@@ -260,7 +247,7 @@ public class BoardController {
 
 	@Operation(summary = "게시글 상세 (조회수 증가, 이전글/다음글 포함). boardId 파라미터로 조회한다")
 	@RequestMapping(value = "/detail", method = { RequestMethod.GET, RequestMethod.POST })
-	public String detail(HttpServletRequest request, ModelMap model) throws Exception {
+	public String detail(HttpServletRequest request, HttpServletResponse response, ModelMap model) throws Exception {
 		// 근거: 동일 BOARD_TYPE 내 REGIST_DT·BOARD_ID 기준 이전/다음 1건. 조회수는 세션 집합으로 중복 방지한다.
 		String boardId = cmmUtil.convertHtml(request, "boardId");
 		EgovMap detail = boardService.selectBoardDetail(boardId);
@@ -269,12 +256,11 @@ public class BoardController {
 				&& !"TOAST".equals(String.valueOf(detail.get("boardType")))) {
 			detail = null;
 		}
-		// 조회수 중복 방지. 세션에 본 글 ID를 모아두고 처음 볼 때만 올린다.
-		// 새로고침·뒤로가기로 뻥튀기되는 것을 막는다. (세션 만료되면 다시 센다)
-		Set<String> viewed = getViewedSet(request);
-		if (detail != null && boardId != null && !boardId.isEmpty() && !viewed.contains(boardId)) {
+		// 조회수 중복 방지. 게시글 1건은 브라우저(세션·쿠키)당 24시간에 한 번만 센다.
+		// 새로고침·뒤로가기로 뻥튀기되는 것을 막고, 24시간이 지나면 다시 센다.
+		if (detail != null && boardId != null && !boardId.isEmpty()
+				&& BoardViewTracker.markIfDue(request, response, boardId)) {
 			boardService.updateViewCnt(boardId);
-			viewed.add(boardId);
 		}
 		model.put("detail", detail);
 		if (detail != null) {

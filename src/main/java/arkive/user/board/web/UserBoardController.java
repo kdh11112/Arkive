@@ -1,8 +1,6 @@
 package arkive.user.board.web;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
@@ -15,12 +13,13 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import arkive.admin.board.service.BoardService;
 import arkive.admin.comm.service.FileService;
+import arkive.admin.comm.web.BoardViewTracker;
 import arkive.admin.comm.web.CommUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * 외부 사용자 화면. 공지사항(CK)·자료실(TOAST) 목록·상세만 제공한다. 등록·수정·삭제는 내부(관리)에서 한다.
@@ -40,18 +39,6 @@ public class UserBoardController {
 	private FileService fileService;
 
 	private CommUtil cmmUtil = new CommUtil();
-
-	@SuppressWarnings("unchecked")
-	private Set<String> getViewedSet(HttpServletRequest request) {
-		HttpSession session = request.getSession();
-		Object attr = session.getAttribute("viewedBoards");
-		if (attr instanceof Set) {
-			return (Set<String>) attr;
-		}
-		Set<String> viewed = new HashSet<>();
-		session.setAttribute("viewedBoards", viewed);
-		return viewed;
-	}
 
 	/**
 	 * 검색 범위값을 화이트리스트로 정리한다. title(기본) / content / all 외 값은 title로 떨어뜨린다.
@@ -103,8 +90,9 @@ public class UserBoardController {
 
 	@Operation(summary = "외부 공지사항 상세")
 	@RequestMapping(value = "/noticeDetail", method = { RequestMethod.GET, RequestMethod.POST })
-	public String noticeDetail(HttpServletRequest request, ModelMap model) throws Exception {
-		return detail(request, model, "CK", "user/board/noticeDetail");
+	public String noticeDetail(HttpServletRequest request, HttpServletResponse response, ModelMap model)
+			throws Exception {
+		return detail(request, response, model, "CK", "user/board/noticeDetail");
 	}
 
 	@Operation(summary = "외부 자료실 목록 껍데기 (목록은 /board/toastList.json 공용)")
@@ -117,21 +105,23 @@ public class UserBoardController {
 
 	@Operation(summary = "외부 자료실 상세")
 	@RequestMapping(value = "/archiveDetail", method = { RequestMethod.GET, RequestMethod.POST })
-	public String archiveDetail(HttpServletRequest request, ModelMap model) throws Exception {
-		return detail(request, model, "TOAST", "user/board/archiveDetail");
+	public String archiveDetail(HttpServletRequest request, HttpServletResponse response, ModelMap model)
+			throws Exception {
+		return detail(request, response, model, "TOAST", "user/board/archiveDetail");
 	}
 
-	private String detail(HttpServletRequest request, ModelMap model, String expectedType, String view) throws Exception {
+	private String detail(HttpServletRequest request, HttpServletResponse response, ModelMap model,
+			String expectedType, String view) throws Exception {
 		String boardId = cmmUtil.convertHtml(request, "boardId");
 		EgovMap detail = boardService.selectBoardDetail(boardId);
 		// 게시판 타입을 URL로 바꿔 다른 게시판(QNA/FAQ 포함)을 열람하지 못하게 한다.
 		if (detail != null && !expectedType.equals(String.valueOf(detail.get("boardType")))) {
 			detail = null;
 		}
-		Set<String> viewed = getViewedSet(request);
-		if (detail != null && boardId != null && !boardId.isEmpty() && !viewed.contains(boardId)) {
+		// 조회수는 브라우저(세션·쿠키)당 24시간에 한 번만 센다. 관리자 화면과 같은 규칙을 쓴다.
+		if (detail != null && boardId != null && !boardId.isEmpty()
+				&& BoardViewTracker.markIfDue(request, response, boardId)) {
 			boardService.updateViewCnt(boardId);
-			viewed.add(boardId);
 		}
 		model.put("detail", detail);
 		if (detail != null) {
