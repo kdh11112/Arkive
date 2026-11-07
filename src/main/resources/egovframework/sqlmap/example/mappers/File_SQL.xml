@@ -66,6 +66,21 @@
         WHERE FILE_ID = #{fileId}
     </delete>
 
+    <!-- 에디터 본문 이미지 중 보관 기간이 지난 후보를 조회한다.
+         게시글 저장 전에 업로드만 되고 버려진 파일(BOARD_EDITOR_ 그룹)을 정리 배치가 찾을 때 쓴다.
+         실제 삭제 여부는 게시글 본문 참조 여부를 함께 확인해 결정한다. -->
+    <select id="selectOldEditorFiles" parameterType="egovMap" resultType="egovMap">
+        SELECT
+            FILE_ID,
+            ATCH_FILE_GRPID,
+            FILE_PATH,
+            REG_DT
+        FROM ATCH_FILE
+        WHERE ATCH_FILE_GRPID LIKE 'BOARD_EDITOR_%'
+            AND REG_DT &lt; #{before}
+        ORDER BY REG_DT ASC
+    </select>
+
     <!-- 업로드 타입별 파일 목록 조회 -->
     <select id="selectAtchFileListByType" parameterType="string" resultType="egovMap">
         SELECT

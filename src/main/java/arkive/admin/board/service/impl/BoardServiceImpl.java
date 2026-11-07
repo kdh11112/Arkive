@@ -105,6 +105,14 @@ public class BoardServiceImpl extends EgovAbstractServiceImpl implements BoardSe
 	}
 
 	@Override
+	public int countContentRef(String fileId) throws Exception {
+		if (fileId == null || fileId.isEmpty()) {
+			return 0;
+		}
+		return boardMapper.countContentRef(fileId);
+	}
+
+	@Override
 	public int updateNoticeYn(EgovMap egovMap) throws Exception {
 		return boardMapper.updateNoticeYn(egovMap);
 	}

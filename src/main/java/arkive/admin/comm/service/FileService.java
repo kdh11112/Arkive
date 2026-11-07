@@ -1,6 +1,7 @@
 package arkive.admin.comm.service;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -36,6 +37,13 @@ public interface FileService {
 	 * @return 파일 정보 Map 목록
 	 */
 	public List<EgovMap> selectAtchFileListByType(String type);
+
+	/**
+	 * 기준 시각 이전에 등록된 에디터 본문 이미지(BOARD_EDITOR_ 그룹) 목록 조회
+	 * @param before 이 시각 이전 등록분
+	 * @return 파일 정보 Map 목록
+	 */
+	public List<EgovMap> getOldEditorFiles(Date before);
 
 	/**
 	 * 단일 파일 정보 조회 (Select)

@@ -200,6 +200,14 @@
 			AND COALESCE(SMS_SENT_YN, 'N') = 'N'
 	</update>
 
+	<!-- 본문에서 특정 파일(fileId)을 참조하는 게시글 수.
+	     에디터 이미지 정리 배치가 저장된 글의 이미지를 지우지 않도록 확인할 때 쓴다. -->
+	<select id="countContentRef" parameterType="string" resultType="int">
+		SELECT COUNT(*)
+		FROM BOARD
+		WHERE CONTENT LIKE '%downloadFileId=' || #{fileId} || '%'
+	</select>
+
 	<!-- 조회수 증가 -->
 	<update id="updateViewCnt" parameterType="string">
 		UPDATE BOARD

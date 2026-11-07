@@ -31,6 +31,8 @@ public interface BoardMapper {
 
 	void updateViewCnt(String boardId) throws Exception;
 
+	int countContentRef(String fileId) throws Exception;
+
 	int updateNoticeYn(EgovMap egovMap) throws Exception;
 
 	int claimBoardMail(String boardId) throws Exception;

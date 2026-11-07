@@ -19,6 +19,11 @@ public interface FileMapper {
 	public void setInsertAtchFile(EgovMap param);
 
 	/**
+	 * 보관 기간이 지난 에디터 본문 이미지 후보 조회
+	 */
+	public List<EgovMap> selectOldEditorFiles(EgovMap param);
+
+	/**
 	 * 단일 파일 정보 조회 (Select)
 	 */
 	public EgovMap getFileInfo(String fileId);

@@ -32,6 +32,11 @@ public interface BoardService {
 
 	int updateNoticeYn(EgovMap egovMap) throws Exception;
 
+	/**
+	 * 본문이 해당 파일을 참조하는 게시글 수. 에디터 이미지 정리 배치에서 저장된 글의 이미지를 보호한다.
+	 */
+	int countContentRef(String fileId) throws Exception;
+
 	int claimBoardMail(String boardId) throws Exception;
 
 	int claimBoardSms(String boardId) throws Exception;

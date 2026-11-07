@@ -243,6 +243,16 @@ public class FileServiceImpl extends EgovAbstractServiceImpl implements FileServ
 	}
 
 	@Override
+	public List<EgovMap> getOldEditorFiles(java.util.Date before) {
+		if (before == null) {
+			return new ArrayList<>();
+		}
+		EgovMap param = new EgovMap();
+		param.put("before", before);
+		return fileMapper.selectOldEditorFiles(param);
+	}
+
+	@Override
 	public EgovMap getFileInfo(String fileId) {
 		if (!StringUtils.hasText(fileId)) {
 			return null;

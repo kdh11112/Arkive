@@ -32,6 +32,12 @@
                 <div class="form-tit"><label for="editor">내용 (HWP에서 복사 후 Ctrl+V, 이미지는 에디터에 바로 붙여넣기)</label></div>
                 <div class="form-conts">
                     <div style="margin-bottom: 4px;"><span id="charCount">0 / 4000자</span></div>
+                    <!-- 임시저장 안내. confirm 대신 배너로 알리고 사용자가 불러오기/무시를 고른다. -->
+                    <div id="draftNotice" style="display: none; align-items: center; gap: 8px; margin-bottom: 8px; padding: 8px 12px; border: 1px solid #d5dbe3; border-radius: 6px; background: #f7f9fc; font-size: 13px; color: #333;">
+                        <span>작성 중인 임시저장본이 있습니다. <span id="draftSavedAt"></span></span>
+                        <button type="button" id="draftLoad" class="krds-btn small secondary">불러오기</button>
+                        <button type="button" id="draftDiscard" class="krds-btn small tertiary">무시</button>
+                    </div>
                     <div id="editor"></div>
                 </div>
             </div>
@@ -79,30 +85,70 @@
         $('#charCount').text(n + ' / ' + BOARD_MAX_CHARS + '자');
         return n;
     }
+    // 임시저장은 편집이 멈춘 뒤에만 한다. 화면을 열어보기만 해도 초안이 쌓이던 문제를 막는다.
+    var DRAFT_DELAY_MS = 2000;
+    var DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+    var draftTimer = null;
+    var lastDraftJson = null;
+    function currentDraft() {
+        return { title: $('#title').val() || '', content: toastEditor.getHTML() };
+    }
     function saveDraft() {
+        var d = currentDraft();
+        // 빈 화면은 초안으로 남기지 않는다.
+        if (!d.title.trim() && !plainText(d.content)) return;
+        var json = JSON.stringify(d);
+        // 직전 저장과 같으면 쓰지 않는다.
+        if (json === lastDraftJson) return;
+        lastDraftJson = json;
         try {
             localStorage.setItem(DRAFT_KEY, JSON.stringify({
-                title: $('#title').val(),
-                content: toastEditor.getHTML(),
+                title: d.title,
+                content: d.content,
                 savedAt: Date.now()
             }));
         } catch (e) { /* 저장소 full 등 무시 */ }
     }
-    function restoreDraft() {
-        try {
-            var d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
-            if (!d || (!d.title && !plainText(d.content))) return;
-            if (d.title === $('#title').val() && plainText(d.content) === plainText(toastEditor.getHTML())) return;
-            if (confirm('작성 중 임시저장본이 있습니다. 불러올까요? (' + new Date(d.savedAt).toLocaleString() + ')')) {
-                $('#title').val(d.title || '');
-                toastEditor.setHTML(d.content || '');
-            }
-        } catch (e) { /* 파손된 초안 무시 */ }
+    function scheduleSaveDraft() {
+        clearTimeout(draftTimer);
+        draftTimer = setTimeout(saveDraft, DRAFT_DELAY_MS);
     }
-    toastEditor.on('change', updateCharCount);
+    function hideDraftNotice() {
+        $('#draftNotice').hide();
+    }
+    function restoreDraft() {
+        var raw = null;
+        try { raw = localStorage.getItem(DRAFT_KEY); } catch (e) { return; }
+        if (!raw) return;
+        var d = null;
+        try { d = JSON.parse(raw); } catch (e) { d = null; }
+        // 파손된 초안·만료된 초안·빈 초안은 버린다.
+        if (!d || !d.savedAt || (Date.now() - d.savedAt) > DRAFT_TTL_MS
+            || (!d.title && !plainText(d.content))) {
+            try { localStorage.removeItem(DRAFT_KEY); } catch (e) { /* 무시 */ }
+            return;
+        }
+        if (d.title === ($('#title').val() || '') && plainText(d.content) === plainText(currentDraft().content)) return;
+        $('#draftSavedAt').text(new Date(d.savedAt).toLocaleString());
+        $('#draftLoad').off('click').on('click', function () {
+            $('#title').val(d.title || '');
+            toastEditor.setHTML(d.content || '');
+            lastDraftJson = JSON.stringify({ title: $('#title').val() || '', content: toastEditor.getHTML() });
+            hideDraftNotice();
+        });
+        $('#draftDiscard').off('click').on('click', function () {
+            try { localStorage.removeItem(DRAFT_KEY); } catch (e) { /* 무시 */ }
+            hideDraftNotice();
+        });
+        $('#draftNotice').css('display', 'flex');
+    }
+    toastEditor.on('change', function () {
+        updateCharCount();
+        scheduleSaveDraft();
+    });
+    $('#title').on('input', scheduleSaveDraft);
     restoreDraft();
     updateCharCount();
-    setInterval(saveDraft, 10000);
 
     function fnSaveBoard() {
         if (window._boardSaving) { return; }
