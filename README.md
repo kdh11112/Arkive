@@ -59,13 +59,13 @@ Arkive 레퍼런스: C:\Users\kdh\Documents\workspace-egov\Arkive
 
 설명 + 위험·주의점을 함께 적는다.
 
-검증 표기는 자동 테스트와 GUI 확인(ego-browser)을 모두 마친 `[검증완료]` 하나만 쓴다. computer-use 같은 데스크톱 자동화는 GUI 기준이 아니다.
+검증 표기는 자동 테스트와 GUI 확인(ego-browser)을 모두 마친 `[검증완료]` 하나만 쓴다. GUI 확인은 ego-browser로만 수행하며, computer-use 같은 데스크톱 자동화나 다른 브라우저 자동화로 대체하지 않는다. ego-browser가 없으면 GUI 확인은 미수행으로 남긴다.
 
 검증 순서를 바꾸기 전에 붙였던 항목별 상태 표기는 모두 제거했다. `verify.cmd`를 처음부터 다시 돌리고, 화면이 있는 기능은 ego-browser로 확인한 뒤 `[검증완료]`를 붙인다.
 
 ### 구현
 
-- [x] 게시판 (공지사항관리·자료실관리. CK·토스트 에디터, HWP 복붙, 에디터 이미지 업로드, 검색 범위 제목/내용/제목+내용 — GIES `Board_SQL.xml`의 searchType(title/content) 참고. 내용 검색은 CONTENT 원문 LIKE라 table·style 같은 영문 태그 문자열도 걸린다) — `BoardControllerTest`로 CK/TOAST 저장·본문 sanitize·이중등록 차단·조회수 1회 증가·에디터 이미지·첨부 삭제를, `BoardPagingControllerTest`로 오프셋/커서 페이징을, `BoardServiceImplTest`로 CLOB 변환·초성·색인 이벤트를 확인했다. HWP 복붙은 브라우저 동작이라 미확인. 검색 범위는 2026-11-03 추가로 아직 자동 테스트가 없다
+- [x] 게시판 (공지사항관리·자료실관리. CK·토스트 에디터, HWP 복붙, 에디터 이미지 업로드, 검색 범위 제목/내용/제목+내용 — GIES `Board_SQL.xml`의 searchType(title/content) 참고. 내용 검색은 CONTENT 원문 LIKE라 table·style 같은 영문 태그 문자열도 걸린다) — `BoardControllerTest`로 CK/TOAST 저장·본문 sanitize·이중등록 차단·조회수 1회 증가·에디터 이미지·첨부 삭제를, `BoardPagingControllerTest`로 오프셋/커서 페이징을, `BoardServiceImplTest`로 CLOB 변환·초성·색인 이벤트를 확인했다. HWP 복붙은 브라우저 동작이라 미확인. 검색 범위는 2026-11-03 추가. 2026-11-07 verify.cmd(전체 314개) 통과와 ego-browser GUI 확인(CK·TOAST·자료실에서 제목/내용 분리 검색, 콘솔 오류 없음)을 마쳤고, 검색 범위 전용 자동 테스트는 아직 없다
 - [x] 페이징 (공지사항: 전자정부 오프셋, 자료실: 커서+더보기)
 - [x] 이전글/다음글
 - [x] 공통코드 관리 — `CommCodeControllerTest`로 마스터·상세 관리, 하위 코드 연쇄 삭제, 필수값 검증을 확인했다
