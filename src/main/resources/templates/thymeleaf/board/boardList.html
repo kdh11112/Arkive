@@ -51,8 +51,9 @@
             <tr th:each="item, stat : ${resultList}">
                 <td th:text="${paginationInfo.totalRecordCount + 1 - ((pageIndex - 1) * paginationInfo.recordCountPerPage + stat.count)}"></td>
                 <td>
+                    <!-- 버튼 글자가 '고정'/'해제'만이라 데이터처럼 읽힌다. 화면 문구는 유지하고 이름을 붙인다. -->
                     <button type="button" class="krds-btn small tertiary"
-                            th:attr="data-board-id=${item['boardId']},data-notice-yn=${item['noticeYn'] == 'Y' ? 'N' : 'Y'}"
+                            th:attr="data-board-id=${item['boardId']},data-notice-yn=${item['noticeYn'] == 'Y' ? 'N' : 'Y'},aria-label=${item['noticeYn'] == 'Y' ? '공지 고정 해제' : '공지로 고정'}"
                             onclick="fnToggleNotice(this)"
                             th:text="${item['noticeYn'] == 'Y' ? '해제' : '고정'}">고정</button>
                 </td>
@@ -146,18 +147,6 @@
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
     // 상세 이동은 POST로 한다(쿼리스트링 노출 방지). arkive-common.js 전역 data-post와 같은 규칙이다.
-    function toastGoDetail(boardId) {
-        var form = document.createElement('form');
-        form.method = 'post';
-        form.action = '/board/detail';
-        var input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'boardId';
-        input.value = boardId;
-        form.appendChild(input);
-        document.body.appendChild(form);
-        form.submit();
-    }
     function toastLoad(reset) {
         if (toastLoading) return;
         toastLoading = true;
@@ -185,7 +174,8 @@
                     toastSeq++;
                     buffer.push('<tr>');
                     buffer.push('<td>' + toastSeq + '</td>');
-                    buffer.push('<td>' + (item.importantYn === 'Y' ? '<span class="krds-badge">중요</span> ' : '') + '<a href="javascript:void(0)" onclick="toastGoDetail(\'' + item.boardId + '\')">' + escapeHtml(item.title) + '</a></td>');
+                    // 실제 href를 쓰면 새 탭·링크 복사·미리보기가 동작한다.
+                    buffer.push('<td>' + (item.importantYn === 'Y' ? '<span class="krds-badge">중요</span> ' : '') + '<a href="/board/detail?boardId=' + encodeURIComponent(item.boardId) + '">' + escapeHtml(item.title) + '</a></td>');
                     buffer.push('<td>' + escapeHtml(item.registDt) + '</td>');
                     buffer.push('<td>' + item.viewCnt + '</td>');
                     buffer.push('</tr>');
