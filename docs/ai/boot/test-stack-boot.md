@@ -3,14 +3,15 @@
 > 이식 구분: 복붙 가능(Boot). 공통 테스트 팩은 파일째 복사(패키지·진입 클래스·DB 값만 변경), 기능 테스트는 기능과 함께 수정 복사한다. 절차·판단은 가이드로 읽는다.
 > 클래식(전자정부 3.x/4.x)은 [../classic/test-stack-classic.md](../classic/test-stack-classic.md)를 쓴다.
 
-## 현황 (Arkive, 2026-10-25 실측)
+## 현황 (Arkive, 2026-11-07 실측)
 
-- `src/test`에 테스트 클래스 78개, 테스트 314개가 있고 `verify.cmd`가 통과한다.
+- `src/test`에 테스트 클래스 79개, 테스트 321개가 있고 `verify.cmd`가 통과한다.
   - `ArkiveSmokeTest` 1 — 컨텍스트·MyBatis 배선
   - `BoardMapperTest` 3 — 게시판 CRUD, null content, 댓글·cascade
   - `BoardCommentControllerTest` 3 — 댓글 인증·검증·작성자/관리자 삭제
   - `BoardNoticeMapperTest` 2 — 공지 고정 정렬·해제·CK 외 거부
   - `BoardNoticeControllerTest` 4 — 공지 고정 인증·관리자 권한·입력 검증·목록 렌더링
+  - `BoardSearchScopeControllerTest` 7 — 검색 범위(title/content/all) 분리, 잘못된 값 title 폴백, CK·TOAST·사용자 공지·자료실
   - `BoardNotificationEventListenerTest` 9 — CK/TOAST SSE 역할, 메일 요청 분기, 채널별 실패 격리
   - `BoardNotificationControllerTest` 4 — 게시글 저장·수정·공지 고정 시 알림 이벤트 발행
   - `MessageMapperTest` 2 — 받은/보낸함 분리, 읽음, 소프트 삭제, 검색

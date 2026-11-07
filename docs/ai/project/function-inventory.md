@@ -69,14 +69,14 @@
 | WebSocket 채팅 | `arkive.admin.chat.*`, `Chat_SQL.xml`, `ChatWebSocketConfig`, `ChatHandshakeInterceptor`, `ChatWebSocketHandler`, `templates/thymeleaf/chat/chat.html`, `V32__chat.sql` | `/ws/chat` 세션 인증 + 채팅 메뉴 WRITE 검사, Origin 허용목록, DB 최근 100건 이력, 메시지 저장·브로드캐스트 (`/chat/chat`) | 미확인 (다중 인스턴스 브로커, 메시지 보존·신고·차단 정책, 대용량 동시 접속) |
 | Spring Batch 일일 집계 | `arkive.admin.batch.*`, `Batch_SQL.xml`, `BatchConfig`, `DailyStatsTasklet`, `DailyStatsAggregator`, `templates/thymeleaf/batch/batchList.html`, `V33__batch.sql` | `dailyStatsJob`/`dailyStatsStep` 수동 실행, `STAT_DAILY`에 게시판 건수·로그인·접속·강의 수료·설문 참여 집계, 같은 날짜 재집계 멱등 (`/batch`) | 미확인 (자동 스케줄링, 실행 이력·재시작, 대량 발송·분산 배치) |
 
-## 테스트 자산 현황 (2026-10-25)
+## 테스트 자산 현황 (2026-11-07)
 
-전체 314개 테스트, instruction 51% / branch 43% / line 52% (2026-10-25 `verify.cmd`와 JaCoCo report 기준). 숫자만으로 품질을 판단하지 않고 아래처럼 기능별 검증 범위와 공백을 함께 본다. 2026-10-25 전체 테스트를 실행해 모두 통과했고 클래스별 JaCoCo 게이트도 충족했다. README에서 `[일부검증]`으로 남긴 항목은 외부 계약·실장비·브라우저 저장소에 의존해 자동 테스트로 닫지 못한 기능이다.
+전체 321개 테스트, instruction 51.5% / branch 43.4% / line 52.2% (2026-11-07 `verify.cmd`와 JaCoCo report 기준). 숫자만으로 품질을 판단하지 않고 아래처럼 기능별 검증 범위와 공백을 함께 본다. 2026-11-07 전체 테스트를 실행해 모두 통과했고 클래스별 JaCoCo 게이트도 충족했다. README에서 `[일부검증]`으로 남긴 항목은 외부 계약·실장비·브라우저 저장소에 의존해 자동 테스트로 닫지 못한 기능이다.
 
 | 기능/영역 | 자동 테스트 | 검증 범위 | 남은 공백 |
 | --- | --- | --- | --- |
 | 컨텍스트·MyBatis | `ArkiveSmokeTest` 1 | 컨텍스트 로딩, SqlSessionFactory 배선 | - |
-| 게시판 CRUD·화면 | `BoardMapperTest` 4, `BoardServiceImplTest` 11, `BoardControllerTest` 5, `BoardPagingControllerTest` 2 | insert/select/delete, CLOB 변환, 초성·색인 이벤트, sanitize·이중등록·조회수 1회·에디터 이미지·첨부 삭제, 오프셋/커서 페이징 | HWP 복붙 브라우저 동작, 검색 조건 세부, 실제 화면 확인 |
+| 게시판 CRUD·화면 | `BoardMapperTest` 4, `BoardServiceImplTest` 11, `BoardControllerTest` 5, `BoardPagingControllerTest` 2, `BoardSearchScopeControllerTest` 7 | insert/select/delete, CLOB 변환, 초성·색인 이벤트, sanitize·이중등록·조회수 1회·에디터 이미지·첨부 삭제, 오프셋/커서 페이징, 검색 범위(title/content/all)·폴백 | HWP 복붙 브라우저 동작, 실제 화면 확인 |
 | 게시글 댓글 API | `BoardCommentControllerTest` 3 | 401, 게시글/내용 검증, 작성자·관리자 삭제 | 수정·신고, 관리자 판정 범위 |
 | 공지 고정 | `BoardNoticeMapperTest` 2, `BoardNoticeControllerTest` 4 | 고정 우선 정렬·해제·CK 외 거부, 401·관리자 권한·입력 검증, 목록 템플릿 렌더링 | 페이지 경계, 다건 고정 정렬, 수동 화면 확인 |
 | 게시판 알림 이벤트·SSE | `BoardNotificationEventListenerTest` 13, `BoardNotificationControllerTest` 4, `BoardSseServiceTest` 5 | 등록 시 SSE·메일 요청 분리, CK/TOAST 메뉴 역할, 중요글 전환 시에만 메일, 채널별 실패 격리, SSE 게시판 유형·ALL 채널 전달·역할 필터 | 실제 브라우저 EventSource 구독 E2E, 실제 SMTP·SMS E2E, 이벤트 비동기 전환 |

@@ -19,7 +19,7 @@
 		WHERE BOARD_TYPE = #{boardType}
 		<!-- 검색 범위: 제목(title, 기본) / 내용(content) / 제목+내용(all). 목록·커서·건수 쿼리가 같은 조건을 쓴다. -->
 		<!-- 주의: CONTENT는 CK·토스트 HTML 원문이다. 태그를 제거하지 않으므로 table·style 같은 영문 태그 문자열도 검색된다. -->
-		<!-- 검증 필요(2026-11-03 추가): verify.cmd 미실행. OGNL 문자열 비교와 HSQLDB LIKE 동작을 실행으로 확인해야 한다. -->
+		<!-- 검증: 2026-11-07 verify.cmd 321개 통과. BoardSearchScopeControllerTest가 범위 분리와 title 폴백을 확인한다. -->
 		<if test="searchKeyword != null and searchKeyword != ''">
 			<choose>
 				<when test="searchCondition == 'content'">
@@ -53,7 +53,7 @@
 		WHERE BOARD_TYPE = #{boardType}
 		<!-- 검색 범위: 제목(title, 기본) / 내용(content) / 제목+내용(all). 목록·커서·건수 쿼리가 같은 조건을 쓴다. -->
 		<!-- 주의: CONTENT는 CK·토스트 HTML 원문이다. 태그를 제거하지 않으므로 table·style 같은 영문 태그 문자열도 검색된다. -->
-		<!-- 검증 필요(2026-11-03 추가): verify.cmd 미실행. OGNL 문자열 비교와 HSQLDB LIKE 동작을 실행으로 확인해야 한다. -->
+		<!-- 검증: 2026-11-07 verify.cmd 321개 통과. BoardSearchScopeControllerTest가 범위 분리와 title 폴백을 확인한다. -->
 		<if test="searchKeyword != null and searchKeyword != ''">
 			<choose>
 				<when test="searchCondition == 'content'">
@@ -82,7 +82,7 @@
 		WHERE BOARD_TYPE = #{boardType}
 		<!-- 검색 범위: 제목(title, 기본) / 내용(content) / 제목+내용(all). 목록·커서·건수 쿼리가 같은 조건을 쓴다. -->
 		<!-- 주의: CONTENT는 CK·토스트 HTML 원문이다. 태그를 제거하지 않으므로 table·style 같은 영문 태그 문자열도 검색된다. -->
-		<!-- 검증 필요(2026-11-03 추가): verify.cmd 미실행. OGNL 문자열 비교와 HSQLDB LIKE 동작을 실행으로 확인해야 한다. -->
+		<!-- 검증: 2026-11-07 verify.cmd 321개 통과. BoardSearchScopeControllerTest가 범위 분리와 title 폴백을 확인한다. -->
 		<if test="searchKeyword != null and searchKeyword != ''">
 			<choose>
 				<when test="searchCondition == 'content'">

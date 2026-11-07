@@ -78,6 +78,7 @@ main 설정을 덮어쓰므로 테스트에 필요한 키만 둔다.
 | `PasswordResetControllerTest` | 5 | 토큰 발급 조건·1회 사용·만료·입력 검증·쿨다운 | 중간(URL·메시지·DB) |
 | `BoardControllerTest` | 5 | CK/TOAST 저장·sanitize·이중등록·조회수·에디터 이미지 | 중간(URL·메시지·세션) |
 | `BoardPagingControllerTest` | — | 오프셋/커서 페이징 | 중간(URL·세션) |
+| `BoardSearchScopeControllerTest` | 7 | 제목/내용/제목+내용 분리 검색, 잘못된 값 title 폴백, CK·TOAST·사용자 공지/자료실 | 중간(URL·SQL·세션) |
 | `BoardServiceImplTest` | — | CLOB 변환·초성·색인 이벤트 | 낮음(Mockito) |
 | `BoardSseServiceTest` | 5 | 게시판 유형·ALL 채널·대상 역할 없음·미전송 | 낮음~중간(Mockito) |
 | `FileControllerTest` | 7 | temp→확정·다운로드·삭제, TUS 전체 흐름, 묶음 ZIP, 경로 이탈 | 중간(URL·세션·파일) |
@@ -130,7 +131,7 @@ main 설정을 덮어쓰므로 테스트에 필요한 키만 둔다.
 | `ChatWebSocketTest` | — | WebSocket 세션·권한·Origin·이력·브로드캐스트 | 높음(WebSocket) |
 | `BatchControllerTest` | — | 일일 통계 집계·멱등 재집계·날짜·토큰 검증 | 중간(URL·메시지·세션) |
 
-합계 314개, 테스트 클래스 78개. 전체 커버리지는 instruction ~51%, branch ~51% (2026-10-25 `verify.cmd` 기준).
+합계 321개, 테스트 클래스 79개. 전체 커버리지는 instruction 51.5%, branch 43.4%, line 52.2% (2026-11-07 `verify.cmd` 기준).
 JaCoCo 게이트는 검증된 일부 클래스만 강제하며, 메일은 `MailServiceImpl`(branch 70%·line 80%), 게시판 알림은 `BoardNotificationEventListener`(branch 80%·line 90%), 통합검색은 `SearchServiceImpl`(branch 80%·line 90%)를 추가로 검사한다.
 
 ## 5. 실행

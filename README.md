@@ -65,7 +65,7 @@ Arkive 레퍼런스: C:\Users\kdh\Documents\workspace-egov\Arkive
 
 ### 구현
 
-- [x] 게시판 (공지사항관리·자료실관리. CK·토스트 에디터, HWP 복붙, 에디터 이미지 업로드, 검색 범위 제목/내용/제목+내용 — GIES `Board_SQL.xml`의 searchType(title/content) 참고. 내용 검색은 CONTENT 원문 LIKE라 table·style 같은 영문 태그 문자열도 걸린다) — `BoardControllerTest`로 CK/TOAST 저장·본문 sanitize·이중등록 차단·조회수 1회 증가·에디터 이미지·첨부 삭제를, `BoardPagingControllerTest`로 오프셋/커서 페이징을, `BoardServiceImplTest`로 CLOB 변환·초성·색인 이벤트를 확인했다. HWP 복붙은 브라우저 동작이라 미확인. 검색 범위는 2026-11-03 추가. 2026-11-07 verify.cmd(전체 314개) 통과와 ego-browser GUI 확인(CK·TOAST·자료실에서 제목/내용 분리 검색, 콘솔 오류 없음)을 마쳤고, 검색 범위 전용 자동 테스트는 아직 없다
+- [x] 게시판 (공지사항관리·자료실관리. CK·토스트 에디터, HWP 복붙, 에디터 이미지 업로드, 검색 범위 제목/내용/제목+내용 — GIES `Board_SQL.xml`의 searchType(title/content) 참고. 내용 검색은 CONTENT 원문 LIKE라 table·style 같은 영문 태그 문자열도 걸린다) — `BoardControllerTest`로 CK/TOAST 저장·본문 sanitize·이중등록 차단·조회수 1회 증가·에디터 이미지·첨부 삭제를, `BoardPagingControllerTest`로 오프셋/커서 페이징을, `BoardServiceImplTest`로 CLOB 변환·초성·색인 이벤트를 확인했다. HWP 복붙은 브라우저 동작이라 미확인. 검색 범위는 2026-11-03 추가했고, `BoardSearchScopeControllerTest`로 제목/내용/제목+내용 분리와 잘못된 값의 title 폴백을 확인했다. 2026-11-07 verify.cmd(전체 321개) 통과와 ego-browser GUI 확인(CK·TOAST·자료실에서 제목/내용 분리 검색, 콘솔 오류 없음)을 마쳤다(화면 스크린샷은 에고 창 최소화로 미확보)
 - [x] 페이징 (공지사항: 전자정부 오프셋, 자료실: 커서+더보기)
 - [x] 이전글/다음글
 - [x] 공통코드 관리 — `CommCodeControllerTest`로 마스터·상세 관리, 하위 코드 연쇄 삭제, 필수값 검증을 확인했다
@@ -143,5 +143,5 @@ Arkive 레퍼런스: C:\Users\kdh\Documents\workspace-egov\Arkive
 ## 검증
 
 - 재검증 대기: 위 항목은 구현 여부만 표시했다. 검증은 `verify.cmd`(자동 테스트) → ego-browser(화면) 순서로 다시 수행하고, 끝난 항목에만 `[검증완료]`를 붙인다.
-- 이전 실행 기록: 2026-10-25 `verify.cmd` 테스트 314개 통과, 실패·오류 0, JaCoCo 기준 충족.
+- 실행 기록: 2026-11-07 `verify.cmd` 테스트 321개 통과, 실패·오류 0, JaCoCo 기준 충족. 이전 기록: 2026-10-25 테스트 314개 통과.
 - 2026-11-03 게시판 검색 범위(제목/내용/제목+내용)를 추가했다. 본문 검색은 CONTENT 원문 LIKE라 `table`·`style` 같은 영문 태그 문자열에 오탐이 날 수 있다(해결: 평문 컬럼 또는 DB별 `REGEXP_REPLACE`).
