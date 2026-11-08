@@ -8,35 +8,65 @@
 </head>
 <body>
 <div layout:fragment="content">
+    <!-- 화면 폭 대응. 640px 이하에서는 날짜 라벨을 격일로만 보여 두 줄로 갈라지지 않게 한다.
+         막대는 14개를 그대로 두고, 마지막 날짜(오늘)는 항상 보이도록 짝수 칸을 남긴다.
+         표는 좁은 폭에서 행을 카드처럼 쌓아 모든 열을 보여주고, 그래도 넘치는 경우만 래퍼가 가로 스크롤한다. -->
+    <style>
+        .view-stats-head { display: flex; flex-wrap: wrap; gap: 8px 12px; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .view-stats-head p { margin: 0; color: #555; flex: 1 1 240px; min-width: 0; }
+        .view-stats-chart-wrap { padding: 20px 16px 8px; }
+        .view-stats-bars { display: flex; align-items: flex-end; gap: 8px; height: 240px; border-bottom: 1px solid #d1d5db; }
+        .view-stats-bar-col { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; text-align: center; }
+        .view-stats-bar-count { font-size: 11px; color: #374151; }
+        .view-stats-bar { width: 100%; background: #2563eb; border-radius: 3px 3px 0 0; min-height: 2px; }
+        .view-stats-labels { display: flex; gap: 8px; margin-top: 6px; }
+        .view-stats-labels span { flex: 1; min-width: 0; text-align: center; font-size: 11px; color: #374151; white-space: nowrap; }
+        @media (max-width: 640px) {
+            .view-stats-bars, .view-stats-labels { gap: 4px; }
+            .view-stats-labels span:nth-child(odd) { visibility: hidden; }
+            /* 일별 표는 2열이라 좁은 화면에서 최소 폭 720을 풀어도 읽힌다. */
+            .krds-table-wrap > table.view-stats-daily { min-width: 0; }
+            /* 누적 순위 표는 5열이라 좁은 화면에서 가로 스크롤이 생긴다. 행을 카드처럼 쌓아 모든 열을 한눈에 보여준다. */
+            .krds-table-wrap > table.view-stats-rank { min-width: 0; }
+            .view-stats-rank thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+            .view-stats-rank tbody { display: block; }
+            .view-stats-rank tbody tr { display: block; padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
+            .view-stats-rank tbody td { display: flex; gap: 12px; padding: 2px 0; border: 0; }
+            .view-stats-rank tbody td::before { content: attr(data-label); flex: 0 0 56px; color: #6b7280; }
+            .view-stats-rank tbody td.view-stats-rank-title { display: block; padding: 2px 0 6px; font-weight: 600; }
+            .view-stats-rank tbody td.view-stats-rank-title::before,
+            .view-stats-rank tbody td[colspan]::before { display: none; }
+        }
+    </style>
+
     <h2 class="heading-large">조회수 통계</h2>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <p style="margin: 0; color: #555;">
+    <div class="view-stats-head">
+        <p>
             최근 14일 동안 집계된 조회수입니다. 게시글 1건은 브라우저당 24시간에 한 번만 집계됩니다.
         </p>
         <a th:href="@{/board/ckeditorList}" class="krds-btn medium secondary">공지사항관리</a>
     </div>
 
     <!-- 그래프: 일별 조회수 막대. 별도 차트 라이브러리 없이 CSS 높이로 그린다. -->
-    <div class="krds-table-wrap" style="padding: 20px 16px 8px;">
-        <div style="display: flex; align-items: flex-end; gap: 8px; height: 240px; border-bottom: 1px solid #d1d5db;">
-            <div th:each="point : ${dailyStats}"
-                 style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; text-align: center;">
-                <span style="font-size: 11px; color: #374151;" th:text="${point['count']}">0</span>
-                <div th:style="'width: 100%; background: #2563eb; border-radius: 3px 3px 0 0; height: ' + ${point['heightPct']} + '%; min-height: 2px;'"
+    <div class="krds-table-wrap view-stats-chart-wrap">
+        <div class="view-stats-bars">
+            <div th:each="point : ${dailyStats}" class="view-stats-bar-col">
+                <span class="view-stats-bar-count" th:text="${point['count']}">0</span>
+                <div class="view-stats-bar"
+                     th:style="'height: ' + ${point['heightPct']} + '%;'"
                      th:title="${point['label']} + ' · ' + ${point['count']}"></div>
             </div>
         </div>
-        <div style="display: flex; gap: 8px; margin-top: 6px;">
+        <div class="view-stats-labels">
             <span th:each="point : ${dailyStats}"
-                  style="flex: 1; text-align: center; font-size: 11px; color: #374151;"
                   th:text="${point['label']}">10-25</span>
         </div>
     </div>
 
     <!-- 그래프 아래 숫자 표 -->
     <div class="krds-table-wrap" style="margin-top: 20px;">
-        <table class="tbl col data">
+        <table class="tbl col data view-stats-daily">
             <caption>일별 조회수</caption>
             <colgroup>
                 <col style="width: 40%;">
@@ -63,7 +93,7 @@
 
     <h3 class="heading-medium" style="margin-top: 28px;">게시글별 누적 조회수</h3>
     <div class="krds-table-wrap">
-        <table class="tbl col data">
+        <table class="tbl col data view-stats-rank">
             <caption>게시글별 누적 조회수</caption>
             <colgroup>
                 <col style="width: 8%;">
@@ -83,13 +113,13 @@
             </thead>
             <tbody>
             <tr th:each="item, stat : ${boardRank}">
-                <td th:text="${stat.count}">1</td>
-                <td th:text="${item['boardType'] == 'CK' ? '공지' : '자료실'}">공지</td>
-                <td>
+                <td data-label="순위" th:text="${stat.count}">1</td>
+                <td data-label="구분" th:text="${item['boardType'] == 'CK' ? '공지' : '자료실'}">공지</td>
+                <td class="view-stats-rank-title">
                     <a th:href="@{/board/detail(boardId=${item['boardId']})}" th:text="${item['title']}">제목</a>
                 </td>
-                <td th:text="${item['viewCnt']}">0</td>
-                <td th:text="${item['registDt'] != null ? #dates.format(item['registDt'], 'yyyy-MM-dd') : ''}">2026-11-07</td>
+                <td data-label="조회수" th:text="${item['viewCnt']}">0</td>
+                <td data-label="등록일" style="white-space: nowrap;" th:text="${item['registDt'] != null ? #dates.format(item['registDt'], 'yyyy-MM-dd') : ''}">2026-11-07</td>
             </tr>
             <tr th:if="${boardRank == null or boardRank.isEmpty()}">
                 <td colspan="5">게시글이 없습니다.</td>
