@@ -110,6 +110,9 @@ local.properties
 hs_err_pid*
 replay_pid*
 
+# macOS Finder metadata
+.DS_Store
+
 ### Windows ###
 # Windows thumbnail cache files
 Thumbs.db
