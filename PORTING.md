@@ -74,17 +74,19 @@ rem 또는 저장소 루트에서: java -jar target\Arkive-1.0.0.jar
 
 ```text
 Arkive 실행 → 기능 동작 확인 → 화면/JS 복사 → Controller → Service/Impl
-→ Mapper 인터페이스 → Mapper XML → db/versions SQL → 설정 키 → pom 의존성
-→ 메뉴 seed → 스펙 담당자의 별도 테스트 준비 → verify.cmd
+→ Mapper 인터페이스 → Mapper XML → schema.sql의 필요한 DDL → 설정 키 → pom 의존성
+→ seed.sql의 메뉴·역할·권한 등 필수값 → 스펙 담당자의 별도 테스트 준비 → verify.cmd
 ```
 
 1. **Arkive에서 먼저 실행한다.** 로그인·권한·정상/오류 케이스를 화면과 API로 확인한다.
 2. 화면(Thymeleaf/JSP)과 화면 전용 JavaScript를 복사한다.
 3. Controller → Service/Impl → Mapper 인터페이스 → Mapper XML 순서로 복사한다.
-4. `db/versions/V*__*.sql`에서 해당 테이블·메뉴 seed를 찾아 대상 DB 문법으로 옮긴다.
+4. `src/main/resources/db/schema.sql`에서 해당 기능의 테이블·컬럼·제약조건·인덱스를, `db/seed.sql`에서 메뉴·역할·권한 등 필요한 초기값을 골라 대상 DB 문법으로 옮긴다. 기존 DB에는 전체 CREATE/시드를 다시 실행하지 않고 대상의 승인된 갱신 절차를 따른다. 분류 기준은 [SQL 표준](docs/ai/common/sql-standard.md#db-변경을-어느-파일에-넣을지)을 참고한다.
 5. `application.properties`의 `Globals.*` 키와 `pom.xml` 의존성을 확인한다.
 6. 관련 테스트의 복사 대상·맞춤 항목을 보고한다. 스펙 담당자가 테스트를 별도 준비·승인한 뒤 제공된 테스트로 검증한다. 테스트가 없거나 준비가 끝나지 않으면 이식을 완료로 보고하지 않는다.
 7. 대상에서 `verify.cmd`를 실행하고, 화면·API·DB를 다시 확인한다.
+
+Arkive의 HSQLDB 자동 시작과 `HsqlDemoDatabaseInitializer`·`ARKIVE_DB_INIT`은 **로컬 데모 인프라**다. 기존 DB가 있는 대상에는 복사하지 않고 대상 DataSource·마이그레이션 방식을 유지한다. 빈 DB 초기화용 최신 정의는 기존 DB를 자동 업그레이드하는 SQL이 아니다. 개발용 admin과 약관 자리표시자는 실제 서비스에 그대로 가져가지 않는다.
 
 ### 3.1 테스트 준비의 책임
 
@@ -105,7 +107,7 @@ Arkive 실행 → 기능 동작 확인 → 화면/JS 복사 → Controller → S
 | 메일 설정 | `spring.mail.*`, `arkive.mail.enabled/from/base-url`, `MAIL_*` 환경변수 | 대상 SMTP·발신자·base URL. 테스트는 `arkive.mail.enabled=false` |
 | 비동기 실행 | `EgovConfigAsync`의 `mailTaskExecutor` | 대상 Executor·스레드 풀·종료 정책 |
 | 전역 오류·헬스 | `EgovConfigWeb`의 404/500 예외 매핑, `management.health.mail.enabled` | 오류 view·상태 코드 계약, 메일 헬스 활성화 여부 |
-| DB 포트 | `Globals.hsql_server.Port=9001` | `Globals.hsql_server.Url`의 포트와 일치 |
+| DB 연결·초기화 | Arkive 데모 HSQLDB 자동 시작, 빈 DB에 `schema.sql` → `seed.sql` 1회 | 기존 DB 대상은 대상 DataSource·갱신 절차 사용. 데모 서버/초기화기는 제외 |
 | 테스트 DB | `target/test-db`, 9002 | 앱 DB와 경로·포트 분리 |
 | 테스트 세션 | `LOGIN_USER`, `ADMIN_USER`, `EgovMap` | 대상 세션 키·사용자 모델 |
 | 테스트 URL·메시지 | `/board/...`, `"게시글이 없습니다."` | 대상 API 경로·응답 계약 |
@@ -127,6 +129,7 @@ verify.cmd
 - 테스트 DB는 운영 DB와 분리하고, 가능하면 대상 DB와 같은 제품으로 검증한다.
 - HSQLDB 테스트만 통과했다고 Oracle/PostgreSQL 이식을 완료했다고 말하지 않는다.
 - 화면·API·DB 확인 결과는 [evidence-report-template.md](docs/ai/portable/evidence-report-template.md)에 남긴다.
+- 화면/CSS는 13.3인치 노트북을 필수 확인하고, 그 밖의 화면은 해상도·배율·창 크기에 유동 대응하는지 확인한다. [화면 크기 판정](docs/ai/common/test-standard.md#화면-크기-확인)에서 실기기와 대체 viewport 검사를 구분한다.
 
 ## 6. 적용 트랙과 기록
 

@@ -1,6 +1,6 @@
 # 변경 영향 분석 (Arkive 기록)
 
-> 이식 구분: **Arkive 기록**. 대상 프로젝트로 복사하지 않는다. 이식용 빈 양식은 [project-template-pack.md](../portable/project-template-pack.md), 기능별 절차는 [feature-porting-sheet.md](../portable/feature-porting-sheet.md)를 쓴다.
+> **Arkive 기록 · 대상에 복사 금지.** 대상 지식은 [빈 양식](../portable/project-template-pack.md)을 쓴다.
 
 <!--
 문서 상태: 부분 미완성
@@ -19,8 +19,8 @@
 | 시스템 메뉴 Mapper/SQL | `SystemController` → `SystemService` → `SystemMapper` → `System_SQL.xml` | 메뉴 화면·AJAX 호출, 메뉴 초기 데이터와 테이블 |
 | 파일 공통 처리 | `FileController` → `FileService` / 파일 유틸 → `File_SQL.xml` 및 파일 시스템 | 업로드 유형, 다운로드·삭제 호출처, 저장 경로, DB 메타데이터, 파일 접근 보안 |
 | 공통 화면 조각/정적 자원 | Thymeleaf `layout/`, `comm/`, `static/` | 이를 포함하거나 사용하는 각 화면 |
-| DB 초기화/예약 작업 | `application.properties`, `db/*.sql`, `QuartzConfig`, `DBJob` | 시작 시 초기화 동작, DB 변경, 덤프 경로·스케줄 |
-| 메뉴 시드·사이드바 | `db/versions/V3__message.sql`, `V5__permission.sql`, `V8__leave.sql` → `menu`, `MenuInterceptor` | 신규 메뉴 ID·상위 메뉴·순서, 기존 메뉴 ID 충돌, 역할별 조회 권한 |
+| DB 초기화/예약 작업 | `EgovConfigDatasource`, `HsqlDemoDatabaseInitializer`, `application.properties`, `db/schema.sql`·`seed.sql`, `QuartzConfig`, `DBJob` | 빈 DB 최초 1회 초기화, 기존 DB 읽기 확인/인수, 부분 실패 차단, 덤프 경로·스케줄 |
+| 메뉴 시드·사이드바 | `db/seed.sql` → `MENU`·`APP_ROLE`·`APP_USER_ROLE`·`APP_ROLE_MENU`, `MenuInterceptor` | 메뉴 ID·상위·순서·역할 권한 유지, 새 메뉴의 필수 초기값과 기존 DB 갱신 구분 |
 | 메뉴 권한 | `PermissionService`/`PermissionServiceImpl`/`PermissionMapper`/`Permission_SQL.xml`, `MenuPermissionInterceptor`, `MenuInterceptor`, `RoleManageController` | 컨트롤러→메뉴 매핑, READ/WRITE 판정, 관리자 우회, 사이드바 필터, SSE 대상 역할 |
 | 로그인 세션·역할 | `LoginController`, `OauthController`, `LoginSessionRegistry`, `AuthServiceImpl`, `PermissionService` | 로그인·로그아웃·세션 만료, 중복 로그인, 사용자 삭제 시 역할 매핑 정리 |
 | 메일 발송 | `MailAsyncService` → `MailServiceImpl` → `JavaMailSender`, `EgovConfigAsync` | 로그인·OAuth·사용자관리·게시판·비밀번호 찾기 호출처, SMTP 설정·수신 동의·발송 이력, 테스트 환경 비활성 |
@@ -31,8 +31,11 @@
 
 ## 작업별 기록
 
+아래 기존 기능 행의 V번호·검증 수치는 당시 변경 이력이다. 2026-11-08 이후 현재 DDL/초기값은 `db/schema.sql`·`seed.sql`에서 찾는다.
+
 | 변경 파일/기능 | 직접 호출자 | 공통 사용처 | API/정책/권한 | DB/외부 영향 | 검증 근거 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-11-08 최신 schema/seed 초기화 (`EgovConfigDatasource`, `HsqlDemoDatabaseInitializer`, `application.properties`, `db/schema.sql`·`seed.sql`, 구 SQL 제거) | DataSource 빈 생성 → Mapper/웹/Quartz | 모든 DB 소비 기능, 로그인·메뉴·권한·약관, eGov ID 생성기 | 메뉴·역할·권한의 기존 최종값 유지, 개발용 admin, 약관 동의 미리 생성 안 함 | 빈 DB만 생성, 기존 데이터 재시드/삭제 없음. 구 체인 호환 DB 1회 인수, 부분/비호환 DB 중단. 데모 서버/상태표는 기존 DB 대상에 이식 안 함 | [전환 검증 기록](current-state-analysis.md#2026-11-08-최신-schemaseed-초기화-전환) |
 | 게시글 댓글 (`BoardController`/`BoardService`/`BoardMapper`/`Board_SQL.xml`, `V2__board_comment.sql`) | `board/boardDetail.html` 댓글 AJAX | 게시판 상세·댓글 API | 로그인 사용자 작성, 작성자/관리자 삭제 | `BOARD_COMMENT` 신규, `BOARD` 삭제 시 cascade | `BoardMapperTest`·`BoardCommentControllerTest`, `verify.cmd` 105/105 |
 | 쪽지 (`MessageController`/`MessageService`/`MessageMapper`/`Message_SQL.xml`, `V3__message.sql`) | `templates/thymeleaf/message/*` | `/message/**`, 레이아웃 메뉴 | 로그인 사용자, 발신자/수신자 본인만 열람·삭제 | `MESSAGE` 신규, `menu` 4행 | `MessageMapperTest`·`MessageControllerTest`, `verify.cmd` 105/105 |
 | 공지 고정 (`BoardController`/`BoardService`/`BoardMapper`/`Board_SQL.xml`, `V4__board_notice.sql`) | `board/boardList.html` 토글, `user/board/noticeList.html` 배지 | CK 목록 공통 쿼리(`selectBoardList`)를 쓰는 대시보드·사용자 메인·API 공지 목록 | 관리자만 변경, CK만 허용 | `BOARD.NOTICE_YN`·`IDX_BOARD_NOTICE` 추가, TOAST 커서 쿼리는 영향 없음 | `BoardNoticeMapperTest`·`BoardNoticeControllerTest`, `verify.cmd` 105/105 |

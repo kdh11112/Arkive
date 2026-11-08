@@ -17,7 +17,7 @@
 | Boot (Arkive) | 클래식 (관례, 대상 확인) |
 | --- | --- |
 | packaging `jar`, 내장 Tomcat | packaging `war`, 외장 WAS 배포. `webapp/WEB-INF` 구조 필요 |
-| Thymeleaf + layout-dialect | JSP + JSTL/EL + Tiles(사용 시). 화면 테스트는 JSON·Model 값까지만 |
+| Thymeleaf + layout-dialect | JSP + JSTL/EL + Tiles(사용 시). 자동 테스트는 JSON·Model 값, 실제 화면은 별도 GUI 확인 |
 | `static/**`, `templates/**` | `webapp/css·js·images`, `WEB-INF/jsp` 관례. 리소스 핸들러 매핑 확인 |
 
 ## 코드 대응

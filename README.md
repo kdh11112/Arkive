@@ -8,7 +8,7 @@
 
 ### 구현 및 검증완료
 
-자동 테스트와 ego-browser GUI 확인을 모두 마친 항목이다.
+자동 테스트와 ego-browser GUI 확인을 모두 마친 항목이다. 실제 실행 결과를 기준으로 기록하며, 스크린샷 파일의 유무로 자동 판정하지 않는다.
 
 - [x] 게시판 조회수 통계 (최근 14일 일별 그래프·숫자 표·게시글별 누적 조회수 상위 10)
 - [x] 게시판 검색 범위(제목/내용/제목+내용)
@@ -100,6 +100,11 @@ verify.cmd
 
 - 기본 주소: `http://localhost:8080`
 - 앱 DB: `data/ArkiveDB`, HSQLDB 9001. 테스트 DB: `target/test-db`, 9002로 분리.
+- Java 17·Maven 준비 후 Git checkout을 실행하면 HSQLDB도 자동 시작한다. 별도 DB 설치·접속 설정은 필요 없다(최초 Maven 의존성 다운로드에는 네트워크가 필요할 수 있다).
+- 빈 DB에만 `src/main/resources/db/schema.sql` → `seed.sql`을 한 번 실행한다. Java·화면 코드를 수정하고 서버를 재시작해도 기존 DB를 다시 CREATE하거나 시드를 덮어쓰지 않는다.
+- 초기화 SQL이 바뀌거나 기존 DB가 비호환이면 자동 삭제·갱신하지 않고 시작을 중단한다. [DB 갱신·새 경로 사용법](docs/ai/project/migration.md#개발자-사용법)을 따른다.
+- 개발용 로그인은 `admin` / `Admin1234!`이며 처음 로그인하면 약관 자리표시자에 대한 동의 화면을 거친다. 실제 서비스에 이 계정·문구를 그대로 이식하지 않는다. 게시물·회의실·연차 등 업무 데이터는 화면에서 등록한다.
+- schema/seed 전환의 실제 기동·GUI·파일 DB 재시작 결과와 미검증 범위는 [전환 검증 기록](docs/ai/project/current-state-analysis.md#2026-11-08-최신-schemaseed-초기화-전환)에 남긴다.
 - 메일 등 외부 연동은 기본 비활성·미설정이다. 실제 발송·계약·운영 환경까지 검증됐다는 뜻은 아니다.
 - Java 17, eGovFrame Boot 5.0.0, Maven, Thymeleaf, MyBatis, HSQLDB 기반이다.
 
@@ -111,6 +116,8 @@ verify.cmd
 | 기능을 다른 프로젝트로 가져오기 | [PORTING.md](PORTING.md) |
 | AI에게 이식 요청하기 | [복사용 요청](docs/ai/portable/ai-porting-request.md) |
 | 설정·코드 구조 확인 | [프로젝트 개요](docs/ai/project/project-overview.md), [아키텍처](docs/ai/project/architecture.md) |
+| DB 변경의 schema·seed·업무 SQL 분류 | [SQL 배치 기준](docs/ai/common/sql-standard.md#db-변경을-어느-파일에-넣을지) |
+| 13.3인치 필수·나머지 화면 유동 CSS 기준 | [반응형 화면 기준](docs/ai/common/coding-standard.md#css반응형-화면) |
 | 최신 테스트 수치·클래스 목록 | [src/test/README.md](src/test/README.md) |
 | 기존 GUI·실행 확인 이력 | [현행 분석](docs/ai/project/current-state-analysis.md) |
 | AI 작업 규칙·전체 문서 지도 | [AGENTS.md](AGENTS.md), [문서 지도](docs/ai/README.md) |

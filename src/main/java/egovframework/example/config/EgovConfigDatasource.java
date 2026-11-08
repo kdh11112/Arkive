@@ -4,14 +4,11 @@ import javax.sql.DataSource;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.hsqldb.Server;
+import org.hsqldb.server.ServerConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.env.Environment;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -20,7 +17,7 @@ import jakarta.annotation.PreDestroy;
 // @PropertySource를 쓰지 않는다. Boot가 application.properties를
 // main+test 합쳐서 Environment에 넣는데, @PropertySource는 중복 파일 중
 // 첫 번째 것만 읽어서 테스트 오버라이드가 묻힌다.
-public class EgovConfigDatasource implements ApplicationRunner {
+public class EgovConfigDatasource {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EgovConfigDatasource.class);
 	
@@ -57,8 +54,8 @@ public class EgovConfigDatasource implements ApplicationRunner {
             }
         }
 
-        // dbType이 "hsql_server"인 경우에만 HSQLDB 서버를 직접 시작합니다.
-        // 현재 Globals.DbType이 "hsql_server"이므로 이 블록이 실행됩니다.
+        // 로컬 데모의 hsql_server 모드에서만 DB 서버를 직접 시작한다.
+        // 기존 DB를 사용하는 이식 대상에는 서버 시작·데모 초기화를 가져가지 않는다.
         if ("hsql_server".equalsIgnoreCase(dbType)) {
             // 파일 DB는 서버를 재시작해도 디스크의 스키마와 데이터가 그대로 남습니다.
             String databasePath = env.getProperty("Globals.hsql_server.DatabasePath", "./data/ArkiveDB");
@@ -76,142 +73,29 @@ public class EgovConfigDatasource implements ApplicationRunner {
             hsqldbServer.setDatabaseName(0, "ArkiveDB");
             hsqldbServer.setDatabasePath(0, hsqlDatabasePath);
             hsqldbServer.setPort(port); // 서버 포트 설정 (Url의 포트와 일치해야 함)
-            hsqldbServer.start(); // HSQLDB 시작
-
-            try {
-                // 2초 정도 정지하여 서버가 완전하게 준비될 수 있는 시간을 줍니다.
-                System.out.println("HSQLDB server starting, waiting for 2 seconds...");
-                Thread.sleep(2000); 
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt(); // 인터럽트 상태 복원
-                System.err.println("HSQLDB server startup delay interrupted.");
+            hsqldbServer.start(); // start()는 서버의 시작 결과가 정해질 때까지 기다린다.
+            if (hsqldbServer.getState() != ServerConstants.SERVER_STATE_ONLINE) {
+                Throwable cause = hsqldbServer.getServerError();
+                hsqldbServer.stop();
+                throw new IllegalStateException("HSQLDB server could not start on port " + port, cause);
             }
 
-            System.out.println("HSQLDB file server started at " + hsqlDatabasePath + " on port " + port);
+            LOGGER.info("HSQLDB file server started at {} on port {}", hsqlDatabasePath, port);
         }
     }
 
-    @Override
-    public void run(ApplicationArguments args) throws Exception {
-        if (!"hsql_server".equalsIgnoreCase(dbType)) {
-            return;
-        }
-
-        DataSource dataSource = dataSourceBasic();
-        try (java.sql.Connection connection = dataSource.getConnection()) {
-            // 최초 DB와 기존 DB 모두 같은 방식으로 이력을 만들고, 미적용 버전 SQL을 순서대로 반영합니다.
-            createMigrationHistory(connection);
-            applyPendingMigrations(connection);
-        } finally {
-            if (dataSource instanceof org.apache.commons.dbcp2.BasicDataSource basicDataSource) {
-                basicDataSource.close();
-            }
-        }
-    }
-
-    private void executeSqlCommand(java.sql.Connection connection, String command) throws java.sql.SQLException {
-        StringBuilder sql = new StringBuilder();
-        for (String line : command.split("\\R")) {
-            String trimmedLine = line.trim();
-            if (!trimmedLine.startsWith("--")) {
-                sql.append(line).append('\n');
-            }
-        }
-        String trimmed = sql.toString().trim();
-        if (!trimmed.isEmpty()) {
-            try (java.sql.Statement statement = connection.createStatement()) {
-                statement.execute(trimmed);
-            }
-        }
-    }
-
-    private void createMigrationHistory(java.sql.Connection connection) throws java.sql.SQLException {
-        // 적용된 버전과 파일명을 기록해 앱 재시작 때 같은 SQL을 다시 실행하지 않습니다.
-        try (java.sql.Statement statement = connection.createStatement()) {
-            statement.execute("CREATE TABLE IF NOT EXISTS SCHEMA_MIGRATION (VERSION VARCHAR(200) PRIMARY KEY, SCRIPT_NAME VARCHAR(255) NOT NULL, APPLIED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL)");
-        }
-    }
-
-    private void applyPendingMigrations(java.sql.Connection connection) throws Exception {
-        // V숫자__설명.sql 파일을 숫자 순으로 찾아 개발 실행과 패키징된 실행 모두에서 읽습니다.
-        java.util.List<MigrationScript> scripts = new java.util.ArrayList<>();
-        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(getClass().getClassLoader());
-        for (Resource resource : resolver.getResources("classpath*:db/versions/V*__*.sql")) {
-            String filename = resource.getFilename();
-            if (filename != null && filename.matches("V[0-9]+__.+\\.sql")) {
-                scripts.add(new MigrationScript(filename, () -> {
-                    try (java.io.InputStream input = resource.getInputStream()) {
-                        return new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
-                    }
-                }));
-            }
-        }
-
-        scripts.sort(java.util.Comparator.comparingLong(MigrationScript::versionNumber));
-        java.util.Set<String> versions = new java.util.HashSet<>();
-        for (MigrationScript script : scripts) {
-            if (!versions.add(script.version())) {
-                throw new IllegalStateException("Duplicate database migration version: " + script.version());
-            }
-            applyMigration(connection, script);
-        }
-    }
-
-    private void applyMigration(java.sql.Connection connection, MigrationScript script) throws Exception {
-        String version = script.version();
-        try (java.sql.PreparedStatement query = connection.prepareStatement("SELECT 1 FROM SCHEMA_MIGRATION WHERE VERSION = ?")) {
-            query.setString(1, version);
-            try (java.sql.ResultSet result = query.executeQuery()) {
-                if (result.next()) {
-                    // 이미 적용 이력이 있으면 건너뜁니다.
-                    return;
-                }
-            }
-        }
-
-        LOGGER.info("Applying database migration {}", script.name());
-        // SQL 실행과 이력 기록을 한 트랜잭션으로 묶어 실패한 버전은 적용 완료로 남기지 않습니다.
-        connection.setAutoCommit(false);
-        try {
-            for (String command : script.sql().split(";")) {
-                executeSqlCommand(connection, command);
-            }
-            try (java.sql.PreparedStatement record = connection.prepareStatement("INSERT INTO SCHEMA_MIGRATION (VERSION, SCRIPT_NAME) VALUES (?, ?)")) {
-                record.setString(1, version);
-                record.setString(2, script.name());
-                record.executeUpdate();
-            }
-            connection.commit();
-        } catch (Exception e) {
-            connection.rollback();
-            throw e;
-        } finally {
-            connection.setAutoCommit(true);
-        }
-    }
-
-    private record MigrationScript(String name, SqlSupplier supplier) {
-        String sql() throws Exception { return supplier.get(); }
-        String version() { return name.substring(0, name.indexOf("__")); }
-        long versionNumber() { return Long.parseLong(version().substring(1)); }
-    }
-
-    @FunctionalInterface
-    private interface SqlSupplier {
-        String get() throws Exception;
-    }
     @PreDestroy
     public void stopHsqldbServer() {
         if (hsqldbServer != null) {
             hsqldbServer.stop();
-            System.out.println("HSQLDB server stopped");
+            LOGGER.info("HSQLDB server stopped");
         }
     }
 
 	/**
 	 * @return [dataSource 설정] basicDataSource 설정
 	 */
-    private DataSource dataSourceBasic() {
+    private BasicDataSource dataSourceBasic() {
         BasicDataSource basicDataSource = new BasicDataSource();
         basicDataSource.setDriverClassName(className);
         basicDataSource.setUrl(url);
@@ -236,16 +120,25 @@ public class EgovConfigDatasource implements ApplicationRunner {
 	/**
 	 * @return [DataSource 설정]
 	 */
-    @Bean(name = {"dataSource", "egov.dataSource", "egovDataSource"})
-    public DataSource dataSource() {
-        // 이제 "hsql_server" 모드를 사용하기 위해, 내장형 HSQLDB 분기 제거
-        if ("hsql_server".equalsIgnoreCase(dbType)) {
-             System.out.println("Initializing BasicDataSource for HSQLDB Server (" + url + ")");
-             return dataSourceBasic();
-        } else {
-             // 만약 "hsql_server"가 아니고 다른 외부 DB 연결 (mysql, oracle 등)이 설정되어 있다면 여기에 반환
-             System.out.println("Initializing BasicDataSource for external DB (" + url + ")");
-             return dataSourceBasic();
+    @Bean(name = {"dataSource", "egov.dataSource", "egovDataSource"}, destroyMethod = "close")
+    public DataSource dataSource() throws Exception {
+        BasicDataSource dataSource = dataSourceBasic();
+        try {
+            if ("hsql_server".equalsIgnoreCase(dbType)) {
+                // Mapper·웹 서버·스케줄러가 DB를 쓰기 전에 최초 초기화/기존 DB 확인을 마친다.
+                // 일반 재시작에는 schema.sql·seed.sql을 실행하지 않는다.
+                try (java.sql.Connection connection = dataSource.getConnection()) {
+                    new HsqlDemoDatabaseInitializer().initialize(connection, hsqlDatabasePath);
+                }
+            }
+            return dataSource;
+        } catch (Exception e) {
+            try {
+                dataSource.close();
+            } catch (java.sql.SQLException closeException) {
+                e.addSuppressed(closeException);
+            }
+            throw e;
         }
     }
 

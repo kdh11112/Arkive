@@ -12,9 +12,9 @@
 | Mapper 테스트 | 위와 동일 + HSQLDB/Testcontainers | `SqlSessionFactory`를 XML 설정에서 로드. `EgovAbstractMapper` 상속 DAO는 그대로 쓴다 |
 | Controller 테스트 | `@WebMvcTest` 또는 MockMvc | `spring-test` MockMvc + `@WebAppConfiguration`, JSP 렌더링 대신 JSON·Model 값 검증 |
 | BDD | Cucumber-JUnit5 (`cucumber-junit-platform-engine`) | Cucumber-JVM 6.x + `cucumber-junit` (JUnit4 Runner). feature 문법 동일이라 feature 파일은 공유 가능 |
-| 커버리지 | JaCoCo 0.8.11 | 동일. 단 Java 8 프로젝트는 JaCoCo 0.8.8 상한 |
+| 커버리지 | JaCoCo 0.8.12 (Boot 예제) | 대상 Java·빌드 JDK·Maven과 호환되는 버전을 확인한다. Java 8이라는 이유만으로 0.8.8 상한을 적용하지 않는다 |
 | 뮤테이션 | PIT (JUnit5 플러그인 필요) | PIT 기본이 JUnit4 지원. 버전은 pitest 최신의 Java 8 호환 범위 확인 |
-| CI | 동일 워크플로 | 동일. `mvn -B verify` + Secrets만 교체 |
+| CI | 동일 워크플로 | 대상 Java·빌드 환경에 맞춰 `mvn -B clean verify`와 Secrets 설정 |
 
 ## 클래식 주의점
 
@@ -23,7 +23,7 @@
 - XML 컨텍스트에 테스트용 DataSource를 덮어쓰려면 별도 `context-test-datasource.xml`을
   만들고 `@ContextConfiguration`에 추가한다. 운영 XML은 건드리지 않는다.
 - Tiles/JSP 화면은 단위 테스트 범위에서 제외하고 JSON·리다이렉트 값까지만 본다.
-  화면 회귀는 핵심 시나리오 한정.
+  화면 회귀는 핵심 시나리오를 ego-browser로 확인한다. 도구·미수행 기록은 [GUI 기준](../common/test-standard.md#검증-단계와-gui-확인)을 따른다.
 
 ## 이식 체크리스트
 

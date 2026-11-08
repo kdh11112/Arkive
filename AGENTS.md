@@ -13,7 +13,7 @@ Arkive는 다른 프로젝트에 기능 이식을 편하게 만들기 위해 만
 | 작업 | 먼저 읽을 것 | 필요할 때 추가 |
 | --- | --- | --- |
 | 구조 파악·기능 수정 | 관련 코드와 [프로젝트 지식](docs/ai/project/) 중 해당 기능 | [코딩 표준](docs/ai/common/coding-standard.md), [테스트 표준](docs/ai/common/test-standard.md) |
-| SQL·DB 변경 | [SQL 표준](docs/ai/common/sql-standard.md), 해당 Mapper/XML·버전 SQL | [마이그레이션 절차](docs/ai/common/migration-standard.md), 프로젝트 DB 기록 |
+| SQL·DB 변경 | [SQL 표준](docs/ai/common/sql-standard.md), 해당 Mapper/XML·스키마/시드 SQL | [마이그레이션 절차](docs/ai/common/migration-standard.md), 프로젝트 DB 기록 |
 | 기능 이식 | [PORTING.md](PORTING.md), 해당 기능 코드·기록 | [기능 시트](docs/ai/portable/feature-porting-sheet.md), [테스트 시트](docs/ai/portable/test-porting-sheet.md), 선택한 트랙 |
 | 검증·증거 작성 | [테스트 표준](docs/ai/common/test-standard.md), [검증 절차](docs/ai/common/verification-standard.md) | [인수 조건](docs/ai/portable/acceptance-template.md), [증거 양식](docs/ai/portable/evidence-report-template.md) |
 
@@ -68,6 +68,7 @@ Verifier·Guard 등 자동화 도구와 배포·롤백·Health·Canary Runbook�
 - 실패하면 원인을 고치고 다시 실행한다. 실패 상태에서는 작업을 완료했다고 선언하지 않는다.
 - 실행하지 못한 검증은 성공했다고 보고하지 않고, 사유와 남은 위험을 기록한다.
 - 화면이 있는 변경은 ego-browser로 GUI 확인까지 수행한다. 다른 브라우저 자동화나 computer-use 같은 데스크톱 자동화로 대체하지 않으며, ego-browser를 사용할 수 없으면 `미수행`과 사유를 기록한다.
+- 화면/CSS 변경은 13.3인치 노트북을 필수 확인 대상으로 두고, 나머지는 특정 인치에 고정하지 않는 유동 대응을 확인한다. 해상도·배율·viewport와 실기기/대체 검사를 구분하는 기준은 [코딩 표준](docs/ai/common/coding-standard.md#css반응형-화면)과 [테스트 표준](docs/ai/common/test-standard.md#화면-크기-확인)을 따른다.
 - 이 문서는 선언일 뿐 강제력이 없다. 진짜 차단은 `verify.cmd`의 exit 1과 CI 머지 차단이 담당한다.
 
 ## 문서 관리 기준

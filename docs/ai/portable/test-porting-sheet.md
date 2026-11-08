@@ -5,14 +5,14 @@
 
 ## 0. 복사할 테스트 자산
 
-- [ ] `src/test/java/<base>/support/ArkiveIntegrationTest.java` — 대상에서는 `IntegrationTest`로 이름을 바꾼다
-- [ ] `src/test/java/<base>/support/TestSessions.java` — 로그인 세션 생성
-- [ ] `src/test/resources/application-test.properties.template` — 대상 DB 값으로 채운 뒤 `application-test.properties`로 저장
-- [ ] 기능별 테스트 클래스
-- [ ] 기능별 fixture (`BoardFixtures`, `MessageFixtures` 등)
-- [ ] `pom.xml`의 테스트 의존성·JaCoCo 설정
-- [ ] `application-test.properties`에 `arkive.mail.enabled=false`(메일 기능을 복사한 경우)
-- [ ] `verify.cmd`
+| 자산 | 대상 맞춤·확인 | 결과/근거 |
+| --- | --- | --- |
+| `src/test/java/<base>/support/ArkiveIntegrationTest.java` | `IntegrationTest`로 이름 변경, `@SpringBootTest(classes = ...)`는 대상 앱 클래스 |  |
+| `src/test/java/<base>/support/TestSessions.java` | 로그인 세션 키·사용자 형태 |  |
+| `src/test/resources/application-test.properties.template` | 대상 DB 제품·URL·경로·포트를 채워 `application-test.properties`로 저장. 앱 DB와 분리, 메일 기능은 `arkive.mail.enabled=false` |  |
+| 기능별 테스트·fixture | 선택한 클래스, `BoardFixtures`·`MessageFixtures` 등 |  |
+| `pom.xml` | 테스트 의존성·JaCoCo `includes`를 대상 클래스로 맞춤. 승인된 게이트를 비우지 않음 |  |
+| `verify.cmd` | `mvn clean verify` 실행, 실패 시 exit 1 |  |
 
 `ArkiveSmokeTest`는 Arkive 전용이므로 복사하지 않고, 대상 프로젝트에서 새로 만든다.
 
@@ -27,7 +27,7 @@
 | Mapper/DB | `BoardMapperTest`, `MessageMapperTest`, `SearchMapperTest` | 기능과 함께 수정 복사 | 테이블·컬럼·PK, SQL 문법, seed 데이터, `BOARD_TYPE`·페이징 문법 |
 | 스모크 | `ArkiveSmokeTest` | 복사하지 않음 | 대상 앱 클래스로 새로 작성 |
 
-핵심은 **테스트 시나리오는 복사하고, assertion은 대상 업무 규칙에 맞게 다시 확인**하는 것이다.
+스펙 담당자가 시나리오를 재사용하되 assertion을 대상 업무 규칙과 대조한다. 기대 결과 변경은 인간 승인 없이 수행하지 않는다.
 
 ## 2. 기능 정보
 
@@ -40,17 +40,7 @@
 - 대상 앱 진입 클래스:
 - 대상 테스트 패키지:
 
-## 3. 공통 팩 적용
-
-- [ ] `ArkiveIntegrationTest` → `IntegrationTest` 이름 변경
-- [ ] `@SpringBootTest(classes = ...)`를 대상 앱 클래스로 변경
-- [ ] `TestSessions`의 세션 키·사용자 형태 변경
-- [ ] `application-test.properties`의 DB 제품·URL·경로·포트 변경
-- [ ] 앱 DB와 테스트 DB 분리 확인
-- [ ] JaCoCo `includes`를 대상 클래스로 변경
-- [ ] `verify.cmd`가 `mvn clean verify`를 실행하고 실패 시 exit 1을 반환하는지 확인
-
-## 4. 기능 테스트 맞춤
+## 3. 기능 테스트 맞춤
 
 - [ ] URL·컨텍스트 경로
 - [ ] 요청 파라미터·JSON 필드
@@ -66,7 +56,7 @@
 - [ ] 통합검색의 대상 `BOARD_TYPE`·제목 범위·Q&A 공개 조건·LIKE 페이징 문법·상세 링크
 - [ ] 비밀번호 재설정 토큰 만료·1회 사용·재발급 쿨다운·세션 무효화
 
-## 5. 실행과 완료 기준
+## 4. 실행과 완료 기준
 
 ```cmd
 mvn -Dtest=대상테스트클래스 test
@@ -80,6 +70,6 @@ verify.cmd
 - [ ] HSQLDB만이 아니라 대상 DB에서도 Mapper 테스트를 확인했다
 - [ ] 실패 시 원인을 코드에서 고쳤다
 
-## 6. 남은 위험·메모
+## 5. 남은 위험·메모
 
 -

@@ -1,6 +1,6 @@
 # 기능 목록 및 소유권 (Arkive 기록)
 
-> 이식 구분: **Arkive 기록**. 대상 프로젝트로 복사하지 않는다. 이식용 빈 양식은 [project-template-pack.md](../portable/project-template-pack.md), 기능별 절차는 [feature-porting-sheet.md](../portable/feature-porting-sheet.md)를 쓴다.
+> **Arkive 기록 · 대상에 복사 금지.** 대상 지식은 [빈 양식](../portable/project-template-pack.md)을 쓴다.
 
 <!--
 문서 상태: 부분 미완성
@@ -10,51 +10,53 @@
 완료 기준: 운영 대상 기능이 빠짐없이 분류되고 모든 기능 소유자가 확인되었거나, 소유권 미정 항목에 의사결정 담당과 기한이 기록되어 있다.
 -->
 
+찾기: [구현 위치](#확인된-코드-영역) · [자동 테스트 범위](#테스트-자산-현황-2026-11-07) · [이식 의존성](#이식-시-함께-확인할-묶음).
+
 ## 확인된 코드 영역
 
-> 2026-10-11, 2026-10-22, 2026-10-23(메일·비밀번호 재설정·사이트맵·통합검색 포함), 2026-10-24(공통 오류 응답·헬스 설정·휴가관리·2단계 보강) 저장소 검색으로 확인한 주요 코드 영역의 목록이다. 전체 기능 목록이나 조직별 소유권을 확정한 문서가 아니다. 소유자는 근거가 없어 미확인으로 둔다.
+> 2026-10-11, 2026-10-22~24 저장소 검색으로 확인한 주요 코드 영역이며 SQL 위치는 2026-11-08 최신 schema/seed 전환에 맞춰 갱신했다. 전체 업무 목록이나 소유권을 확정한 문서가 아니다. 모든 기능 DDL은 `db/schema.sql`, 메뉴·역할·권한 등 필수 초기값은 `db/seed.sql`에서 필요한 부분만 선택한다. 소유자는 근거가 없어 미확인으로 둔다.
 
 | 기능/영역 | 확인된 구현 위치 | 확인된 범위 | 책임자/소유권 |
 | --- | --- | --- | --- |
 | 시스템 메뉴·공통코드 관리 | `arkive.admin.system.*`, `System_SQL.xml`, `CommCode_SQL.xml`, `templates/thymeleaf/system/` | 메뉴·코드 목록·상세·등록·수정·삭제 (`/system` prefix) | 미확인 |
 | 로그인·회원·계정 찾기 | `arkive.admin.auth.web.LoginController`, `Auth_SQL.xml`(APP_USER), `templates/thymeleaf/login/` | 로그인·회원가입·ID/PW찾기·로그아웃 (`/login`) | 미확인 |
-| 메일 발송 | `arkive.admin.mail.*`, `MailServiceImpl`, `MailAsyncService`, `EgovConfigAsync`, `BoardNotificationEvent`/`BoardNotificationEventListener`, `V6__mail_notification.sql`, `application.properties`(`spring.mail.*`·`arkive.mail.*`) | 환영·비밀번호 재설정·공지/중요글 알림, 게시판 알림은 ApplicationEvent로 채널 분리, `@Async("mailTaskExecutor")`, 기본 비활성, 수신 동의 필터, 게시글당 1회 선점 | 미확인 (SMTP 제공자·발신 도메인·대량 발송 정책) |
+| 메일 발송 | `arkive.admin.mail.*`, `MailServiceImpl`, `MailAsyncService`, `EgovConfigAsync`, `BoardNotificationEvent`/`BoardNotificationEventListener`, `db/schema.sql`, `application.properties`(`spring.mail.*`·`arkive.mail.*`) | 환영·비밀번호 재설정·공지/중요글 알림, 게시판 알림은 ApplicationEvent로 채널 분리, `@Async("mailTaskExecutor")`, 기본 비활성, 수신 동의 필터, 게시글당 1회 선점 | 미확인 (SMTP 제공자·발신 도메인·대량 발송 정책) |
 | 비밀번호 재설정 | `LoginController`(`/login/findPw*`, `/login/resetPw*`), `AuthServiceImpl`, `AuthMapper`, `Auth_SQL.xml`, `PASSWORD_RESET_TOKEN`, `login/findPw.html`, `login/resetPw.html` | 아이디·이름·이메일 일치 시 1회용 링크 발급, 30분·1회·60초 쿨다운, SHA-256 해시 저장, 성공 시 세션 만료 | 미확인 (IP별 제한·감사 로그·메일 전달 정책) |
 | 중복 로그인 방지 | `LoginController`, `OauthController`, `LoginSessionRegistry`, `EgovConfigWeb` | 폼·OAuth 로그인 성공 시 사용자별 최신 세션만 유지, 이전 세션 만료, 로그아웃·세션 만료 시 매핑 제거 | 미확인 |
 | 사용자관리 | `arkive.admin.auth.web.UserManageController`, `templates/thymeleaf/auth/` | 목록·등록·수정·삭제·잠금해제·비번초기화 (`/auth`). 메뉴 `ME02010400` | 미확인 |
-| 권한관리 | `arkive.admin.auth.web.RoleManageController`, `PermissionService`/`PermissionServiceImpl`, `PermissionMapper`, `Permission_SQL.xml`, `MenuPermissionInterceptor`, `auth/roleList.html`, `auth/roleWrite.html`, `V5__permission.sql` | 역할 목록·등록·수정·삭제, 메뉴별 조회/쓰기, 사용자 역할 배정 (`/auth/role*`). 서버 인터셉터로 메뉴 CRUD 강제, SSE 대상 역할 조회 | 미확인 |
+| 권한관리 | `arkive.admin.auth.web.RoleManageController`, `PermissionService`/`PermissionServiceImpl`, `PermissionMapper`, `Permission_SQL.xml`, `MenuPermissionInterceptor`, `auth/roleList.html`, `auth/roleWrite.html`, `db/schema.sql`·`seed.sql` | 역할 목록·등록·수정·삭제, 메뉴별 조회/쓰기, 사용자 역할 배정 (`/auth/role*`). 서버 인터셉터로 메뉴 CRUD 강제, SSE 대상 역할 조회 | 미확인 |
 | 사이트맵 | `arkive.admin.comm.web.SitemapController`, `templates/thymeleaf/comm/sitemap.html`, `layout/layout.html`, `EgovConfigWeb.MenuInterceptor` | `/sitemap` 읽기 전용 메뉴 트리, 로그인 사용자의 조회 권한 메뉴만 표시, 빈 메뉴 안내 | 미확인 (메뉴 순서·표시명 소유자) |
-| 통합검색 | `arkive.admin.search.web.SearchController`·`SearchReindexController`, `SearchService`/`SearchServiceImpl`, `SearchMapper`, `Search_SQL.xml`, `SearchIndexService`/`ElasticsearchSearchIndexService`, `search/searchList.html`, `user/layout.html`, `V11__search_chosung.sql` | `/search` 로그인 사용자 대상 제목 LIKE + `SEARCH_CHOSUNG` 초성 검색. BOARD의 CK·TOAST·FAQ·QNA를 한 목록에 표시하고 본문은 태그 제거 요약으로 노출. Elasticsearch는 기본 비활성(`arkive.search.elasticsearch.enabled=false`)이며 켜면 색인 조회·재색인(`/search/reindex.json`) 사용 | 미확인 (본문 검색, ES 동기화·운영 정책, Q&A 공개 범위, 검색 성능 기준) |
-| Q&A 내·외부 구분 | `arkive.admin.qna.*`, `arkive.user.qna.*`, `Qna_SQL.xml`, `V7__stage2_qna_audit.sql` | `BOARD.ASK_TYPE`(PUBLIC/INTERNAL). 공개 목록은 PUBLIC만, INTERNAL 상세는 비로그인 시 로그인 화면으로 유도, 외부 등록은 PUBLIC 강제, 답변은 관리자 세션만 (`/qna`, `/user/qna`) | 미확인 (내부글 사용자별 세부 권한, 역할 기반 답변) |
-| 로그관리·감사 | `arkive.admin.audit.*`, `AuditInterceptor`, `AuditEvent`, `AuditLogEventListener`, `AuditLogController`, `V7__stage2_qna_audit.sql` | 로그인·로그아웃·메뉴·개인정보 조회/다운로드·API 접근을 `AUDIT_LOG`에 비동기 기록. `/system/auditLogList` 조회·엑셀, 보관주기 삭제 잡(기본 비활성) | 미확인 (이벤트·대상 경로 범위, 보관주기 정책, 다중 인스턴스 중복 기록) |
-| 개인정보 보호 | `MaskingInterceptor`, `MaskingUtil`, `PiiFieldService`, `FieldCryptoService`, `AddressServiceImpl`/`CardServiceImpl`/`AuthServiceImpl`, `SmsServiceImpl`, `V15__field_crypto.sql`, `V34__user_phone_crypto.sql` | 목록 `EgovMap` 마스킹, PII 조회·다운로드 감사 연계, 주소록·명함 연락처/이메일과 사용자 휴대전화 AES-GCM 저장·복호화. `APP_USER.EMAIL`은 조회 조건이라 평문 | 미확인 (상세·엑셀 마스킹 누락, 키 관리·회전, 기존 평문 데이터 이관) |
-| 2차인증 (TOTP) | `LoginController`의 `/login/totp*`, `TotpService`/`TotpServiceImpl`, `TotpMapper`, `V9__totp.sql`, `UserManageController.resetTotp` | 로그인 후 TOTP 코드·복구코드 검증, 설정·해제, 복구코드 1회 발급, 관리자 초기화. 비밀키 AES-GCM, 복구코드 SHA-256 | 미확인 (복구·본인확인 정책, 5회 실패 잠금 외 정책, 다중 인스턴스 키) |
-| 약관동의 | `TermsController`, `TermsService`/`TermsServiceImpl`, `TermsMapper`, `TermsInterceptor`, `V10__terms.sql`, `login/termsAgree.html`, `terms/termsList.html` | 버전별 약관·동의 이력(`TERMS`, `USER_TERMS_CONSENT`), 공개 `/terms`, 로그인 후 미동의 필수 약관 인터셉트, 화면은 409 JSON·리다이렉트 | 미확인 (실제 약관 문구·법무 검토, 선택 동의 철회 정책) |
-| SMS·알림 채널 | `arkive.admin.sms.*`, `AligoSmsSender`, `SmsServiceImpl`, `SmsAsyncService`, `BoardNotificationEvent`/`BoardNotificationEventListener`, `V17__sms.sql`, `Permission_SQL.xml`의 SMS 대상 쿼리 | 게시글 알림을 SSE·메일·SMS로 채널 분리. SMS는 `SMS_YN='Y'`·휴대전화·메뉴 조회 권한 대상, `BOARD.SMS_SENT_YN` 선점으로 1회 발송, 기본 비활성 | 미확인 (알리고 계약·발신번호·요금, 실패 재시도, 인증번호 발송) |
+| 통합검색 | `arkive.admin.search.web.SearchController`·`SearchReindexController`, `SearchService`/`SearchServiceImpl`, `SearchMapper`, `Search_SQL.xml`, `SearchIndexService`/`ElasticsearchSearchIndexService`, `search/searchList.html`, `user/layout.html`, `db/schema.sql`(`BOARD`) | `/search` 로그인 사용자 대상 제목 LIKE + `SEARCH_CHOSUNG` 초성 검색. BOARD의 CK·TOAST·FAQ·QNA를 한 목록에 표시하고 본문은 태그 제거 요약으로 노출. Elasticsearch는 기본 비활성(`arkive.search.elasticsearch.enabled=false`)이며 켜면 색인 조회·재색인(`/search/reindex.json`) 사용 | 미확인 (본문 검색, ES 동기화·운영 정책, Q&A 공개 범위, 검색 성능 기준) |
+| Q&A 내·외부 구분 | `arkive.admin.qna.*`, `arkive.user.qna.*`, `Qna_SQL.xml`, `db/schema.sql`(`BOARD`) | `BOARD.ASK_TYPE`(PUBLIC/INTERNAL). 공개 목록은 PUBLIC만, INTERNAL 상세는 비로그인 시 로그인 화면으로 유도, 외부 등록은 PUBLIC 강제, 답변은 관리자 세션만 (`/qna`, `/user/qna`) | 미확인 (내부글 사용자별 세부 권한, 역할 기반 답변) |
+| 로그관리·감사 | `arkive.admin.audit.*`, `AuditInterceptor`, `AuditEvent`, `AuditLogEventListener`, `AuditLogController`, `db/schema.sql`(`AUDIT_LOG`) | 로그인·로그아웃·메뉴·개인정보 조회/다운로드·API 접근을 `AUDIT_LOG`에 비동기 기록. `/system/auditLogList` 조회·엑셀, 보관주기 삭제 잡(기본 비활성) | 미확인 (이벤트·대상 경로 범위, 보관주기 정책, 다중 인스턴스 중복 기록) |
+| 개인정보 보호 | `MaskingInterceptor`, `MaskingUtil`, `PiiFieldService`, `FieldCryptoService`, `AddressServiceImpl`/`CardServiceImpl`/`AuthServiceImpl`, `SmsServiceImpl`, `db/schema.sql` | 목록 `EgovMap` 마스킹, PII 조회·다운로드 감사 연계, 주소록·명함 연락처/이메일과 사용자 휴대전화 AES-GCM 저장·복호화. `APP_USER.EMAIL`은 조회 조건이라 평문 | 미확인 (상세·엑셀 마스킹 누락, 키 관리·회전, 기존 평문 데이터 이관) |
+| 2차인증 (TOTP) | `LoginController`의 `/login/totp*`, `TotpService`/`TotpServiceImpl`, `TotpMapper`, `db/schema.sql`(`APP_USER_TOTP*`), `UserManageController.resetTotp` | 로그인 후 TOTP 코드·복구코드 검증, 설정·해제, 복구코드 1회 발급, 관리자 초기화. 비밀키 AES-GCM, 복구코드 SHA-256 | 미확인 (복구·본인확인 정책, 5회 실패 잠금 외 정책, 다중 인스턴스 키) |
+| 약관동의 | `TermsController`, `TermsService`/`TermsServiceImpl`, `TermsMapper`, `TermsInterceptor`, `db/schema.sql`·`seed.sql`, `login/termsAgree.html`, `terms/termsList.html` | 버전별 약관·동의 이력(`TERMS`, `USER_TERMS_CONSENT`), 공개 `/terms`, 로그인 후 미동의 필수 약관 인터셉트, 화면은 409 JSON·리다이렉트 | 미확인 (실제 약관 문구·법무 검토, 선택 동의 철회 정책) |
+| SMS·알림 채널 | `arkive.admin.sms.*`, `AligoSmsSender`, `SmsServiceImpl`, `SmsAsyncService`, `BoardNotificationEvent`/`BoardNotificationEventListener`, `db/schema.sql`(`BOARD`), `Permission_SQL.xml`의 SMS 대상 쿼리 | 게시글 알림을 SSE·메일·SMS로 채널 분리. SMS는 `SMS_YN='Y'`·휴대전화·메뉴 조회 권한 대상, `BOARD.SMS_SENT_YN` 선점으로 1회 발송, 기본 비활성 | 미확인 (알리고 계약·발신번호·요금, 실패 재시도, 인증번호 발송) |
 | 통계·외부 웹분석 | `StatsController`/`StatsService`/`StatsMapper`, `Stats_SQL.xml`, `AnalyticsModelAdvice`, `arkive-analytics.js`, `stats/statsList.html` | `/stats` 기간별 게시판·감사 이벤트·일별 로그인/접속·다운로드 집계와 엑셀. GA4·Clarity는 동의 후 로드, ID 미설정 시 비활성 | 미확인 (실측 ID·도메인, 지표 정의, 감사 로그 이전 구간) |
 | 내부 API 제공 | `InternalApiController`, `InternalApiAuthFilter`, `InternalApiConfig`, `/internal/v1` | `X-Internal-Token` 상수시간 비교, 미설정 503·불일치 401. `/health`, `/notices`(CK 최신 10건, 개인정보 없음) | 미확인 (토큰 발급·회전, 소비자 계약, 버전·하위호환 정책) |
 | 소셜 로그인 연계 | `arkive.admin.auth.web.OauthController`, `OAUTH_LINK` | 제공자 연결·콜백·연계 (`/login/oauth`) | 미확인 |
 | NICE 본인 확인 | `NiceCheckController`(`/niceExt`), `NiceVerifyController`(`/login/nice`) | 연계·시작·콜백·상태 | 미확인 (외부 계약은 연계 명세 확인) |
 | 공통 파일 처리 | `arkive.admin.comm.web.FileController`, `FileService*`, `File_SQL.xml` | 멀티파트·TUS·드롭존 업로드, 다운로드, 삭제 (`/system`, `/file`) | 미확인 |
-| 게시판 (관리자) | `arkive.admin.board.*`, `Board_SQL.xml`, `V35__board_view_log.sql` | CK·토스트 목록·쓰기·상세·등록·수정·삭제·구독·조회수 통계 (`/board`) | 미확인 (조회 로그 보관·정리 정책) |
+| 게시판 (관리자) | `arkive.admin.board.*`, `Board_SQL.xml`, `db/schema.sql`(`BOARD`·`BOARD_VIEW_LOG`)·`seed.sql` | CK·토스트 목록·쓰기·상세·등록·수정·삭제·구독·조회수 통계 (`/board`) | 미확인 (조회 로그 보관·정리 정책) |
 | 팝업·배너·카테고리·일정·POLL·상담·명함·주소록·당직·메모·FAQ·Q&A (관리자) | `arkive.admin.popup/banner/category/schedule/poll/counsel/card/address/duty/memo/faq/qna.*` | 각 `/popup`·`/banner`·`/category`·`/schedule`·`/poll`·`/counsel`·`/card`·`/address`·`/duty`·`/faq`·`/memo`·`/qna` prefix | 미확인 |
 | 외부포털 (사용자) | `arkive.user.board/faq/qna/poll/counsel/main.*` | 공지·자료·FAQ·Q&A·POLL·상담·메인 (`/user/**`) | 미확인 |
 | 샘플 기능 | `egovframework.example.sample.*`, `EgovSample_Sample_SQL.xml` | eGovFrame 샘플 CRUD 및 페이징 코드가 있음 | 샘플 코드, 업무 소유권 해당 없음 |
-| 시스템 설정·예약 DB 작업 | `egovframework.example.config.*`, `arkive.com.config.*` | DB·Mapper 설정, 10분 Trigger와 덤프 작업 코드가 있음 | 운영 책임자 미확인 |
+| 시스템 설정·예약 DB 작업 | `egovframework.example.config.*`, `HsqlDemoDatabaseInitializer`, `arkive.com.config.*`, `db/schema.sql`·`seed.sql` | 로컬 DB 자동 시작·빈 DB 최초 초기화·기존 DB 재사용/부분 실패 차단. 10분 Trigger와 SQL 덤프. 데모 서버/초기화기는 기존 DB 대상에 이식하지 않음 | 운영 책임자 미확인 |
 | 공통 오류·헬스 | `egovframework.example.config.EgovConfigWeb`, `application.properties` | 미매핑 URL·정적 리소스 404, `Throwable` 500, Actuator health, 메일 헬스 기본 비활성 | 미확인 |
 | 게시글 댓글 | `arkive.admin.board.web.BoardController`(댓글 API), `BoardService`/`BoardServiceImpl`, `BoardMapper`, `Board_SQL.xml`, `templates/thymeleaf/board/boardDetail.html` | 로그인 사용자 1단 댓글 목록·등록·삭제, 작성자/관리자 삭제 (`/board/insertComment.json`, `/board/deleteComment.json`) | 미확인 |
-| 공지 고정 | `arkive.admin.board.web.BoardController`, `BoardService`/`BoardServiceImpl`, `BoardMapper`, `Board_SQL.xml`, `V4__board_notice.sql`, `board/boardList.html`, `board/boardDetail.html`, `user/board/noticeList.html`, `user/board/noticeDetail.html` | CK 공지 목록 상단 정렬, 관리자 고정/해제 (`/board/updateNotice.json`), 관리·사용자 화면 '공지' 배지 | 미확인 |
+| 공지 고정 | `arkive.admin.board.web.BoardController`, `BoardService`/`BoardServiceImpl`, `BoardMapper`, `Board_SQL.xml`, `db/schema.sql`(`BOARD`), `board/boardList.html`, `board/boardDetail.html`, `user/board/noticeList.html`, `user/board/noticeDetail.html` | CK 공지 목록 상단 정렬, 관리자 고정/해제 (`/board/updateNotice.json`), 관리·사용자 화면 '공지' 배지 | 미확인 |
 | 쪽지관리 | `arkive.admin.message.*`, `Message_SQL.xml`, `templates/thymeleaf/message/` | 받은/보낸 목록·검색·페이징·발송·상세·읽음·함별 소프트 삭제 (`/message`) | 미확인 |
-| 휴가관리 | `arkive.admin.leave.*`, `Leave_SQL.xml`, `templates/thymeleaf/leave/`, `V8__leave.sql` | 내 휴가(본인 연차·신청·취소), 휴가관리(전체 목록·승인/반려), 연차관리(사용자·연도별 부여). 주말·공휴일(HOLIDAY) 제외 평일 일수, 반차 0.5일, 승인 시 차감·취소 시 환원, 신청중 포함 잔여 초과 금지 (`/leave`) | 미확인 (연차 발생·이월 규칙, 결재선·대결자) |
-| 회의실관리·예약 | `arkive.admin.meeting.*`, `Meeting_SQL.xml`, `templates/thymeleaf/meeting/`, `V13__meeting.sql` | 회의실 목록·등록·수정·삭제, 예약 목록·등록·취소. 같은 회의실·날짜 시간대 중복 차단, 예약 취소는 본인·관리자만 (`/meeting`) | 미확인 (자정 넘김 예약, 예약 변경 이력) |
-| 약식결재 | `arkive.admin.approval.*`, `Approval_SQL.xml`, `templates/thymeleaf/approval/`, `V14__approval.sql` | 기안(DRAFT)→상신(SUBMITTED)→승인(APPROVED)/반려(REJECTED)/상신취소(CANCELLED), 지정 결재자 서버 검증, `APPROVAL_HISTORY` 이력 (`/approval`) | 미확인 (결재선·대결자, 대상 업무 연계, 공통코드 COM75 매핑) |
-| HR 세트 | `arkive.admin.hr.*`, `Hr_SQL.xml`, `templates/thymeleaf/hr/`, `V18__hr.sql` | 기념일·경조사·포상 CRUD, 개인연차 화면에서 LEAVE_BALANCE·LEAVE_REQUEST·DUTY 통합 조회·연차 저장 (`/hr`) | 미확인 (유형 코드 샘플 상수, 휴가·당직·결재 연계) |
-| 설문관리 세트 | `arkive.admin.survey.*`, `Survey_SQL.xml`, `templates/thymeleaf/survey/`, `V16__survey.sql` | 템플릿·설문·질문·항목·참여·통계 6종. 단일/복수/주관식, 익명 여부, 공개·마감, 문항별 통계 (`/survey`) | 미확인 (설문 정책·익명 통계 기준, 대량 응답 성능) |
-| 강의형 콘텐츠·동영상 | `arkive.admin.lecture.*`, `Lecture_SQL.xml`, `VideoEncodingService`/`FfmpegVideoEncodingService`, `templates/thymeleaf/lecture/`, `V30__lecture.sql` | 강의 CRUD·공개/마감, 동영상 업로드(FFmpeg 선택), Range 스트리밍, 진도 저장·이어보기, 시청 기준 + 설문 참여 수료 판정, 수료현황 (`/lecture`) | 미확인 (FFmpeg 실제 인코딩, 출석·과제·시험·성적, 비로그인 수강자 식별) |
-| 약도관리 | `arkive.admin.map.*`, `MapGuide_SQL.xml`, `templates/thymeleaf/map/`, `V31__map_guide.sql` | 약도 목록·등록·수정·삭제, 주소·위도·경도·설명, 카카오 지도 SDK는 키가 있을 때만 로드 (`/map`) | 미확인 (카카오 키·허용 도메인, 주소 지오코딩 계약) |
+| 휴가관리 | `arkive.admin.leave.*`, `Leave_SQL.xml`, `templates/thymeleaf/leave/`, `db/schema.sql`·`seed.sql` | 내 휴가(본인 연차·신청·취소), 휴가관리(전체 목록·승인/반려), 연차관리(사용자·연도별 부여). 주말·공휴일(HOLIDAY) 제외 평일 일수, 반차 0.5일, 승인 시 차감·취소 시 환원, 신청중 포함 잔여 초과 금지 (`/leave`) | 미확인 (연차 발생·이월 규칙, 결재선·대결자) |
+| 회의실관리·예약 | `arkive.admin.meeting.*`, `Meeting_SQL.xml`, `templates/thymeleaf/meeting/`, `db/schema.sql`·`seed.sql` | 회의실 목록·등록·수정·삭제, 예약 목록·등록·취소. 같은 회의실·날짜 시간대 중복 차단, 예약 취소는 본인·관리자만 (`/meeting`) | 미확인 (자정 넘김 예약, 예약 변경 이력) |
+| 약식결재 | `arkive.admin.approval.*`, `Approval_SQL.xml`, `templates/thymeleaf/approval/`, `db/schema.sql`·`seed.sql` | 기안(DRAFT)→상신(SUBMITTED)→승인(APPROVED)/반려(REJECTED)/상신취소(CANCELLED), 지정 결재자 서버 검증, `APPROVAL_HISTORY` 이력 (`/approval`) | 미확인 (결재선·대결자, 대상 업무 연계, 공통코드 COM75 매핑) |
+| HR 세트 | `arkive.admin.hr.*`, `Hr_SQL.xml`, `templates/thymeleaf/hr/`, `db/schema.sql`·`seed.sql` | 기념일·경조사·포상 CRUD, 개인연차 화면에서 LEAVE_BALANCE·LEAVE_REQUEST·DUTY 통합 조회·연차 저장 (`/hr`) | 미확인 (유형 코드 샘플 상수, 휴가·당직·결재 연계) |
+| 설문관리 세트 | `arkive.admin.survey.*`, `Survey_SQL.xml`, `templates/thymeleaf/survey/`, `db/schema.sql`·`seed.sql` | 템플릿·설문·질문·항목·참여·통계 6종. 단일/복수/주관식, 익명 여부, 공개·마감, 문항별 통계 (`/survey`) | 미확인 (설문 정책·익명 통계 기준, 대량 응답 성능) |
+| 강의형 콘텐츠·동영상 | `arkive.admin.lecture.*`, `Lecture_SQL.xml`, `VideoEncodingService`/`FfmpegVideoEncodingService`, `templates/thymeleaf/lecture/`, `db/schema.sql`·`seed.sql` | 강의 CRUD·공개/마감, 동영상 업로드(FFmpeg 선택), Range 스트리밍, 진도 저장·이어보기, 시청 기준 + 설문 참여 수료 판정, 수료현황 (`/lecture`) | 미확인 (FFmpeg 실제 인코딩, 출석·과제·시험·성적, 비로그인 수강자 식별) |
+| 약도관리 | `arkive.admin.map.*`, `MapGuide_SQL.xml`, `templates/thymeleaf/map/`, `db/schema.sql`·`seed.sql` | 약도 목록·등록·수정·삭제, 주소·위도·경도·설명, 카카오 지도 SDK는 키가 있을 때만 로드 (`/map`) | 미확인 (카카오 키·허용 도메인, 주소 지오코딩 계약) |
 | SSO 연계 | `arkive.admin.sso.web.SsoController`, `OAUTH_LINK`, `templates/thymeleaf/sso/`, `application.properties`(`arkive.sso.*`) | OAuth2 authorization code, state 검증, 토큰 교환·사용자정보 조회, `OAUTH_LINK.PROVIDER='sso'` 사전 연계 계정 로그인, TOTP, 선택적 자동 가입 (`/sso`) | 미확인 (외부 SSO 서버 URL·필드·글로벌 로그아웃 계약, 자동 가입 정책) |
-| WebSocket 채팅 | `arkive.admin.chat.*`, `Chat_SQL.xml`, `ChatWebSocketConfig`, `ChatHandshakeInterceptor`, `ChatWebSocketHandler`, `templates/thymeleaf/chat/chat.html`, `V32__chat.sql` | `/ws/chat` 세션 인증 + 채팅 메뉴 WRITE 검사, Origin 허용목록, DB 최근 100건 이력, 메시지 저장·브로드캐스트 (`/chat/chat`) | 미확인 (다중 인스턴스 브로커, 메시지 보존·신고·차단 정책, 대용량 동시 접속) |
-| Spring Batch 일일 집계 | `arkive.admin.batch.*`, `Batch_SQL.xml`, `BatchConfig`, `DailyStatsTasklet`, `DailyStatsAggregator`, `templates/thymeleaf/batch/batchList.html`, `V33__batch.sql` | `dailyStatsJob`/`dailyStatsStep` 수동 실행, `STAT_DAILY`에 게시판 건수·로그인·접속·강의 수료·설문 참여 집계, 같은 날짜 재집계 멱등 (`/batch`) | 미확인 (자동 스케줄링, 실행 이력·재시작, 대량 발송·분산 배치) |
+| WebSocket 채팅 | `arkive.admin.chat.*`, `Chat_SQL.xml`, `ChatWebSocketConfig`, `ChatHandshakeInterceptor`, `ChatWebSocketHandler`, `templates/thymeleaf/chat/chat.html`, `db/schema.sql`·`seed.sql` | `/ws/chat` 세션 인증 + 채팅 메뉴 WRITE 검사, Origin 허용목록, DB 최근 100건 이력, 메시지 저장·브로드캐스트 (`/chat/chat`) | 미확인 (다중 인스턴스 브로커, 메시지 보존·신고·차단 정책, 대용량 동시 접속) |
+| Spring Batch 일일 집계 | `arkive.admin.batch.*`, `Batch_SQL.xml`, `BatchConfig`, `DailyStatsTasklet`, `DailyStatsAggregator`, `templates/thymeleaf/batch/batchList.html`, `db/schema.sql`·`seed.sql` | `dailyStatsJob`/`dailyStatsStep` 수동 실행, `STAT_DAILY`에 게시판 건수·로그인·접속·강의 수료·설문 참여 집계, 같은 날짜 재집계 멱등 (`/batch`) | 미확인 (자동 스케줄링, 실행 이력·재시작, 대량 발송·분산 배치) |
 
 ## 테스트 자산 현황 (2026-11-07)
 
@@ -115,15 +117,15 @@
 
 | 기능 | 함께 가져갈 자산·주의점 |
 | --- | --- |
-| 메일·비밀번호 재설정 | `spring-boot-starter-mail`, `EgovConfigAsync`, `MailService`/`MailAsyncService`/`MailServiceImpl`, `AuthServiceImpl`의 토큰 메서드, `LoginController` 화면·API, `V6__mail_notification.sql`, `spring.mail.*`·`arkive.mail.*`. 게시판 알림은 `BoardNotificationEvent`·`BoardNotificationEventListener` 포함. SMTP 값은 대상 환경변수로 주입 |
+| 메일·비밀번호 재설정 | `spring-boot-starter-mail`, `EgovConfigAsync`, `MailService`/`MailAsyncService`/`MailServiceImpl`, `AuthServiceImpl`의 토큰 메서드, `LoginController` 화면·API, `schema.sql`의 APP_USER·BOARD·PASSWORD_RESET_TOKEN, `spring.mail.*`·`arkive.mail.*`. 게시판 알림은 `BoardNotificationEvent`·`BoardNotificationEventListener` 포함. SMTP 값은 대상 환경변수로 주입 |
 | 사이트맵 | `SitemapController`, `templates/thymeleaf/comm/sitemap.html`, `layout/layout.html` 링크, `MenuInterceptor`의 `menuList` 모델. 메뉴 테이블·권한 필터 선행, `SitemapControllerTest`는 별도 테스트 준비 대상 |
 | 통합검색 | `SearchController`·`SearchReindexController`, `SearchService`/`SearchServiceImpl`, `SearchIndexService` 구현, `SearchMapper`·`Search_SQL.xml`, `search/searchList.html`, `user/layout.html` 링크, `.search-snippet` CSS. BOARD·BOARD_TYPE·상세 URL에 맞춰 SQL/링크 조정. 초성은 `SEARCH_CHOSUNG`·`KoreanSearchUtil` 필요, ES는 선택, 본문 검색 제외 |
-| 감사·개인정보 보호 | `AuditInterceptor`/`AuditEvent`/`AuditLogEventListener`/`AuditLogService`/`AuditLogController`, `MaskingInterceptor`/`MaskingUtil`, `PiiFieldService`/`FieldCryptoService`, `V7`·`V15`·`V34` SQL, `EgovConfigWeb` 인터셉터 등록, `application.properties`의 `arkive.audit.*`·`arkive.crypto.field-key`. 키는 대상에서 주입하고 기존 평문 데이터 이관은 별도 절차로 준비 |
+| 감사·개인정보 보호 | `AuditInterceptor`/`AuditEvent`/`AuditLogEventListener`/`AuditLogService`/`AuditLogController`, `MaskingInterceptor`/`MaskingUtil`, `PiiFieldService`/`FieldCryptoService`, `schema.sql`의 AUDIT_LOG·연락처 컬럼, `EgovConfigWeb` 인터셉터 등록, `application.properties`의 `arkive.audit.*`·`arkive.crypto.field-key`. 키는 대상에서 주입하고 기존 평문 데이터 이관은 별도 절차로 준비 |
 
 ## 유지 기준
 
 - 기능을 추가·변경할 때 실제 화면, Controller, Service, Mapper/SQL, 외부 연계와 호출처를 확인해 행을 갱신한다.
-- Arkive는 타 프로젝트로의 기능 이식을 전제로 한다. 기능을 추가할 때는 이식에 필요한 의존성(pom.xml), 설정(Globals 키·application.properties), DB 객체(db/versions), 외부 연계 JAR/키를 함께 기록한다.
+- Arkive는 타 프로젝트로의 기능 이식을 전제로 한다. 기능을 추가할 때는 의존성(pom.xml), 설정(Globals 키·application.properties), DB 객체(`db/schema.sql`)·필수 초기값(`db/seed.sql`), 외부 연계 JAR/키를 함께 기록한다.
 - DB 제품이 달라질 수 있으므로(Oracle/PostgreSQL 등) DB 종속 문법과 HSQL 전용 함수는 비고에 표시한다.
 - `@RequestMapping` 등 코드상 경로가 있다는 사실과 사용 중인 업무 기능이라는 사실을 구분한다.
 - 책임 조직·담당자는 업무 담당자나 공식 문서 근거가 있을 때만 기록한다.

@@ -1,6 +1,6 @@
 # DB 스키마 (Arkive 기록)
 
-> 이식 구분: **Arkive 기록**. 대상 프로젝트로 복사하지 않는다. 이식용 빈 양식은 [project-template-pack.md](../portable/project-template-pack.md), 기능별 절차는 [feature-porting-sheet.md](../portable/feature-porting-sheet.md)를 쓴다.
+> **Arkive 기록 · 대상에 복사 금지.** 대상 지식은 [빈 양식](../portable/project-template-pack.md)을 쓴다.
 
 <!--
 문서 상태: 부분 미완성
@@ -12,25 +12,30 @@
 
 > 이 문서는 저장소에 있는 초기화 SQL을 기준으로 한 개발 스키마 현황이며 운영 스키마 문서가 아니다. 실제 대상 DB와 버전은 환경 설정으로 별도 확인한다.
 
+찾기: [연결·초기화](#확인된-연결초기화-설정) · [주요 테이블](#주요-테이블-최신-정의) · [추가 기능 객체](#추가-기능별-객체-최신-정의) · [변경 기록](#스키마-변경-기록).
+
 ## 확인된 연결·초기화 설정
 
 - `application.properties`는 `Globals.DbType=hsql_server`와 `Globals.hsql_server.Port=9001`을 설정한다. `EgovConfigDatasource.java`는 이 값에서 `./data/ArkiveDB` 파일 HSQLDB 서버를 시작한다. 테스트는 `application-test.properties`에서 경로 `target/test-db`, 포트 9002로 분리한다.
-- 기본 설정은 `spring.sql.init.mode=never`이며 스키마를 `db/versions/`의 `V*__*.sql`로 관리한다. 현재 파일은 V1(baseline), V2(댓글), V3(쪽지), V4(공지 고정), V5(권한), V6(메일·재설정), V7(2단계 Q&A 구분·감사 로그), V8(휴가), V9(TOTP), V10(약관), V11(초성 검색), V12(SMS 동의), V13(회의실), V14(약식결재), V15(연락처 컬럼 확장), V16(설문), V17(SMS 발송 상태), V18(HR), V30(강의), V31(약도), V32(채팅), V33(배치 집계), V34(사용자 휴대전화 암호화 컬럼 확장), V35(게시판 조회 로그·조회수 통계 메뉴)이다. V19~V29는 없다. 빈 DB에서 시작기가 번호 순서로 적용하고 `SCHEMA_MIGRATION`에 버전별로 기록한다.
-- 2026-10-11에 구 체인(V1,V2,V6~V29)을 단일 V1으로 교체했다. 구 이력 DB에서는 새 V1이 스킵되므로 개발 DB 재생성이 필요할 수 있지만, 데이터 보존·백업·복구 확인 없이 `data/`를 삭제하지 않는다. 10-22에 V2·V3, 10-23에 V4·V5·V6, 10-24에 V8 및 2·3단계 버전을 추가했다. 현재 목록은 위와 같이 V35까지다. 당시 테스트 DB 적용 이력은 아래 변경 기록과 [마이그레이션 기록](migration.md)에 두며 운영 적용은 미확인이다. 적용된 SQL은 수정하지 않고 다음 버전을 추가한다.
-- `db/data.sql`은 시작 마이그레이션이 아니다. `DBJob` 덤프의 대상 파일명 표시용(143바이트 주석)이며 로더는 `db/versions/V*__*.sql`만 읽는다.
+- 2026-11-08부터 `src/main/resources/db/schema.sql`에 54개 기능 테이블과 최종 컬럼·PK/FK·Unique·인덱스를, `db/seed.sql`에 필수 초기값을 둔다. `spring.sql.init.mode=never`를 유지하고 `HsqlDemoDatabaseInitializer`가 빈 로컬 DB에만 `schema` → `seed`를 한 번 실행한다. 근거: 두 SQL, `EgovConfigDatasource.java`, `HsqlDemoDatabaseInitializer.java`.
+- 초기화기의 `ARKIVE_DB_INIT`은 기능 스키마 밖의 데모 상태표다. 완료 상태·초기화 SQL 체크섬·객체 메타데이터 서명을 확인하고 일반 재시작은 DDL/시드를 실행하지 않는다. 파일 변경·불완전 초기화·구조 불일치는 자동 삭제나 갱신 없이 시작을 중단한다. 구 체인 전체 적용 이력과 구조가 일치하는 DB는 전환 때 한 번 인수하며 기존 데이터는 유지한다. 자세한 조건과 새 DB 경로 사용은 [마이그레이션 기록](migration.md)을 따른다.
+- `seed.sql`은 메뉴 63행, 개발용 admin 1행, 역할 2행, 사용자-역할 1행, 역할-메뉴 권한 92행, `IDS.SAMPLE=1`, 약관 자리표시자 3행을 준비한다. 샘플 CRUD 레코드·회의실·자동 연차 부여·업무 로그·토큰·사용자 동의는 넣지 않는다. 구 DB를 인수할 때 이 시드를 재실행하지 않는다.
+- 전환 전 `db/versions/`의 V1~V18·V30~V35(24개, V19~V29 없음)은 최신 정의로 통합해 제거했다. 덤프 표시용 주석 `db/data.sql`도 제거했으며 `DBJob`은 이 리소스를 읽지 않는다. 구 SQL·실행 결과는 아래 변경 기록과 Git 이력에 남긴다.
 - `db/baseline_schema.sql`(구 복사용 밑그림, V10 시절에서 멈춤)과 `db/sampledb.sql`(레거시, `DROP TABLE` 포함)은 2026-10-11에 삭제했다. `db/system.sql`은 저장소에 이미 없고 문서에만 남아 있던 언급이라 함께 정리했다.
 - HSQLDB 런타임 파일은 프로젝트 `data/` 아래에 만들어지며 `.lck`는 실행 중 잠금 파일이다. 현재 `.gitignore`에서 `data/`를 제외해 DB 파일은 Git에 올리지 않는다.
 - 운영 DB 제품/버전과 운영 스키마: 미확인.
 
-## 기준 스키마 테이블 (V1 baseline)
+## 주요 테이블 (최신 정의)
+
+현행 객체의 원본은 `db/schema.sql`, 필수 초기값의 원본은 `db/seed.sql`이다. 같은 객체에 대한 변경 결과를 최종 CREATE에 반영하며 기존 DB용 ALTER/백필과 구분한다. [SQL 배치 기준](../common/sql-standard.md#db-변경을-어느-파일에-넣을지)을 따른다.
 
 | 테이블 | 확인된 용도/구조 | 주의 |
 | --- | --- | --- |
-| `menu` | 메뉴 ID·이름·경로·상위·순서·사용 여부. V1 시드 32행 (사용자관리 `ME02010400` 포함)에 V3 쪽지 메뉴 4행이 추가된다 | 기존 메뉴 ID는 보존. `ME02010300`은 Swagger 유지. V3 메뉴 ID `ME02080000`~`ME02080300` |
+| `MENU` | 메뉴 ID·이름·경로·상위·순서·사용 여부. 필수 메뉴 63행 | 기존 ID·상위 관계·경로·순서 유지. `ME02010300`은 Swagger, `ME02010400`은 사용자관리 |
 | `ATCH_FILE` | 파일 ID·그룹 ID·원본/물리 파일명·경로·크기·확장자·등록 정보 (`USE_YN` 없음) | hard delete. 기존 `OTHER_` 그룹은 `DROPZONE_`으로 이전된 상태 |
-| `SAMPLE` | eGovFrame CRUD 대상. 기본 레코드 6건 포함 | 샘플 매퍼가 살아 있어 유지 |
-| `IDS` | eGovFrame 샘플 ID 생성기. `SAMPLE` 다음 ID 7로 초기화 |  |
-| `BOARD` | 게시판. `BOARD_TYPE`: CK·TOAST·FAQ·QNA. 첨부는 `ATCH_FILE_GRPID`(`BOARD_` 접두사). `NOTICE_YN`은 V4, `IMPORTANT_YN`·`MAIL_SENT_YN`·`MAIL_SENT_DT`는 V6에서 추가(공지/중요글 메일) | `NOTICE_YN` 기본 'N'. `IMPORTANT_YN` 기본 'N'. `MAIL_SENT_YN`은 발송 전 원자적 선점에 사용하며 기본 'N'. TOAST 커서 목록은 고정 정렬을 쓰지 않음 |
+| `SAMPLE` | eGovFrame CRUD 대상. 빈 DB에 샘플 레코드는 넣지 않음 | 매퍼가 살아 있어 테이블 유지 |
+| `IDS` | eGovFrame 샘플 ID 생성기. `SAMPLE` 다음 ID 1로 초기화 | 샘플 레코드가 없으므로 1부터 등록 가능 |
+| `BOARD` | 게시판. `BOARD_TYPE`: CK·TOAST·FAQ·QNA. `CONTENT CLOB`, 첨부 `BOARD_` 그룹, 공지·중요글·Q&A 공개 구분·초성·메일/SMS 발송 상태를 최종 정의에 포함 | 공지·중요글·발송 선점은 기본 'N', `ASK_TYPE` 기본 'PUBLIC'. TOAST 커서 목록은 공지 고정 정렬을 쓰지 않음 |
 | `COMM_CODE` | 공통코드. 마스터는 `MASTR_CODE = DETAIL_CODE`인 행 | 별도 마스터 테이블 없음 |
 | `QNA_ANSWER` | Q&A 답변. `BOARD`와 1:1, 질문 삭제 시 cascade | 답변 존재 여부로 상태 판정 |
 | `MEMO_REPORT` | 메모보고. 상태 보고→확인/의견 |  |
@@ -44,41 +49,46 @@
 | `DUTY` | 당직. 엑셀 일괄등록: 날짜(YYYYMMDD)\|당직자\|비고 |  |
 | `BUSINESS_CARD` / `CARD_USER` | 명함·사용등록. 공개 명함만 목록 노출 |  |
 | `COUNSEL` | 상담. 비밀번호 SHA 해시. 상태 접수대기/접수/완료 |  |
-| `APP_USER` | 사용자. `ADMIN_YN`으로 관리자/일반 구분. `MAIL_YN`은 V6, `PHONE`·`SMS_YN`은 V12에서 추가된 수신 동의·연락처. 초기 admin 1건 포함 | 초기 비번은 개발용. 운영 전 변경. admin 시드의 이메일은 없으므로 메일 수신 대상이 아님. `PHONE`은 V34부터 AES-GCM 암호문 허용, 복호화 키 필요 |
-| `APP_ROLE` | 역할 마스터. `ROLE_ID` PK, 역할명, 설명, 사용 여부 | V5에서 `ROLE_ADMIN`·`ROLE_USER` 시드. 역할 ID는 시스템 역할 고정 |
+| `APP_USER` | 사용자. bcrypt 비밀번호, 관리자·잠금·사용·메일/SMS 동의 상태, 이메일과 `PHONE VARCHAR(500)`. 개발용 admin 1건 포함 | 시드에 이메일·전화·수신/약관 동의 없음. `PHONE` AES-GCM 저장에는 별도 키 필요. 개발용 계정을 실제 서비스에 복사하지 않음 |
+| `APP_ROLE` | 역할 마스터. `ROLE_ID` PK, 역할명, 설명, 사용 여부 | `ROLE_ADMIN`·`ROLE_USER` 초기값. 역할 ID는 애플리케이션이 참조 |
 | `APP_USER_ROLE` | 사용자-역할 매핑. `USER_ID`+`ROLE_ID` PK | 여러 역할 가능. 사용자 삭제 시 애플리케이션이 매핑 정리 |
 | `APP_ROLE_MENU` | 역할-메뉴 권한. `ROLE_ID`+`MENU_ID` PK, `READ_YN`, `WRITE_YN` | `WRITE_YN='Y'`는 조회 포함으로 저장. 여러 역할은 메뉴별 OR 집계 |
 | `OAUTH_LINK` | 소셜 로그인 연계 (`PROVIDER`, `PROVIDER_ID` PK) |  |
 
 제외한 테이블: 구 V2의 `menu_author`·`user`는 매퍼·자바 참조 0건이라 baseline에서 뺐다. 로그인은 `APP_USER`를 쓴다.
 
-## 이후 마이그레이션 테이블 (V2~)
+## 추가 기능별 객체 (최신 정의)
 
-| 테이블 | 스크립트 | 확인된 용도/구조 | 주의 (DB종속·보존·백업) |
+아래 객체도 모두 `db/schema.sql`에 최종 정의가 있다. 메뉴·역할·권한 초기값은 `seed.sql`에서 필요한 부분만 가져간다. 과거 버전 경로와 실행 증거는 [변경 기록](#스키마-변경-기록)에 보존하고 현재 실행 검증과 구분한다.
+
+| 객체/영역 | 현재 SQL | 확인된 용도/구조 | 주의 (DB종속·보존·백업) |
 | --- | --- | --- | --- |
-| `BOARD_COMMENT` | `db/versions/V2__board_comment.sql` | 게시글 1단 댓글. `COMMENT_ID` PK, `BOARD_ID` FK, `CONTENT VARCHAR(1000)`, 작성자 ID·표시명, 등록일 | `BOARD` 삭제 시 `ON DELETE CASCADE`. 대댓글 없음. 삭제 권한(작성자/관리자)은 애플리케이션에서 판정 |
-| `MESSAGE` | `db/versions/V3__message.sql` | 받은/보낸 쪽지. 발신자·수신자 ID/명, 제목, 내용, 읽음 여부·일시, 발신/수신 삭제 플래그 | `CONTENT VARCHAR(4000)`은 DB 문자 길이 기준 확인 필요(Oracle bytes 주의). 목록 SQL은 `LIMIT ? OFFSET ?` 사용 → Oracle 이식 시 문법 조정. 양쪽 삭제 플래그가 Y여도 행은 남는다(보존·정리 정책 미확인) |
-| `BOARD.NOTICE_YN` | `db/versions/V4__board_notice.sql` | 공지 고정 여부(`Y`/`N`, 기본 `N`). CK 목록은 `NOTICE_YN DESC, REGIST_DT DESC, BOARD_ID DESC`로 정렬 | `ALTER TABLE ... ADD COLUMN ... DEFAULT 'N' NOT NULL`은 HSQLDB 기준. Oracle/PG 등 대상 DB의 DDL 문법 확인 필요 |
-| `APP_ROLE`, `APP_USER_ROLE`, `APP_ROLE_MENU` | `db/versions/V5__permission.sql` | 역할 마스터, 사용자-역할, 역할-메뉴 조회/쓰기 권한. `menu`에 `ME02010500`(권한관리) 추가 | 기존 사용자는 `ADMIN_YN`에 따라 `ROLE_ADMIN`/`ROLE_USER`로 매핑. `ROLE_USER`는 `ME0201*`·`ME0202*`(시스템·업로드)를 조회·쓰기 모두 제외하고 나머지 콘텐츠 메뉴에 쓰기까지 부여 |
-| `APP_USER.MAIL_YN`, `BOARD.IMPORTANT_YN`, `BOARD.MAIL_SENT_YN`, `BOARD.MAIL_SENT_DT`, `PASSWORD_RESET_TOKEN` | `db/versions/V6__mail_notification.sql` | 메일 수신 동의, 중요글 표시, 게시글당 1회 메일 발송 선점, 1회용 비밀번호 재설정 토큰 | `MAIL_YN`·`IMPORTANT_YN`·`MAIL_SENT_YN` 기본 `N`. 토큰은 `TOKEN_HASH` PK에 SHA-256 해시만 저장하고 원문은 저장하지 않는다. `USED_YN`, `EXPIRES_DT`, `REGIST_DT`로 30분·1회를 판정. `APP_USER` FK는 선언하지 않음. `ALTER TABLE ... ADD COLUMN ... DEFAULT ... NOT NULL`·`CREATE INDEX IF NOT EXISTS`는 HSQLDB 기준이므로 대상 DB 문법 확인 필요 |
-| `BOARD.ASK_TYPE`, `AUDIT_LOG`, `menu` 2행 | `db/versions/V7__stage2_qna_audit.sql` | Q&A 공개(`PUBLIC`)/내부(`INTERNAL`) 구분, 감사 로그, 로그관리·통계 메뉴(`ME02010600`·`ME02010700`) | 2단계 마이그레이션으로 이번 작업에서 새로 만든 것이 아니다. `DETAIL`에 비밀번호·주민번호·본문 원문을 저장하지 않는 전제. 적용·테스트 이력은 미확인 |
-| `LEAVE_BALANCE`, `LEAVE_REQUEST`, `menu` 4행 | `db/versions/V8__leave.sql` | 사용자·연도별 총 연차·사용일수, 휴가 신청(유형·기간·일수·상태·승인자·반려사유). 메뉴 `ME02090000`(인사관리)과 `ME02090100`(내 휴가)·`ME02090200`(휴가관리)·`ME02090300`(연차관리) | 기존 `APP_USER`에게 현재 연도 15일을 시드한다(이미 있으면 건너뜀). 승인 시 차감·승인 취소 시 환원은 애플리케이션 트랜잭션 책임. 신청 기간은 같은 연도만 허용하고 일수는 주말·`HOLIDAY` 제외 평일, 반차 0.5일. `LIMIT/OFFSET`·`SUBSTRING`·`CREATE TABLE/INDEX IF NOT EXISTS`는 HSQLDB 기준이므로 대상 DB 문법 확인 필요 |
-| `APP_USER_TOTP`, `APP_USER_TOTP_RECOVERY` | `db/versions/V9__totp.sql` | TOTP 비밀키(AES-GCM 암호문)와 복구코드 SHA-256 해시 | 2단계 마이그레이션. 평문 비밀키·복구코드는 저장하지 않는다. `APP_USER` 삭제 시 cascade. 적용·테스트 이력은 미확인 |
-| `TERMS`, `USER_TERMS_CONSENT` | `db/versions/V10__terms.sql` | 버전별 약관(`SERVICE`·`PRIVACY`·`MARKETING`)과 사용자 동의 이력. 본문은 자리표시자 | 2단계 마이그레이션. 실제 문구는 법무·개인정보 담당자 검토 후 새 버전으로 추가하고 기존 동의 이력은 보존. 적용·테스트 이력은 미확인 |
-| `BOARD.SEARCH_CHOSUNG` | `db/versions/V11__search_chosung.sql` | 초성 검색용 색인 컬럼 | 2단계 마이그레이션. 색인 값 채우기·갱신 주체는 애플리케이션/배치 확인 필요 |
-| `APP_USER.PHONE`, `APP_USER.SMS_YN` | `db/versions/V12__user_contact.sql` | SMS 수신 동의와 연락처 | 2단계 마이그레이션. `SMS_YN` 기본 `N`. 발송은 별도 동의가 있을 때만. 값 저장은 V34에서 암호문 길이를 수용하도록 확장 |
-| `APP_USER.PHONE` | `db/versions/V34__user_phone_crypto.sql` | 사용자 휴대전화 AES-GCM 암호문 저장을 위한 컬럼 길이 확장(`VARCHAR(500)`) | 2단계 보강. `AuthServiceImpl`이 저장 시 암호화·상세 조회 시 복호화하고, SMS 발송 대상은 `SmsServiceImpl`이 복호화한다. `APP_USER.EMAIL`은 아이디 찾기·비밀번호 재설정 조회 조건이라 평문 유지. 기존 평문 데이터의 암호화 이관은 미포함. 2026-10-24 테스트 DB에서 컬럼 확장 적용 확인, 휴대전화 암호화·복호화 경로는 자동 테스트 없음 `[일부검증]` |
-| `MEETING_ROOM`, `MEETING_RESERVATION`, `menu` 2행 | `db/versions/V13__meeting.sql` | 회의실 마스터(이름·위치·수용인원·사용 여부)와 예약(회의실·사용자·날짜·시작/종료시각·제목·목적). 메뉴 `ME02050100`(회의실관리)·`ME02050200`(회의실예약) | 3단계. 같은 회의실·날짜의 시간대 겹침 거부는 애플리케이션 책임. 샘플 회의실 `MR001` 시드. 시간은 `VARCHAR(5)`(HH:mm). `[미검증]` |
-| `APPROVAL_DOC`, `APPROVAL_HISTORY`, `menu` 1행 | `db/versions/V14__approval.sql` | 약식결재 문서(기안자·결재자·상태·상신/승인일·반려사유)와 상태 변경 이력. 메뉴 `ME02070100` | 3단계. 상태 `DRAFT`→`SUBMITTED`→`APPROVED`/`REJECTED`/`CANCELLED`. `DOC_TYPE`은 샘플 상수(GENERAL/LEAVE/EXPENSE/ETC). 결재자 1명 고정. `[미검증]` |
-| `ADDRESS_BOOK.TEL_NO`, `ADDRESS_BOOK.EMAIL`, `BUSINESS_CARD.TEL_NO`, `BUSINESS_CARD.EMAIL` | `db/versions/V15__field_crypto.sql` | AES-GCM 암호문 저장을 위한 컬럼 길이 확장(`VARCHAR(500)`) | 3단계. 암호화 키 관리·기존 평문 데이터 마이그레이션은 별도 확인 필요. `[미검증]` |
-| `SURVEY_TEMPLATE`, `SURVEY`, `SURVEY_QUESTION`, `SURVEY_ITEM`, `SURVEY_PARTICIPATION`, `SURVEY_ANSWER`, `menu` 4행 | `db/versions/V16__survey.sql` | 설문 템플릿·설문·질문·보기·참여·응답. 메뉴 `ME02031600`~`ME02031900`(템플릿·설문관리·참여·통계) | 3단계. 설문 삭제 시 질문·보기·참여·응답 cascade. 참여는 `(SURVEY_ID, USER_ID)` UNIQUE로 1회 제한. 질문 유형 SINGLE/MULTI/TEXT는 샘플 상수. `[미검증]` |
-| `BOARD.SMS_SENT_YN`, `BOARD.SMS_SENT_DT` | `db/versions/V17__sms.sql` | 게시글 SMS 1회 발송 선점 상태 | 3단계. 기본 `N`. 발송 설정은 `arkive.sms.*`(기본 비활성). 외부 SMS 계약은 연계 명세 확인 필요. `[미검증]` |
-| `HR_ANNIVERSARY`, `HR_EVENT`, `HR_REWARD`, `menu` 4행 | `db/versions/V18__hr.sql` | 기념일·경조사·포상 기록과 인사관리 메뉴 `ME02090400`~`ME02090700`. 개인연차 화면은 기존 `LEAVE_BALANCE`·`LEAVE_REQUEST`·`DUTY`를 조합 | 3단계. `APP_USER` FK는 선언하지 않음. 유형 코드는 샘플 상수. `[미검증]` |
-| `LECTURE`, `LECTURE_PROGRESS`, `menu` 4행 | `db/versions/V30__lecture.sql` | 강의(동영상 경로·길이·선택 설문·수료 기준 진도율)와 사용자별 진도·수료 상태. 메뉴 `ME020A0000`(강의관리 상위)·`ME020A0100`~`ME020A0300` | 3단계. 진도율 기본 90%·설문 연계는 샘플 정책. `LECTURE_PROGRESS`는 강의 삭제 시 cascade. 파일 경로는 서버 저장소 기준. `[미검증]` |
-| `MAP_GUIDE`, `menu` 1행 | `db/versions/V31__map_guide.sql` | 약도(주소·위도·경도·설명). 메뉴 `ME02040200` | 3단계. 카카오 지도 키는 화면 표시용이며 비어 있으면 지도 없이 표시. 좌표 정밀도 `DECIMAL(10,7)`. `[미검증]` |
-| `CHAT_MESSAGE`, `menu` 2행 | `db/versions/V32__chat.sql` | 채팅 메시지(사용자·표시명·내용·등록일)와 커뮤니케이션 메뉴 `ME020B0000`·`ME020B0100` | 3단계. 브로드캐스트는 단일 JVM 메모리 기반이라 다중 인스턴스 공유 불가. 메시지 보존·정리 정책 미확인. `[미검증]` |
-| `STAT_DAILY`, `menu` 1행 | `db/versions/V33__batch.sql` | 일일 집계 결과(날짜·유형·키·값). 메뉴 `ME02010800`(배치관리) | 3단계. `BATCH_*` 메타데이터 테이블은 만들지 않고 `ResourcelessJobRepository` 사용. 같은 날짜 재실행 시 삭제 후 재삽입. 스케줄러·실행 이력 없음. `[미검증]` |
-| `BOARD_VIEW_LOG`, `menu` 1행 | `db/versions/V35__board_view_log.sql` | 집계된 게시판 조회 1건(`LOG_ID` PK, `BOARD_ID`, `BOARD_TYPE`, `VIEW_DT`)과 '조회수 통계' 메뉴 `ME02032000`. `(VIEW_DT, BOARD_ID)`·`(BOARD_ID, VIEW_DT)` 인덱스 2개 | 일별 추이의 원본이며 순위는 `BOARD.VIEW_CNT`를 쓴다. `VIEW_CNT`는 이 표 도입 전 누적값이라 일별 그래프에는 잡히지 않는다. 로그 보관·정리 정책 없음. `CREATE TABLE/INDEX IF NOT EXISTS`는 HSQLDB 기준이라 대상 DB 문법 확인 필요. 2026-11-07 테스트 DB·로컬 `data/ArkiveDB` 적용 확인 |
+| `BOARD_COMMENT` | `schema.sql` | 게시글 1단 댓글. `COMMENT_ID` PK, `BOARD_ID` FK, `CONTENT VARCHAR(1000)`, 작성자 ID·표시명, 등록일 | `BOARD` 삭제 시 cascade. 삭제 권한은 애플리케이션 판정 |
+| `MESSAGE` | `schema.sql` + 메뉴/권한 `seed.sql` | 발신자·수신자 ID/명, 제목·내용, 읽음 일시, 함별 삭제 플래그 | `CONTENT VARCHAR(4000)`과 `LIMIT/OFFSET`은 대상 DB 문자 길이·문법 확인. 양쪽 삭제 후에도 행은 남음, 보존 정책 미확인 |
+| `BOARD.NOTICE_YN` | `schema.sql` | 공지 고정 여부(`Y`/`N`, 기본 `N`). CK 목록은 `NOTICE_YN DESC, REGIST_DT DESC, BOARD_ID DESC` | 기존 DB에 새 컬럼을 적용할 때는 별도 갱신 SQL 필요 |
+| `APP_ROLE`, `APP_USER_ROLE`, `APP_ROLE_MENU` | `schema.sql` + `seed.sql` | 역할·사용자 매핑·메뉴 READ/WRITE, 권한관리 메뉴 | 기본 역할 권한은 기존 최종 목록 유지. 새 메뉴에 일반 역할 권한을 자동 부여하지 않음 |
+| 메일·재설정 (`APP_USER`, `BOARD`, `PASSWORD_RESET_TOKEN`) | `schema.sql` | 메일 동의·중요글·게시글당 1회 발송 선점, 토큰 해시·만료·사용 상태 | 동의·중요글·선점 기본 `N`. 토큰 원문/초기 토큰 없음, 사용자 FK 없음. 유효기간/재발급 정책은 애플리케이션 책임 |
+| `BOARD.ASK_TYPE`, `AUDIT_LOG` | `schema.sql` + 메뉴/권한 `seed.sql` | Q&A 공개/내부 구분, 감사 로그, 로그관리·통계 메뉴 | 감사 로그에 비밀번호·민감 원문을 저장하지 않음. 운영 보존 정책 미확인 |
+| `LEAVE_BALANCE`, `LEAVE_REQUEST` | `schema.sql` + 메뉴/권한 `seed.sql` | 연도별 총 연차·사용일수, 휴가 신청·승인·반려 상태 | 새 DB에 연차를 임의 부여하지 않음. 연차관리 화면에서 등록. 신청중/승인 차감·취소 환원·주말/공휴일 제외는 애플리케이션 책임 |
+| `APP_USER_TOTP`, `APP_USER_TOTP_RECOVERY` | `schema.sql` | TOTP 비밀키 암호문과 복구코드 해시·사용 상태 | 평문 비밀키·복구코드를 저장하지 않음. 사용자/TOTP 삭제 시 cascade. 초기 비밀키 없음 |
+| `TERMS`, `USER_TERMS_CONSENT` | `schema.sql` + 약관 `seed.sql` | 버전별 약관과 사용자 동의 이력 | 시드는 약관 자리표시자 3행만. 기존 동의 이력 보존, 실제 문구·새 VERSION은 담당자 검토 |
+| `BOARD.SEARCH_CHOSUNG` | `schema.sql` | 초성 검색용 색인 컬럼 | 빈 DB에는 색인할 게시물이 없음. 애플리케이션의 저장/갱신 경로와 선택 ES 연계 확인 |
+| `APP_USER.PHONE`, `APP_USER.SMS_YN` | `schema.sql` | 휴대전화 `VARCHAR(500)`과 SMS 수신 동의(기본 `N`) | `AuthServiceImpl` 저장/조회, `SmsServiceImpl` 발송 대상 복호화. EMAIL은 조회 조건이라 평문. 기존 평문 암호화 이관·키 관리는 별도 |
+| `MEETING_ROOM`, `MEETING_RESERVATION` | `schema.sql` + 메뉴/권한 `seed.sql` | 회의실 이름·위치·인원·사용 여부, 사용자·날짜·시간 예약 | 샘플 회의실 시드 없음. 먼저 화면에서 회의실 등록. 겹침 검사는 애플리케이션 책임, 시간은 `VARCHAR(5)` |
+| `APPROVAL_DOC`, `APPROVAL_HISTORY` | `schema.sql` + 메뉴/권한 `seed.sql` | 기안자·결재자·문서 상태와 변경 이력 | `DRAFT`→`SUBMITTED`→`APPROVED`/`REJECTED`/`CANCELLED`. DOC_TYPE은 샘플 상수, 결재자 1명 |
+| 주소록·명함 연락처/이메일 | `schema.sql` | `ADDRESS_BOOK`·`BUSINESS_CARD` 연락처 `VARCHAR(500)` | AES-GCM 암호문 길이 수용. 키 관리·기존 평문 이관 별도 |
+| `SURVEY_TEMPLATE`, `SURVEY`, `SURVEY_QUESTION`, `SURVEY_ITEM`, `SURVEY_PARTICIPATION`, `SURVEY_ANSWER` | `schema.sql` + 메뉴/권한 `seed.sql` | 설문 템플릿·설문·질문·보기·참여·응답 | 삭제 cascade, `(SURVEY_ID, USER_ID)` UNIQUE. SINGLE/MULTI/TEXT는 샘플 유형 |
+| `BOARD.SMS_SENT_YN`, `BOARD.SMS_SENT_DT` | `schema.sql` | SMS 1회 발송 선점 | 기본 `N`. `arkive.sms.*` 기본 비활성, 실제 제공자 계약 미확인 |
+| `HR_ANNIVERSARY`, `HR_EVENT`, `HR_REWARD` | `schema.sql` + 메뉴/권한 `seed.sql` | 기념일·경조사·포상. 개인연차 화면은 휴가·당직 객체 조합 | 사용자 FK 없음, 유형 샘플 상수. 사용자·날짜 인덱스 6개 유지 |
+| `LECTURE`, `LECTURE_PROGRESS` | `schema.sql` + 메뉴/권한 `seed.sql` | 동영상 경로·길이·설문·진도 기준과 사용자 수료 상태 | 기본 90%는 샘플 정책. 강의 삭제 시 진도 cascade, 서버 파일의 보존/복구 별도 |
+| `MAP_GUIDE` | `schema.sql` + 메뉴/권한 `seed.sql` | 주소·위도·경도·설명 | 좌표 `DECIMAL(10,7)`. 지도 키가 비면 SDK 없이 표시 |
+| `CHAT_MESSAGE` | `schema.sql` + 메뉴/권한 `seed.sql` | 사용자·표시명·메시지·등록일 | 단일 JVM 메모리 브로드캐스트, 다중 인스턴스·메시지 보존 미확인 |
+| `STAT_DAILY` | `schema.sql` + 메뉴/권한 `seed.sql` | 날짜·유형·키별 일일 집계 값 | `ResourcelessJobRepository`, `BATCH_*` 테이블 없음. 같은 날짜 재집계는 삭제 후 재삽입, 실행 이력/스케줄러 없음 |
+| `BOARD_VIEW_LOG` | `schema.sql` + 메뉴/권한 `seed.sql` | 조회 로그와 조회수 통계 메뉴. 날짜/게시글 인덱스 2개 | 일별 원본과 `BOARD.VIEW_CNT` 누적 순위 구분. 도입 전 누적값은 일별 그래프에 없음, 로그 보존 정책 미확인 |
+
+### 애플리케이션 처리·시드·검증 범위
+
+다음 V번호 설명은 **전환 전의 적용·검증 이력**이다. 새 DB의 시드 범위는 위 연결·초기화 절을 따르며, 아래의 샘플 회의실·자동 연차 부여·기존 사용자 자동 매핑을 다시 실행하지 않는다.
 
 - V3는 `MESSAGE`와 함께 `menu`에 `ME02080000`(쪽지관리), `ME02080100`(받은쪽지), `ME02080200`(보낸쪽지), `ME02080300`(쪽지쓰기)을 추가한다.
 - V5는 `ME02010500`(권한관리) 메뉴를 추가하고 `ROLE_ADMIN` 전체 메뉴, `ROLE_USER` 콘텐츠 메뉴 권한을 시드한다. `/system`·`/auth`는 기존 `AuthInterceptor` 정책상 `ADMIN_YN` 관리자만 접근한다.
@@ -113,6 +123,6 @@
 | 2026-10-24 | `LECTURE`, `LECTURE_PROGRESS`, `MAP_GUIDE`, 메뉴·권한 시드 | 강의형 콘텐츠·동영상 진도, 약도 | `db/versions/V30__lecture.sql`, `V31__map_guide.sql` | `LectureController`/`LectureService`/`LectureMapper`/`Lecture_SQL.xml`, `VideoEncodingService`, `MapController`/`MapGuideService`/`MapGuideMapper`/`MapGuide_SQL.xml` | 2026-10-24 테스트 DB 적용·관련 테스트 통과. FFmpeg·카카오 지도·실행 HTTP·GUI는 미검증(기본 비활성) |
 | 2026-10-24 | `CHAT_MESSAGE`, `STAT_DAILY`, 메뉴·권한 시드 | WebSocket 채팅 이력, Spring Batch 일일 집계 결과 | `db/versions/V32__chat.sql`, `V33__batch.sql` | `ChatController`/`ChatWebSocketHandler`/`ChatService`/`ChatMapper`/`Chat_SQL.xml`, `BatchController`/`BatchService`/`BatchMapper`/`Batch_SQL.xml`, `BatchConfig`/`DailyStatsTasklet` | 2026-10-24 테스트 DB 적용·컨텍스트 기동 확인. WebSocket 실접속·배치 실행·GUI 미검증. 채팅 단일 인스턴스, 배치 스케줄러·실행 이력 없음 |
 
-현재 최신 버전은 V35다. 이후 신규 SQL은 `db/versions/` 바로 아래에 V36부터 추가한다(2026-11-08 버전 파일 목록 재대조).
+2026-11-08 최신 schema/seed 전환: 구 24개 SQL의 최종 메타데이터와 새 정의가 일치하고 메뉴·역할·매핑·권한의 차이가 없음을 격리 HSQLDB에서 대조했다. 기존 업무 데이터는 새 시드에서만 제외하며 구 DB에서 지우지 않는다. 실행 조건·검증 제약은 [전환 검증 기록](current-state-analysis.md#2026-11-08-최신-schemaseed-초기화-전환)에 둔다. 이후 신규 DB 정의는 `schema.sql`·`seed.sql`에서 관리하고 기존 DB 갱신과 구분한다.
 
 컬럼 의미, 제약조건 및 실제 운영 데이터는 SQL 파일만으로 추정하지 않는다. 변경은 [sql-standard.md](../common/sql-standard.md) 및 [migration.md](migration.md)를 따른다.

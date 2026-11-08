@@ -1,6 +1,6 @@
 # 프로젝트 개요·실행 설정 (Arkive 기록)
 
-> 이식 구분: **Arkive 기록**. 대상 프로젝트로 복사하지 않는다. 이식용 빈 양식은 [project-template-pack.md](../portable/project-template-pack.md), 기능별 절차는 [feature-porting-sheet.md](../portable/feature-porting-sheet.md)를 쓴다.
+> **Arkive 기록 · 대상에 복사 금지.** 대상 지식은 [빈 양식](../portable/project-template-pack.md)을 쓴다.
 
 <!--
 문서 상태: 부분 미완성
@@ -22,7 +22,7 @@ Arkive는 기능 이식용 아카이브/레퍼런스다. 아래는 저장소에�
 | 데이터 접근 | MyBatis, Java Config, Mapper/XML | `egovframework.example.config.EgovConfigMapper`, `EgovConfigDatasource` |
 | 기본 포트 | 8080 | `application.properties` |
 | 현재 설정 DB | `Globals.DbType=hsql_server`; `./data/ArkiveDB` 파일 DB를 `Globals.hsql_server.Port=9001`에서 제공. 테스트는 9002 | `application.properties`, `EgovConfigDatasource.java` |
-| SQL 마이그레이션 | `SCHEMA_MIGRATION`에 없는 버전 SQL만 숫자 순으로 적용 | `EgovConfigDatasource`, `src/main/resources/db/versions/`; 상세는 [DB 이력](migration.md) |
+| 데모 DB 초기화 | 빈 DB에 최신 `schema.sql` → 필수 `seed.sql` 1회. 정상 재시작은 읽기 확인 후 재사용, 불일치는 자동 삭제 없이 중단 | `EgovConfigDatasource`, `HsqlDemoDatabaseInitializer`, `src/main/resources/db/schema.sql`·`seed.sql`; 상세는 [DB 이력](migration.md) |
 | 모니터링 | Actuator `health,info,metrics`, `health.show-details=always`; 메일 헬스 기본 비활성 | `application.properties`; 운영 공개 범위 미확인 |
 | 운영 배포 / 실서비스 DB | 미확인. 로컬 설정으로 운영 구성을 추정하지 않는다. | 운영 담당자 확인 필요 |
 
@@ -45,8 +45,8 @@ Arkive는 기능 이식용 아카이브/레퍼런스다. 아래는 저장소에�
 | 필드 암호화 | `ARKIVE_FIELD_KEY` 빈 값 | TOTP·연락처·사용자 휴대전화 저장이 거부됨. 키 분실 시 암호문 복구 불가 |
 | SSE | `layout.html`의 `ARKIVE_SSE_ENABLED=false` | 환경변수가 아닌 화면 설정; 활성화·화면별 옵션은 [알림 상세](feature-status.md#알림-설정과-실패-처리) |
 
-- DB URL과 `Globals.hsql_server.Port`를 일치시킨다. `data/`는 Git 관리 대상이 아닌 로컬 DB이며 실행 중 `.lck`를 직접 삭제하지 않는다. 메모리 DB에서 자동 이관되지 않으므로 [마이그레이션 기록](migration.md)을 확인한다.
-- `QuartzConfig`는 10분 Trigger, `DBJob`은 `Globals.dumpPath`(기본 `./backup/ArkiveDB.sql`)에 HSQLDB `SCRIPT` 덤프를 기록한다. 폴더 생성 후 기존 덤프를 지우므로 다중 이력 보존이 아니며, 삭제 후 실패·파일 권한·복구는 미확인이다.
+- Git checkout의 기본 로컬 데모는 Java·Maven만 준비하면 DB가 자동 시작한다. DB URL과 `Globals.hsql_server.Port`를 일치시킨다. `data/`는 Git 관리 대상이 아닌 로컬 DB이며 실행 중 `.lck`를 직접 삭제하지 않는다. 초기화 SQL 변경이나 불완전 DB의 처리는 [개발자 사용법](migration.md#개발자-사용법)을 따른다.
+- `QuartzConfig`는 10분 Trigger, `DBJob`은 `Globals.dumpPath`(기본 `./backup/ArkiveDB.sql`)에 HSQLDB `SCRIPT` 덤프를 기록한다. 이전 덤프 삭제 후 실패 위험과 CLOB 단독 SQL 복구의 한계가 있으며 완전한 백업으로 보지 않는다. 테스트는 덤프 경로도 분리한다. [복구 주의](migration.md#보존복구-주의)를 따른다.
 - 로그인·메뉴 권한·채팅·배치의 제약은 [기능 상세](feature-status.md)에서 확인한다. 로컬 메모리 세션이나 브로드캐스트를 다중 서버용 공유 상태로 보지 않는다.
 
 ## 아직 확인되지 않은 운영 지식

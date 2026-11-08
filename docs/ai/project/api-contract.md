@@ -1,6 +1,6 @@
 # API 계약 (Arkive 기록)
 
-> 이식 구분: **Arkive 기록**. 대상 프로젝트로 복사하지 않는다. 이식용 빈 양식은 [project-template-pack.md](../portable/project-template-pack.md), 기능별 절차는 [feature-porting-sheet.md](../portable/feature-porting-sheet.md)를 쓴다.
+> **Arkive 기록 · 대상에 복사 금지.** 대상 지식은 [빈 양식](../portable/project-template-pack.md)을 쓴다.
 
 <!--
 문서 상태: 부분 미완성
@@ -12,9 +12,11 @@
 
 > 아래는 코드에 선언된 경로의 일부 인벤토리다. 정식 계약 문서가 아니며 Request/Response 스키마, 인증, 오류 응답은 코드와 승인된 명세를 추가 확인해야 한다. `@RequestMapping`에 HTTP method가 지정되지 않은 경우 메서드를 임의로 정하지 않는다.
 
-## 확인된 경로 인벤토리 (2026-10-11·2026-10-22·2026-10-23 코드 기준)
+찾기: [경로](#경로-인벤토리) · [로그인·게시판·쪽지·휴가](#로그인게시판쪽지휴가-json-동작) · [3단계](#3단계-코드-관찰-2026-10-24-미검증) · [2단계](#2단계-코드-관찰-2026-10-24-미검증).
 
-클래스 prefix 기준이다. 화면 경로는 GET+POST, `.json`은 POST가 기본이다 (`/system`·`/file` 예외 별기).
+## 경로 인벤토리
+
+2026-10-11·2026-10-22·2026-10-23 코드 대조에 아래 추가 이력을 반영한 클래스 prefix 기준이다. 화면 경로는 GET+POST, `.json`은 POST가 기본이다 (`/system`·`/file` 예외 별기).
 
 | prefix | Controller | 대표 경로 | HTTP method (코드 선언) |
 | --- | --- | --- | --- |
@@ -74,9 +76,9 @@
 - 위 표는 코드 선언을 훑은 인벤토리이며 전체 계약 목록이 아니다. 각 prefix의 전체 경로·파라미터는 해당 Controller와 화면 JS를 대조해야 한다.
 - `NiceCheckController`(`/niceExt`) 외부 계약은 연계 명세를 확인한다.
 
-## 2026-10-22~24 코드에서 확인한 로그인·댓글·쪽지·공지 고정·메일·재설정·휴가 JSON 동작
+## 로그인·게시판·쪽지·휴가 JSON 동작
 
-> 아래는 코드 관찰값이며 승인된 API 계약이 아니다. 성공·실패 모두 Controller에서 HTTP 상태를 명시하지 않아 200으로 보이며, 인증 실패는 `AuthInterceptor`가 401 JSON을 반환한다.
+> 2026-10-22~24 코드 관찰값이며 승인된 API 계약이 아니다. 성공·실패 모두 Controller에서 HTTP 상태를 명시하지 않아 200으로 보이며, 인증 실패는 `AuthInterceptor`가 401 JSON을 반환한다.
 
 | 경로 | method | 인증/권한 | Request | Response | 오류 |
 | --- | --- | --- | --- | --- | --- |
@@ -99,20 +101,28 @@
 | `/leave/rejectLeave.json` | POST | 로그인 + 휴가관리 메뉴 WRITE | `leaveId`, `rejectReason`(1~500자) | `success:true`; 반려 사유 저장, 차감 없음 | `success:false` (사유 누락, 대기 아님) |
 | `/leave/saveBalance.json` | POST | 로그인 + 연차관리 메뉴 WRITE(`ME02090300`) | `userId`, `leaveYear`(4자리), `totalDays`(0~999.9, 소수 1자리) | `success:true`; 없으면 등록, 있으면 갱신 | `success:false` (사용자 없음·사용일수보다 적게 부여·형식 오류) |
 
+### 인증·권한·세션
+
 - `/message/**`, `/sitemap`, `/board/insertComment.json`·`/board/deleteComment.json`·`/board/updateNotice.json`은 `AuthInterceptor`의 공개 경로가 아니므로 세션 `LOGIN_USER`가 필요하다. `/sitemap`은 추가 메뉴 권한 매핑 없이 `MenuInterceptor`가 만든 조회 권한 메뉴만 렌더한다.
 - 댓글 삭제의 관리자 예외는 세션 `ADMIN_USER`로 판정한다. 쪽지는 관리자 예외 없이 발신자/수신자 본인만 열람·삭제한다. 공지 고정은 `ADMIN_USER`가 있어야 하며 CK 게시판만 허용한다.
 - `/login/login.json` 성공 시 `LoginSessionRegistry`가 사용자별 최신 세션을 유지하고 같은 계정의 이전 세션을 `invalidate()`한다. 폼 로그인·OAuth 콜백·계정연계 모두 동일하며, 다중 인스턴스에서는 공유 세션 저장소가 필요하다.
 - 로그인 사용자의 메뉴 조회·쓰기는 `MenuPermissionInterceptor`가 컨트롤러→메뉴 매핑으로 검사한다. 거부 시 `.json`은 HTTP 403 + `{"success":false,"message":"권한이 없습니다."}`, 화면은 403 오류 페이지다. `ADMIN_YN='Y'`는 슈퍼관리자로 통과하며, `/system`·`/auth`는 기존 `AuthInterceptor` 정책상 관리자만 접근한다.
 - 매핑되지 않은 URL과 존재하지 않는 정적 리소스는 HTTP 404 + `error/error` 화면으로 응답한다. 미매핑 `.json` 경로도 현재 HTML 404를 반환하며, JSON 오류 본문 규약은 아직 확정되지 않았다.
 - 댓글·쪽지·다운로드·SSE 구독은 메뉴 CRUD 권한과 분리해 로그인 사용자 공통 기능으로 둔다. SSE는 구독 시 역할을 저장하고, `BoardNotificationEventListener`가 발송 시 `selectRoleIdsWithMenuRead` 결과와 겹치는 역할에만 보낸다.
+
+### 메일·비밀번호 재설정
+
 - `/login/findPw.json`·`/login/resetPw.json`은 성공·실패 모두 HTTP 200과 `success` 필드로 응답한다. `findPw`는 계정 불일치·SMTP 비활성·발송 실패에서도 동일한 성공 메시지를 반환하므로, 클라이언트는 메일 도착 여부를 응답만으로 판단하지 않는다.
 - 메일 발송은 `arkive.mail.enabled=true`, 유효한 `arkive.mail.from`, SMTP 설정이 모두 있어야 한다. 기본값은 비활성이며, 비활성·수신 거부·이메일 없음이면 조용히 건너뛴다. 실제 SMTP 발송·반송·수신거부 계약은 미확인이다.
 - 공지/중요글 메일은 `BOARD.MAIL_SENT_YN`을 먼저 `Y`로 선점한 뒤 발송한다. 선점 후 SMTP가 실패해도 API 응답은 성공이며 자동 재시도는 없다. 게시판 저장 API는 `BoardNotificationEvent`만 발행하고, SSE·메일 리스너가 각자 예외를 처리한다.
+
+### 휴가 처리
+
 - `/leave/myLeave`는 로그인 사용자의 본인 연차·신청만 조회하고 취소도 본인만 가능하다. 휴가관리(`ME02090200`)와 연차관리(`ME02090300`)는 `MenuPermissionInterceptor.resolveLeave`가 경로로 메뉴를 판정하며 WRITE 권한이 필요하다. 관리자는 `ADMIN_YN`으로 우회한다.
 - 휴가 일수는 주말과 `HOLIDAY`를 제외한 평일 기준이고 반차는 0.5일이다. 신청 기간은 같은 연도만 허용하며, 신청중(`REQUESTED`) 일수도 잔여에서 차감한다. 승인은 `USED_DAYS + DAYS <= TOTAL_DAYS` 조건부 UPDATE로 차감하고, 승인 취소는 사용일수를 환원한다.
 - `/leave` 화면·JSON은 성공·실패 모두 HTTP 200과 `success` 필드로 응답하는 기존 패턴을 따른다. 권한 없는 메뉴 접근은 `MenuPermissionInterceptor`가 403(JSON은 `{"success":false,"message":"권한이 없습니다."}`)으로 거부한다.
 
-## 2026-10-24 3단계 코드 관찰 (미검증)
+## 3단계 코드 관찰 (2026-10-24, 미검증)
 
 > 3단계(회의실·약식결재·HR·설문·강의·약도·SSO·채팅·배치) 구현 코드를 읽고 정리한 관찰값이다. 2026-10-24 `verify.cmd -o`로 전체 193개 테스트가 통과했으나 실제 기동 HTTP 계약 확인은 하지 않았으므로 승인된 계약이 아니며, 아래 동작은 실제 기동 전까지 `[미검증]`이다. 성공·실패 모두 Controller가 HTTP 상태를 명시하지 않는 한 200과 `success` 필드로 응답하고, 인증·메뉴 권한 거부는 `AuthInterceptor`/`MenuPermissionInterceptor`가 401·403으로 끊는 기존 패턴을 따른다.
 
@@ -141,6 +151,8 @@
 | `/sso/callback` | GET+POST | 공개(`/sso/`), `state` 일치 필요 | `state`, `code` | 연계 계정(`OAUTH_LINK` PROVIDER=`sso`) 로그인 후 `/dashboard` 또는 `/user/userMain`; TOTP 사용자는 TOTP 단계로 | state 불일치·미연계 계정·토큰 교환 실패는 `sso/ssoError` 화면 |
 | `/ws/chat` | WebSocket | 세션 로그인 + 채팅 메뉴 READ·WRITE(`ME020B0100`, 관리자 우회), Origin 검사 | 텍스트 메시지(최대 16KB) | 최근 이력·브로드캐스트, 30분 유휴 타임아웃 | 핸드셰이크 거부, 단일 인스턴스 in-memory |
 | `/batch/runDailyStats.json` | POST | 로그인 + 배치관리 WRITE(`ME02010800`) | token(`BATCH_STATS`), `statDate`(`YYYY-MM-DD`, 미래 불가) | `success:true`, `status`, `targetDate`; 같은 날짜 재실행은 기존 집계 삭제 후 재삽입 | 형식·미래 날짜·토큰·Job 실패 |
+
+### 3단계 설정·운영 제약
 
 - 3단계 메뉴 시드 기준으로 일반 역할(`ROLE_USER`)은 회의실예약·약식결재·설문참여·내 강의·채팅만 접근할 수 있고, 회의실관리·HR·설문관리·설문통계·강의관리·수료현황·약도관리·배치관리는 관리자 전용이다. 실제 부여는 `APP_ROLE_MENU` 데이터에 따르며 위 시드는 샘플이다.
 - SSO는 기본 비활성(`SSO_ENABLED=false`)이고 자동 가입도 기본 비활성(`SSO_AUTO_CREATE=false`)이다. 외부 SSO의 토큰·사용자 정보 계약과 글로벌 로그아웃은 `미확인`이다.
@@ -171,6 +183,8 @@
 | `/login/termsAgree.json` | POST | 로그인 세션 | `termsIds[]` | `success:true`, 동의 이력 저장·`PENDING_TERMS` 해제 | 필수 약관 누락 |
 | `/internal/v1/health` | GET | `X-Internal-Token` 서비스 토큰 | 없음 | `success:true`, `apiVersion:"v1"`, `status:"UP"`, `timestamp` | 토큰 미설정 503, 불일치 401 |
 | `/internal/v1/notices` | GET | `X-Internal-Token` 서비스 토큰 | 없음 | `success:true`, `apiVersion:"v1"`, CK 공지 최신 10건 `list`, `total` | 토큰 오류, 조회 실패 `success:false` |
+
+### 2단계 보안·외부 연계
 
 - 감사 이벤트는 `LOGIN_SUCCESS`, `LOGIN_FAIL`, `LOGOUT`, `API_LOGIN`, `API_LOGIN_FAIL`, `TOTP_CHALLENGE`, `TOTP_FAIL`, `TERMS_CONSENT`, `MENU_ACCESS`, `PII_VIEW`, `PII_DOWNLOAD`, `API_ACCESS`를 기록·필터링한다.
 - 사용자 휴대전화는 등록·수정 시 `AuthServiceImpl`이 AES-GCM으로 암호화하고 상세 조회 시 복호화한다. 목록에는 `PHONE`을 싣지 않으며, SMS 발송 대상은 `SmsServiceImpl`이 발송 직전에 복호화한다. `APP_USER.EMAIL`은 아이디 찾기·비밀번호 재설정의 `WHERE` 조건이라 평문이다.
