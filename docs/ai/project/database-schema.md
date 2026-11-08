@@ -2,19 +2,6 @@
 
 > 이식 구분: **Arkive 기록**. 대상 프로젝트로 복사하지 않는다. 이식용 빈 양식은 [project-template-pack.md](../portable/project-template-pack.md), 기능별 절차는 [feature-porting-sheet.md](../portable/feature-porting-sheet.md)를 쓴다.
 
-## 작성 가이드 (Arkive 기록 참고)
-
-1. `application.properties`·Datasource 설정에서 DB 제품·버전·연결방식을 확인해 적는다. 운영DB는 추측 금지.
-2. 버전 SQL(`db/V*`)별로 테이블·용도를 1행씩 적는다. 컬럼 의미는 데이터사전·담당자 근거 있을 때만 적는다.
-3. Oracle/PG 등 대상 DB와 다른 문법(HSQL 전용 등)은 주의 칸에 표시한다.
-4. 레거시 SQL(DROP 포함)은 자동실행 여부를 확인해 주의에 적는다.
-
-## 양식 (Arkive 기록 참고)
-
-| 테이블 | 스크립트 | 용도/구조 | 주의 (DB종속·보존·백업) |
-| --- | --- | --- | --- |
-| 예: `menu` | `db/V2__....sql` | 메뉴 ID·이름·경로 등 | 기존 ID 보존 |
-
 <!--
 문서 상태: 부분 미완성
 미완성 항목: 운영 DB 제품·버전, 운영 스키마와 컬럼 의미, 외래키/인덱스/제약조건의 전체 현황, 환경별 차이와 데이터 보존 기준.
@@ -25,13 +12,11 @@
 
 > 이 문서는 저장소에 있는 초기화 SQL을 기준으로 한 개발 스키마 현황이며 운영 스키마 문서가 아니다. 실제 대상 DB와 버전은 환경 설정으로 별도 확인한다.
 
-## 작성 예시 (Arkive) — 아래는 참고용
-
-## 확인된 연결·초기화 설정 (Arkive 예시)
+## 확인된 연결·초기화 설정
 
 - `application.properties`는 `Globals.DbType=hsql_server`와 `Globals.hsql_server.Port=9001`을 설정한다. `EgovConfigDatasource.java`는 이 값에서 `./data/ArkiveDB` 파일 HSQLDB 서버를 시작한다. 테스트는 `application-test.properties`에서 경로 `target/test-db`, 포트 9002로 분리한다.
 - 기본 설정은 `spring.sql.init.mode=never`이며 스키마를 `db/versions/`의 `V*__*.sql`로 관리한다. 현재 파일은 V1(baseline), V2(댓글), V3(쪽지), V4(공지 고정), V5(권한), V6(메일·재설정), V7(2단계 Q&A 구분·감사 로그), V8(휴가), V9(TOTP), V10(약관), V11(초성 검색), V12(SMS 동의), V13(회의실), V14(약식결재), V15(연락처 컬럼 확장), V16(설문), V17(SMS 발송 상태), V18(HR), V30(강의), V31(약도), V32(채팅), V33(배치 집계), V34(사용자 휴대전화 암호화 컬럼 확장), V35(게시판 조회 로그·조회수 통계 메뉴)이다. V19~V29는 없다. 빈 DB에서 시작기가 번호 순서로 적용하고 `SCHEMA_MIGRATION`에 버전별로 기록한다.
-- 2026-10-11에 구 체인(V1,V2,V6~V29)을 최종 상태로 합쳐 단일 V1으로 교체했다. 구 버전 이력이 남은 DB에서는 새 V1이 스킵되므로 `data/`를 지우고 시작해야 한다. 2026-10-22에 V2(댓글)·V3(쪽지), 2026-10-23에 V4(공지 고정)·V5(권한)·V6(메일·재설정 토큰), 2026-10-24에 V8(휴가관리)을 추가했다. 현재 저장소에는 2단계 V7·V9~V12와 3단계 V13~V18·V30~V33이 더 있으며, 이후 변경은 V34부터 새 버전으로 추가한다 (적용된 SQL 수정 금지). 3단계 SQL은 파일만 확인했고 실제 적용·검증은 하지 않았다.
+- 2026-10-11에 구 체인(V1,V2,V6~V29)을 단일 V1으로 교체했다. 구 이력 DB에서는 새 V1이 스킵되므로 개발 DB 재생성이 필요할 수 있지만, 데이터 보존·백업·복구 확인 없이 `data/`를 삭제하지 않는다. 10-22에 V2·V3, 10-23에 V4·V5·V6, 10-24에 V8 및 2·3단계 버전을 추가했다. 현재 목록은 위와 같이 V35까지다. 당시 테스트 DB 적용 이력은 아래 변경 기록과 [마이그레이션 기록](migration.md)에 두며 운영 적용은 미확인이다. 적용된 SQL은 수정하지 않고 다음 버전을 추가한다.
 - `db/data.sql`은 시작 마이그레이션이 아니다. `DBJob` 덤프의 대상 파일명 표시용(143바이트 주석)이며 로더는 `db/versions/V*__*.sql`만 읽는다.
 - `db/baseline_schema.sql`(구 복사용 밑그림, V10 시절에서 멈춤)과 `db/sampledb.sql`(레거시, `DROP TABLE` 포함)은 2026-10-11에 삭제했다. `db/system.sql`은 저장소에 이미 없고 문서에만 남아 있던 언급이라 함께 정리했다.
 - HSQLDB 런타임 파일은 프로젝트 `data/` 아래에 만들어지며 `.lck`는 실행 중 잠금 파일이다. 현재 `.gitignore`에서 `data/`를 제외해 DB 파일은 Git에 올리지 않는다.
@@ -128,6 +113,6 @@
 | 2026-10-24 | `LECTURE`, `LECTURE_PROGRESS`, `MAP_GUIDE`, 메뉴·권한 시드 | 강의형 콘텐츠·동영상 진도, 약도 | `db/versions/V30__lecture.sql`, `V31__map_guide.sql` | `LectureController`/`LectureService`/`LectureMapper`/`Lecture_SQL.xml`, `VideoEncodingService`, `MapController`/`MapGuideService`/`MapGuideMapper`/`MapGuide_SQL.xml` | 2026-10-24 테스트 DB 적용·관련 테스트 통과. FFmpeg·카카오 지도·실행 HTTP·GUI는 미검증(기본 비활성) |
 | 2026-10-24 | `CHAT_MESSAGE`, `STAT_DAILY`, 메뉴·권한 시드 | WebSocket 채팅 이력, Spring Batch 일일 집계 결과 | `db/versions/V32__chat.sql`, `V33__batch.sql` | `ChatController`/`ChatWebSocketHandler`/`ChatService`/`ChatMapper`/`Chat_SQL.xml`, `BatchController`/`BatchService`/`BatchMapper`/`Batch_SQL.xml`, `BatchConfig`/`DailyStatsTasklet` | 2026-10-24 테스트 DB 적용·컨텍스트 기동 확인. WebSocket 실접속·배치 실행·GUI 미검증. 채팅 단일 인스턴스, 배치 스케줄러·실행 이력 없음 |
 
-이후 신규 SQL은 `db/versions/` 바로 아래에 V35부터 추가한다.
+현재 최신 버전은 V35다. 이후 신규 SQL은 `db/versions/` 바로 아래에 V36부터 추가한다(2026-11-08 버전 파일 목록 재대조).
 
 컬럼 의미, 제약조건 및 실제 운영 데이터는 SQL 파일만으로 추정하지 않는다. 변경은 [sql-standard.md](../common/sql-standard.md) 및 [migration.md](migration.md)를 따른다.

@@ -33,6 +33,7 @@
 - [ ] `pom.xml` 의존성:
 - [ ] 검색 기능이면 검색 Controller/Service/Mapper/XML·결과 템플릿·상세 링크:
 - [ ] 테스트 클래스:
+- [ ] 스펙 담당자의 별도 테스트 준비·승인 근거(구현 에이전트는 테스트 파일 생성·수정 금지):
 - [ ] 테스트 이식 시트: [test-porting-sheet.md](test-porting-sheet.md)
 
 ## 2. 대상 프로젝트 맞춤

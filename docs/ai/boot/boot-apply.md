@@ -31,10 +31,10 @@
 ## 화면·정적자원
 
 - Thymeleaf + `thymeleaf-layout-dialect`다. 화면은 `templates/thymeleaf/**`, 정적자원은 `static/**`다.
-- JSP·Tiles·`webapp/WEB-INF`가 없다. 클래식에 이식하면 [../classic/classic-apply.md](../classic/classic-apply.md)를 본다.
+- JSP·Tiles·`webapp/WEB-INF`가 없다. 클래식 대상이라면 [이식 가이드](../../../PORTING.md)에서 클래식 트랙을 선택한다(Boot 트랙과 함께 복사하지 않는다).
 
 ## 의존성
 
 - 확인된 starters: web, thymeleaf, validation, mail, quartz, actuator, log4j2, devtools, test.
-  `selenium-java(test)`, `springdoc-openapi`가 있다. 버전은 parent 상속이라 pom에 명시가 없다.
+  `selenium-java(test)`, `springdoc-openapi`가 있다. 스타터 버전은 parent에서 상속하며 개별 라이브러리 버전은 `pom.xml`에서 확인한다.
 - `NiceID_v1_1.jar`는 `src/main/resources/lib` systemPath 참조다. 타 프로젝트로 가져가면 저장소·좌표부터 해결한다.

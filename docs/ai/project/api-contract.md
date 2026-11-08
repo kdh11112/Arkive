@@ -2,18 +2,6 @@
 
 > 이식 구분: **Arkive 기록**. 대상 프로젝트로 복사하지 않는다. 이식용 빈 양식은 [project-template-pack.md](../portable/project-template-pack.md), 기능별 절차는 [feature-porting-sheet.md](../portable/feature-porting-sheet.md)를 쓴다.
 
-## 작성 가이드 (Arkive 기록 참고)
-
-1. Controller의 `@RequestMapping` 경로를 prefix별로 묶어 인벤토리 표에 적는다. method 미지정이면 임의로 정하지 않는다.
-2. 각 경로는 호출 화면·JS와 대조한 뒤 계약 기록 양식에 Request/Response·인증·오류를 적는다.
-3. 코드 선언만으로 계약을 확정하지 말고 명세·담당자 확인을 근거에 남긴다.
-
-## 양식 (Arkive 기록 참고)
-
-| 경로/기능 | HTTP method | 인증/권한 | Request | Response/상태 코드 | 오류/재시도 | 근거 |
-| --- | --- | --- | --- | --- | --- | --- |
-| 예: `/biz/list` | 미지정 (임의기재 금지) | 미확인 |  |  |  | Controller·화면 경로 |
-
 <!--
 문서 상태: 부분 미완성
 미완성 항목: Request/Response 스키마, 인증·권한, 상태/오류 코드, 호환성 및 외부 API 명세. 경로·method 인벤토리는 2026-10-11 대조분에 2026-10-22 댓글·쪽지 경로를 반영.
@@ -24,9 +12,7 @@
 
 > 아래는 코드에 선언된 경로의 일부 인벤토리다. 정식 계약 문서가 아니며 Request/Response 스키마, 인증, 오류 응답은 코드와 승인된 명세를 추가 확인해야 한다. `@RequestMapping`에 HTTP method가 지정되지 않은 경우 메서드를 임의로 정하지 않는다.
 
-## 작성 예시 (Arkive) — 아래는 참고용
-
-## 확인된 경로 인벤토리 (Arkive 예시, 2026-10-11·2026-10-22·2026-10-23 코드 기준)
+## 확인된 경로 인벤토리 (2026-10-11·2026-10-22·2026-10-23 코드 기준)
 
 클래스 prefix 기준이다. 화면 경로는 GET+POST, `.json`은 POST가 기본이다 (`/system`·`/file` 예외 별기).
 
@@ -191,11 +177,5 @@
 - `ARKIVE_FIELD_KEY`가 없으면 TOTP 설정과 휴대전화·연락처 저장이 거부된다. 기존 평문 연락처는 복호화 없이 그대로 읽히며, 자동 암호화 이관은 없다.
 - SMS는 별도 API 없이 `BoardNotificationEvent`의 채널로만 동작한다. `arkive.sms.enabled=false` 또는 자격증명·발신번호 누락 시 조용히 건너뛰고, 실제 알리고 계약·실패 재시도는 `미확인`이다.
 - 외부 웹분석은 API가 아니라 `AnalyticsModelAdvice`가 화면 모델에 설정을 주입하고 `arkive-analytics.js`가 동의 후 GA4·Clarity를 로드하는 방식이다. `ARKIVE_GA4_ID`·`ARKIVE_CLARITY_ID`가 없으면 비활성이다.
-
-## 계약 기록 양식
-
-| 경로/기능 | HTTP method | 인증/권한 | Request | Response/상태 코드 | 오류/재시도 | 호환성/버전 | 근거 |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-|  |  | 미확인 |  |  |  |  |  |
 
 API 계약을 수정할 때 Controller와 JavaScript/호출 시스템 사용처를 함께 확인한다. 코드 구현을 의도된 계약으로 간주하지 말고 업무/API 담당자 확인을 남긴다.

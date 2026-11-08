@@ -1,86 +1,78 @@
-# 프로젝트 개요 (Arkive 기록)
+# 프로젝트 개요·실행 설정 (Arkive 기록)
 
 > 이식 구분: **Arkive 기록**. 대상 프로젝트로 복사하지 않는다. 이식용 빈 양식은 [project-template-pack.md](../portable/project-template-pack.md), 기능별 절차는 [feature-porting-sheet.md](../portable/feature-porting-sheet.md)를 쓴다.
 
 <!--
 문서 상태: 부분 미완성
-미완성 항목: 업무 목적/운영 조직, 운영 프로파일·배포 방식, 운영 DB 제품·버전, 권한·개인정보 요구사항, 외부 연계 계약, Health·장애 대응·Canary 지원 여부.
-필요한 근거/확인자: 업무 책임자, 운영·인프라 담당자, 보안 담당자, 공식 연계 명세.
-완성 방법: 확인된 담당자/문서와 환경별 배포 설정을 검토하고, 민감값 없이 실제 운영 기준만 표에 추가한다.
-완료 기준: 필수 운영 환경과 소유 역할의 출처가 적혀 있고, 미확인 항목에는 담당자와 후속 확인 경로가 지정되어 있다.
+미완성 항목: 운영 조직·기능 소유권, 운영 프로파일·DB·배포 토폴로지, 보안 정책 승인, 외부 계약, Health·장애 대응·Canary 지원 여부.
+필요한 근거/확인자: 업무·보안·운영 담당자, 환경별 설정, 운영 아키텍처 문서, 공식 연계 명세.
+완성 방법: 아래 미확인 사항을 담당자 근거로 보강하고 실제 비밀값은 기록하지 않는다.
+완료 기준: 운영 구성·소유 역할·외부 계약이 근거와 함께 확인되거나 미확인 항목의 담당자와 후속 확인 경로가 지정되어 있다.
 -->
 
-> 확인일: 2026-09-25, 2026-10-23 보강. 아래 내용은 저장소 코드와 설정에서 확인한 현황이다. 운영 환경 및 업무 목적은 별도 근거가 확인될 때 갱신한다.
-> Arkive는 다른 프로젝트에 기능 이식을 편하게 만들기 위해 만든 아카이브/레퍼런스 프로젝트다.
-> 타 전자정부프레임워크·Spring·Spring Boot 프로젝트로 복붙 이식을 전제로 하며, 프로젝트명·패키지·테이블명·파일 위치·DB 제품(Oracle/PostgreSQL 등)은 이식 대상에 맞게 최소한으로 바꾸는 것을 허용한다.
+Arkive는 기능 이식용 아카이브/레퍼런스다. 아래는 저장소에서 확인한 로컬 구성이지 승인된 운영 아키텍처가 아니다. 기존 개요·아키텍처의 코드 관찰(2026-09-25~10-24)을 통합했으며 설정·세션·채팅·예약 작업은 2026-11-08 관련 코드와 재대조했다.
 
-## 작성 가이드 (Arkive 기록 참고)
-
-1. `pom.xml`에서 빌드·Java버전·프레임워크를 확인해 양식 1~4행에 적는다.
-2. `application.properties`·`EgovConfigDatasource.java`에서 포트·DB종류·DB경로를 확인해 5~6행에 적는다.
-3. 마이그레이션 방식(`db/` 규칙)은 7행에 적는다. 운영DB는 추측하지 말고 미확인으로 둔다.
-4. 비밀값(SMS키·JWT·private.key 등)은 절대 복사하지 않는다.
-
-## 양식 (Arkive 기록 참고)
-
-| 구분 | 내용 | 근거 (파일·담당자·확인일) |
-| --- | --- | --- |
-| 빌드 | 예: Maven, artifact `group:artifact:version` | `pom.xml` |
-| Java / 프레임워크 | 예: Java 17, eGovFrame Boot 5.0.0 | `pom.xml` |
-| 웹 화면 | 예: Thymeleaf, 템플릿 경로 | `pom.xml`, `application.properties` |
-| 데이터 접근 | 예: MyBatis, Mapper XML 경로 | `EgovConfigMapper.java`, `sqlmap/` |
-| 기본 포트 | 예: 8080 | `application.properties` |
-| 현재 설정 DB | 예: `Globals.DbType=OOO`, 경로·포트 | `application.properties`, `EgovConfigDatasource.java` |
-| SQL 마이그레이션 | 예: 시작 시 미적용 버전만 적용 | `EgovConfigDatasource`, `db/` |
-| 운영 배포 / 실서비스 DB | 미확인 (추측 금지) | 운영 설정 근거 미확인 |
-
-## Arkive 작성 예시
-
-## 확인된 기술 및 실행 구성 (Arkive 예시)
+## 확인된 기술 및 실행 구성
 
 | 구분 | 확인된 내용 | 근거 |
 | --- | --- | --- |
 | 빌드 | Maven, artifact `Arkive:Arkive:1.0.0` | `pom.xml` |
 | Java / 프레임워크 | Java 17, eGovFrame Boot parent 5.0.0, Spring Boot 의존성 사용 | `pom.xml` |
 | 웹 화면 | Thymeleaf, 템플릿은 `src/main/resources/templates/thymeleaf/` | `pom.xml`, `application.properties` |
-| 데이터 접근 | MyBatis 및 eGovFrame 데이터 접근 설정, Mapper XML | `EgovConfigMapper.java`, `src/main/resources/egovframework/sqlmap/` |
+| 데이터 접근 | MyBatis, Java Config, Mapper/XML | `egovframework.example.config.EgovConfigMapper`, `EgovConfigDatasource` |
 | 기본 포트 | 8080 | `application.properties` |
 | 현재 설정 DB | `Globals.DbType=hsql_server`; `./data/ArkiveDB` 파일 DB를 `Globals.hsql_server.Port=9001`에서 제공. 테스트는 9002 | `application.properties`, `EgovConfigDatasource.java` |
-| SQL 마이그레이션 | 시작 시 미적용 버전만 숫자 순으로 적용 | `EgovConfigDatasource`, `db/` |
-| 운영 모니터링 | Actuator `health,info,metrics` 노출, `health.show-details=always`. 메일 헬스는 `MAIL_HEALTH_ENABLED=false`가 기본 | `application.properties` |
-| 메일 발송 | `spring-boot-starter-mail`, `MailAsyncService`/`MailServiceImpl`, `EgovConfigAsync`의 `mailTaskExecutor`. 게시판 공지/중요글은 `BoardNotificationEvent`/`BoardNotificationEventListener`가 SSE·메일을 분리. 기본 `arkive.mail.enabled=false`; SMTP·발신자·base URL은 환경변수 | `pom.xml`, `application.properties`, `MailServiceImpl`, `EgovConfigAsync`, `BoardNotificationEvent`, `BoardNotificationEventListener` |
-| 운영 배포 / 실서비스 DB | 미확인. 현재 로컬 설정만으로 운영 구성을 추정하지 않는다. | 운영 설정 근거 미확인 |
+| SQL 마이그레이션 | `SCHEMA_MIGRATION`에 없는 버전 SQL만 숫자 순으로 적용 | `EgovConfigDatasource`, `src/main/resources/db/versions/`; 상세는 [DB 이력](migration.md) |
+| 모니터링 | Actuator `health,info,metrics`, `health.show-details=always`; 메일 헬스 기본 비활성 | `application.properties`; 운영 공개 범위 미확인 |
+| 운영 배포 / 실서비스 DB | 미확인. 로컬 설정으로 운영 구성을 추정하지 않는다. | 운영 담당자 확인 필요 |
 
-- 2026-10-22 기준 게시판 댓글(1단)과 쪽지관리(받은/보낸, 읽음, 함별 소프트 삭제)가 구현되어 있고, 2026-10-23에 공지 고정(CK 공지 목록 상단 정렬), 중복 로그인 방지(사용자별 최신 세션 유지), 역할 기반 메뉴 권한(서버 인터셉터 강제·SSE 역할 필터), 메일 발송·비밀번호 재설정 토큰, 게시판 알림 이벤트(Mail/SSE 채널 분리), 로그인 사용자 권한별 읽기 전용 사이트맵, 로그인 사용자 제목 LIKE 통합검색 1단계를 추가했다. 2026-10-24에는 미매핑 URL·정적 리소스를 404로 응답하도록 전역 예외 매핑을 보완하고, 메일 비활성 시 메일 헬스 인디케이터가 전체 health를 DOWN으로 만들지 않게 했다. 저장소에는 2단계(Q&A 내·외부 구분, 감사 로그, 개인정보 마스킹·필드 암호화, TOTP, 약관, 초성 검색·ES 선택 전환, SMS, 중요글 채널 분리, 통계, GA4·Clarity 동의 연계, 내부 API)와 3단계(회의실·약식결재·HR·설문·강의·약도·SSO·WebSocket 채팅·Spring Batch 일일 집계) 코드가 추가되어 있다. 같은 날 2단계 잔여 항목(검색 재색인 관리자 권한, 감사 이벤트 필터, 사용자 휴대전화 암호화)을 보완하고 `verify.cmd -o`로 전체 193개 테스트와 JaCoCo 클래스별 게이트가 통과했으며, 검증을 막던 3단계 `BatchConfig`·`ChatWebSocketConfig` 기동 오류도 수정했다. 브라우저 GUI·실행 HTTP·외부 연동 검증 범위는 `README.md`의 `검증 현황`을 따른다. 메일·SMS·SSO·OAuth·NICE 외부 계약은 미확인이다. 상세 위치는 [function-inventory.md](function-inventory.md), [database-schema.md](database-schema.md), [api-contract.md](api-contract.md)를 참조한다.
+## 코드 탐색 시작점
 
-## 주의할 실행 동작
+디렉터리·계층·공통 호출 흐름은 [아키텍처](architecture.md), 기능별 파일·복사 묶음은 [기능 인벤토리](function-inventory.md)에서 찾는다. 동작·주의점은 [기능 상세](feature-status.md), 요청/응답은 [API 기록](api-contract.md), 공통 변경의 소비자는 [변경 영향](change-impact.md)을 따른다. 이 개요에는 실행 설정과 운영 미확인 사항을 둔다.
 
-- 로그인 성공 시 `LoginSessionRegistry`가 사용자별 최신 세션 1개만 유지한다. 같은 계정으로 다시 로그인하면 이전 세션이 만료되며, 이 레지스트리는 단일 애플리케이션 인스턴스의 메모리 기준이다. 다중 인스턴스 운영 시 공유 세션 저장소나 스티키 세션 정책이 필요하다.
-- 일반 사용자의 메뉴 조회·쓰기는 역할(`APP_ROLE`/`APP_ROLE_MENU`)로 판단하고 `MenuPermissionInterceptor`가 서버에서 강제한다. `ADMIN_YN='Y'`는 슈퍼관리자로 통과하며 `/system`·`/auth`는 기존 정책상 관리자만 접근한다. 역할이 없는 사용자는 메뉴 접근이 거부되고, 신규 사용자는 `ROLE_USER`를 기본 배정받는다.
-- DB 스키마와 초기 데이터는 모두 `db/versions/V*__*.sql`로 관리한다. 현재 파일은 V1~V18, V30~V35이며 V19~V29는 없다. V8까지는 기존 검증 이력이 있고, 2단계 V7·V9~V12·V34와 3단계 V13~V18·V30~V33은 2026-10-24 `mvn -o test`의 테스트 DB 기동에서 적용됐다. V35는 2026-11-07 테스트 DB와 로컬 `data/ArkiveDB`에서 적용된 상태를 확인했다. 운영 DB 적용·데이터 이관은 확인하지 않았다. 다음 신규 변경은 V36부터 추가한다.
-- 메일은 `arkive.mail.enabled=false`가 기본이다. 켜려면 `MAIL_ENABLED=true`, `MAIL_FROM`, `MAIL_HOST`, `MAIL_PORT`, 인증·TLS 환경값을 설정해야 하며 값이 없으면 발송을 건너뛴다. 테스트 설정은 `arkive.mail.enabled=false`라 실제 SMTP에 연결하지 않는다.
-- 메일 발송은 `MailAsyncService`의 `mailTaskExecutor`에서 비동기로 실행된다. 환영·공지/중요글은 `APP_USER.MAIL_YN='Y'`인 사용자에게만, 비밀번호 재설정은 거래성 메일로 동의와 무관하게 이메일이 있으면 발송한다. 공지/중요글은 `BOARD.MAIL_SENT_YN`을 먼저 선점하므로 같은 글에 두 번 발송하지 않지만, 선점 후 SMTP 실패 시 자동 재시도는 없다. 게시판 저장 API는 `BoardNotificationEvent`만 발행하고, SSE·메일 발송 실패는 리스너에서 격리해 저장 응답을 실패시키지 않는다.
-- `db/system.sql`·`db/sampledb.sql`·`db/baseline_schema.sql`은 현재 저장소에 없다(2026-10-11 정리). 새 스키마 변경에는 버전 마이그레이션을 사용한다.
-- 기본 실행은 파일 DB(`./data/ArkiveDB`)를 열어 기존 데이터를 유지하고, 시작 시 버전 이력에 없는 마이그레이션 SQL만 적용한다.
-- 기존 메모리 DB는 종료 시 사라졌으며 파일 DB로 자동 이관되지 않는다. 초기화/마이그레이션 설명은 [migration.md](migration.md)를 참고한다.
-- Actuator는 `health`, `info`, `metrics`를 노출하고 `health.show-details=always`다. 서버 생존·DB 상태·요청 수·JVM 메모리를 볼 수 있지만, 민감 엔드포인트의 운영 공개 범위와 내부망 제한 정책은 미확인이다. 메일 헬스는 `management.health.mail.enabled=${MAIL_HEALTH_ENABLED:false}`로 기본 비활성이며, SMTP를 켠 환경에서만 `MAIL_HEALTH_ENABLED=true`로 활성화한다.
-- 미매핑 URL·정적 리소스는 `NoResourceFoundException`·`NoHandlerFoundException` 매핑으로 HTTP 404와 `error/error` 화면을 반환한다. 그 외 처리되지 않은 `Throwable`은 기존 `sample/egovSampleError`(500) 경로를 유지한다. 미매핑 `.json` 경로도 현재는 HTML 404를 반환하므로 JSON 오류 규약이 필요한 API에는 별도 처리가 필요하다.
-- `QuartzConfig.java`는 10분 주기의 Trigger를 정의하고, `DBJob.java`는 DB `SCRIPT` 명령에 `/db/data.sql` 절대 경로를 전달한다. 이것이 저장소의 `src/main/resources/db/data.sql`을 가리킨다고 보장되지 않으며, 실제 출력 위치와 쓰기 권한·백업 정책은 확인이 필요하다.
-- HSQLDB 런타임 파일은 `./data/ArkiveDB`를 기준으로 생성된다. `data/`는 로컬 DB 상태이며 Git 관리 대상이 아니다. DB가 실행 중일 때 생기는 `.lck`는 잠금 파일이므로 직접 삭제하지 않는다.
-- 3단계 기능의 기본값은 외부 연동 없이 기동되도록 두었다. SSO(`SSO_ENABLED=false`), 동영상 인코딩(`FFMPEG_ENABLED=false`), SMS(`ARKIVE_SMS_ENABLED=false`), 카카오 지도(`KAKAO_MAP_KEY` 빈 값)는 비활성·미설정 상태에서 해당 기능만 제한된다. 2단계도 GA4·Clarity(`ARKIVE_ANALYTICS_ENABLED=false`), Elasticsearch(`ARKIVE_SEARCH_ES_ENABLED=false`), 내부 API(`ARKIVE_INTERNAL_API_TOKEN` 빈 값 → 503)를 기본 비활성으로 둔다.
-- `ARKIVE_FIELD_KEY`는 TOTP 비밀키·주소록/명함 연락처·사용자 휴대전화의 AES-GCM 키다. 값이 없으면 해당 저장 기능이 거부되고 기존 평문은 읽히며, 키를 잃으면 암호문을 복구할 수 없다. `APP_USER.EMAIL`은 아이디 찾기·비밀번호 재설정의 조회 조건이라 암호화하지 않는다.
-- WebSocket 채팅은 세션 로그인과 채팅 메뉴 READ·WRITE, Origin 검사를 통과해야 연결되며, 메시지는 JVM 메모리로 브로드캐스트한다. 다중 인스턴스에서는 공유 브로커나 스티키 세션이 필요하다.
-- Spring Batch 일일 집계는 화면에서 수동 실행만 가능하고 스케줄러가 없다. `ResourcelessJobRepository`라 `BATCH_*` 실행 이력을 남기지 않으며, 같은 날짜 재실행은 집계 행을 지우고 다시 넣는다.
-- 설정 파일에는 외부 연계 및 암호화 관련 값이 포함될 수 있다. 문서, 로그, 증거 자료에 실제 비밀값을 복사하지 않는다. 환경별 설정 전달 방법은 미확인이다.
+## 실행 전 확인할 설정
 
-## 아직 확인되지 않은 프로젝트 지식
+근거는 `src/main/resources/application.properties`다. 실제 자격증명은 환경변수로 주입하고 문서·로그·이식 파일에 복사하지 않는다. 아래 기본값만으로 실연동·운영 안전성을 보장하지 않는다.
 
-- 업무 목적, 운영 조직 및 기능별 책임자
-- 운영 프로파일, 배포 방식, 대상 DB와 DB 버전
-- 인증·권한 정책 및 개인정보 처리 요구사항
-- 외부 API의 정식 계약, 오류 코드 체계와 재시도 정책
-- SMTP 제공자·발신 도메인·SPF/DKIM·반송/수신거부·대량 발송 정책
-- 메일 발송 실패 재시도, 게시글 알림 1회 선점 후 실패 처리, 수신 동의 철회·보존 정책
-- Health 기준, 장애 대응, Canary 지원 여부
+| 기능 | 키 / 기본값 | 확인할 것 |
+| --- | --- | --- |
+| 메일 | `MAIL_ENABLED=false`, `MAIL_FROM` 빈 값, `MAIL_HOST`·`MAIL_PORT`·인증/TLS·base URL | 발신자와 SMTP 설정. 테스트는 `arkive.mail.enabled=false`로 실제 연결하지 않음 |
+| 메일 헬스 | `MAIL_HEALTH_ENABLED=false` | SMTP 사용 환경에서 필요할 때 활성화 |
+| SMS / SSO | `ARKIVE_SMS_ENABLED=false`, `SSO_ENABLED=false` | 제공자 계약·발신번호·콜백과 대상 정책 |
+| 동영상 / 지도 | `FFMPEG_ENABLED=false`, `KAKAO_MAP_KEY` 빈 값 | FFmpeg 설치·VOD 경로, 카카오 허용 도메인 |
+| 웹분석 / 검색 | `ARKIVE_ANALYTICS_ENABLED=false`, `ARKIVE_SEARCH_ES_ENABLED=false` | GA4·Clarity ID와 동의, ES 인프라·동기화 |
+| 내부 API | `ARKIVE_INTERNAL_API_TOKEN` 빈 값 | 미설정 시 503; 토큰 발급·회전·소비자 계약 |
+| 필드 암호화 | `ARKIVE_FIELD_KEY` 빈 값 | TOTP·연락처·사용자 휴대전화 저장이 거부됨. 키 분실 시 암호문 복구 불가 |
+| SSE | `layout.html`의 `ARKIVE_SSE_ENABLED=false` | 환경변수가 아닌 화면 설정; 활성화·화면별 옵션은 [알림 상세](feature-status.md#알림-설정과-실패-처리) |
 
-미확인 항목은 담당자 확인 및 근거 문서가 확보되면 관련 프로젝트 지식 문서에 기록한다.
+- DB URL과 `Globals.hsql_server.Port`를 일치시킨다. `data/`는 Git 관리 대상이 아닌 로컬 DB이며 실행 중 `.lck`를 직접 삭제하지 않는다. 메모리 DB에서 자동 이관되지 않으므로 [마이그레이션 기록](migration.md)을 확인한다.
+- `QuartzConfig`는 10분 Trigger, `DBJob`은 `Globals.dumpPath`(기본 `./backup/ArkiveDB.sql`)에 HSQLDB `SCRIPT` 덤프를 기록한다. 폴더 생성 후 기존 덤프를 지우므로 다중 이력 보존이 아니며, 삭제 후 실패·파일 권한·복구는 미확인이다.
+- 로그인·메뉴 권한·채팅·배치의 제약은 [기능 상세](feature-status.md)에서 확인한다. 로컬 메모리 세션이나 브로드캐스트를 다중 서버용 공유 상태로 보지 않는다.
+
+## 아직 확인되지 않은 운영 지식
+
+| 미확인 항목 | 필요한 근거 / 확인자 |
+| --- | --- |
+| 실제 업무 목적·운영 대상 기능·전체 모듈 경계·소유권 | 업무 책임자, 화면·배포 대상 목록 |
+| 프로파일·배포 토폴로지·운영 DB 제품/버전·공유 상태 | 운영·인프라 담당자, 환경별 설정·운영 구성도 |
+| 인증·권한 승인·개인정보 보존/파기·암호화 키 전달/회전 | 보안·개인정보 담당자, 승인 정책 |
+| 외부 API/SMTP 계약·타임아웃·오류/재시도·발송 이력 | 연계 담당자·정식 명세. SMTP는 SPF/DKIM·반송·수신거부·대량 발송·1회 선점 후 실패 정책 포함 |
+| Health 기준·장애 대응·백업/복구·Canary | 운영 담당자, 실행 증거와 승인된 절차 |
+
+## 기존 참조와 구현 선택
+
+기존 개발 기록의 선택 이유를 보존한다. 동일 구현을 강요하지 않으며 대상 요구사항·현재 코드와 다시 대조한다.
+
+- eGovFrame 공통컴포넌트 v5.0 가이드: https://www.egovframe.go.kr/wiki/doku.php?id=egovframework:com:v5.0:init_guide (명함·상담 등 참고).
+- 당시 참조 프로젝트: ADTM, BLMS, gcsms, GIES, GTEMS, pony-main, GCG-master, HTA-main. BLMS의 팝업·배너·카테고리·FAQ/Q&A, pony의 공지·Q&A, gcsms의 당직·엑셀·민원, GTEMS의 설문(qestnr)을 CRUD/스키마 패턴 근거로 참고했다. ADTM의 지역 JOIN·HTA의 raw JDBC는 이식 부적합으로 제외했다. 참조 프로젝트가 현재 저장소에 포함됐다는 뜻은 아니다.
+
+| 기능 | 참조 / Arkive의 선택 |
+| --- | --- |
+| FAQ·Q&A | BLMS/gcsms 단일 테이블 패턴 → `BOARD`+`BOARD_TYPE` 재사용 |
+| Q&A·메모 상태 | pony `answerStatus` → Q&A는 JOIN 판정, 메모는 SQL 조건으로 상태 전이 강제 |
+| 카테고리 | BLMS jstree → 네이티브 `<details>`와 jstree 규격 `tree.json` 병행 |
+| 메인이미지 | eGov 별도 컴포넌트 → `BANNER`+`POSITION` 통합 |
+| 파일 실형식 | Tika 검토안 → 추가 의존성 없는 `FileTypeUtil` 매직바이트 검사 |
+| POLL | 로그인 전제 대신 세션 집합으로 중복투표 차단 |
+| 댓글 | eGov cop/cmt 대신 `BOARD` 종속 1단 댓글·작성자/관리자 삭제 |
+| 쪽지 | eGov uss 대신 `MESSAGE` 단일 테이블·발신/수신 삭제 플래그 |

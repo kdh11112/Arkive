@@ -2,19 +2,6 @@
 
 > 이식 구분: **Arkive 기록**. 대상 프로젝트로 복사하지 않는다. 이식용 빈 양식은 [project-template-pack.md](../portable/project-template-pack.md), 기능별 절차는 [feature-porting-sheet.md](../portable/feature-porting-sheet.md)를 쓴다.
 
-## 작성 가이드 (Arkive 기록 참고)
-
-1. 기능 단위로 1행을 만든다. 화면·Controller·Service·Mapper·외부연계를 추적해 적는다.
-2. 책임자/소유권은 담당자 확인 있을 때만 적고, 없으면 미확인으로 둔다.
-3. 이식용으로 가져갈 기능은 복사 대상(이식 시 복사 범위) 칸에 함께 적는다.
-4. DB 종속 문법(HSQL 전용 함수 등)은 비고에 표시한다.
-
-## 양식 (Arkive 기록 참고)
-
-| 기능/영역 | 구현 위치 (화면·Controller·Service·Mapper) | 범위 | 책임자/소유권 | 이식 시 복사 대상 |
-| --- | --- | --- | --- | --- |
-| 예: 메뉴 관리 | `biz.menu.*`, `Menu_SQL.xml` | 목록·등록·수정·삭제 | 미확인 | 화면+Controller+Service+Mapper+SQL+V2 |
-
 <!--
 문서 상태: 부분 미완성
 미완성 항목: 전체 업무 기능 목록, 기능별 책임 팀/담당자, 기능별 지원 범위와 사용 여부.
@@ -23,7 +10,7 @@
 완료 기준: 운영 대상 기능이 빠짐없이 분류되고 모든 기능 소유자가 확인되었거나, 소유권 미정 항목에 의사결정 담당과 기한이 기록되어 있다.
 -->
 
-## Arkive 작성 예시
+## 확인된 코드 영역
 
 > 2026-10-11, 2026-10-22, 2026-10-23(메일·비밀번호 재설정·사이트맵·통합검색 포함), 2026-10-24(공통 오류 응답·헬스 설정·휴가관리·2단계 보강) 저장소 검색으로 확인한 주요 코드 영역의 목록이다. 전체 기능 목록이나 조직별 소유권을 확정한 문서가 아니다. 소유자는 근거가 없어 미확인으로 둔다.
 
@@ -71,7 +58,7 @@
 
 ## 테스트 자산 현황 (2026-11-07)
 
-전체 338개 테스트, instruction 52.0% / branch 43.9% / line 52.7% (2026-11-07 `verify.cmd`와 JaCoCo report 기준). 숫자만으로 품질을 판단하지 않고 아래처럼 기능별 검증 범위와 공백을 함께 본다. 2026-11-07 전체 테스트를 실행해 모두 통과했고 클래스별 JaCoCo 게이트도 충족했다. README에서 `[일부검증]`으로 남긴 항목은 외부 계약·실장비·브라우저 저장소에 의존해 자동 테스트로 닫지 못한 기능이다.
+최신 실행 수치·클래스별 개수는 [테스트 자산](../../../src/test/README.md)에서만 관리한다. 아래 표는 2026-11-07에 기록한 기능별 검증 범위와 공백이며 표 안의 당시 개수는 최신 집계가 아니다. 현재 구현·GUI 분류는 [README.md](../../../README.md), 실제 실행 조건은 [현행 분석](current-state-analysis.md)을 따른다. 외부 계약·실장비·브라우저에 의존하는 항목을 자동 테스트만으로 검증완료로 바꾸지 않는다.
 
 | 기능/영역 | 자동 테스트 | 검증 범위 | 남은 공백 |
 | --- | --- | --- | --- |
@@ -121,6 +108,17 @@
 
 기능을 추가하거나 이식할 때는 [feature-porting-sheet.md](../portable/feature-porting-sheet.md)에 실행·복사·검증 결과를 남기고, 이 표의 테스트 자산도 함께 갱신한다.
 테스트를 다른 프로젝트로 옮길 때는 [test-porting-sheet.md](../portable/test-porting-sheet.md)에 복사·수정·검증 결과를 남긴다.
+
+## 이식 시 함께 확인할 묶음
+
+기본 파일 목록은 위 코드 영역 표, 전체 순서는 [PORTING.md](../../../PORTING.md)를 따른다. 아래는 아키텍처 기록에서 모은 추가 의존성·설정이다. 관련 테스트는 위 검증 범위에서 선택해 스펙 담당자가 별도로 준비·승인한다.
+
+| 기능 | 함께 가져갈 자산·주의점 |
+| --- | --- |
+| 메일·비밀번호 재설정 | `spring-boot-starter-mail`, `EgovConfigAsync`, `MailService`/`MailAsyncService`/`MailServiceImpl`, `AuthServiceImpl`의 토큰 메서드, `LoginController` 화면·API, `V6__mail_notification.sql`, `spring.mail.*`·`arkive.mail.*`. 게시판 알림은 `BoardNotificationEvent`·`BoardNotificationEventListener` 포함. SMTP 값은 대상 환경변수로 주입 |
+| 사이트맵 | `SitemapController`, `templates/thymeleaf/comm/sitemap.html`, `layout/layout.html` 링크, `MenuInterceptor`의 `menuList` 모델. 메뉴 테이블·권한 필터 선행, `SitemapControllerTest`는 별도 테스트 준비 대상 |
+| 통합검색 | `SearchController`·`SearchReindexController`, `SearchService`/`SearchServiceImpl`, `SearchIndexService` 구현, `SearchMapper`·`Search_SQL.xml`, `search/searchList.html`, `user/layout.html` 링크, `.search-snippet` CSS. BOARD·BOARD_TYPE·상세 URL에 맞춰 SQL/링크 조정. 초성은 `SEARCH_CHOSUNG`·`KoreanSearchUtil` 필요, ES는 선택, 본문 검색 제외 |
+| 감사·개인정보 보호 | `AuditInterceptor`/`AuditEvent`/`AuditLogEventListener`/`AuditLogService`/`AuditLogController`, `MaskingInterceptor`/`MaskingUtil`, `PiiFieldService`/`FieldCryptoService`, `V7`·`V15`·`V34` SQL, `EgovConfigWeb` 인터셉터 등록, `application.properties`의 `arkive.audit.*`·`arkive.crypto.field-key`. 키는 대상에서 주입하고 기존 평문 데이터 이관은 별도 절차로 준비 |
 
 ## 유지 기준
 

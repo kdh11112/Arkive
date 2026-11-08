@@ -6,7 +6,7 @@
 
 Baseline, Snapshot, Verifier와 Runtime 검증의 공통 절차는 [verification-standard.md](verification-standard.md)를 따른다. 기대 결과와 테스트 사례는 관련 프로젝트 정책, 계약 및 Acceptance Criteria에서 확인한다.
 
-테스트 스택 자체의 이식(Boot용/클래식용 pom·CI·뼈대)은 Boot [test-stack-boot.md](../boot/test-stack-boot.md), 클래식 [test-stack-classic.md](../classic/test-stack-classic.md)를 따른다.
+테스트 스택(pom·CI·뼈대)은 [이식 가이드](../../../PORTING.md)의 선택 트랙을 따른다. 대상에 없는 반대 트랙은 참고 경로일 뿐 필독 문서가 아니다.
 
 ## 기본 확인 항목
 
@@ -23,7 +23,8 @@ Baseline, Snapshot, Verifier와 Runtime 검증의 공통 절차는 [verification
 
 ## 이식 시 테스트 자산
 
-- 기능을 이식할 때 관련 테스트를 함께 가져간다. 테스트가 없으면 이식 전에 먼저 만든다.
+- 관련 테스트 준비·맞춤 수정은 스펙 담당자의 별도 작업이다. 구현 에이전트는 필요한 자산·변경점을 보고하고 제공된 테스트로 검증한다. 테스트가 없거나 준비되지 않았으면 이식을 완료로 보고하지 않는다.
+- 테스트의 기대 결과·assertion은 인간 승인 후 별도로 변경한다. 이식 안내는 구현 에이전트의 테스트 수정 권한을 부여하지 않으며, 대상 루트 `AGENTS.md`를 따른다.
 - 테스트 DB는 운영 DB와 분리하고, 대상 DB 제품이 HSQLDB와 다르면 같은 제품으로 Mapper/SQL을 검증한다.
 - 테스트 실행과 화면·API·DB 확인 결과는 [feature-porting-sheet.md](../portable/feature-porting-sheet.md)에 남긴다.
 - 다른 프로젝트로 테스트를 이식할 때는 [test-porting-sheet.md](../portable/test-porting-sheet.md)에 복사·수정·검증 결과를 남긴다.
