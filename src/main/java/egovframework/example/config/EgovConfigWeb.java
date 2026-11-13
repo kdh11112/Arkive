@@ -80,6 +80,7 @@ public class EgovConfigWeb implements WebMvcConfigurer, ApplicationContextAware 
         // templateResolver.setPrefix("classpath:/templates/thymeleaf/"); //운영
         templateResolver.setPrefix("file:./src/main/resources/templates/thymeleaf/"); // 개발
         templateResolver.setSuffix(".html");
+        templateResolver.setCharacterEncoding("UTF-8");
         templateResolver.setTemplateMode(TemplateMode.HTML);
         templateResolver.setCacheable(false);
         return templateResolver;
@@ -100,10 +101,12 @@ public class EgovConfigWeb implements WebMvcConfigurer, ApplicationContextAware 
     public ThymeleafViewResolver thymeleafViewResolver(EgovKrdsPaginationRenderer egovKrdsPaginationRenderer) {
         ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
         viewResolver.setCharacterEncoding("UTF-8");
+        viewResolver.setContentType("text/html;charset=UTF-8");
+        viewResolver.setForceContentType(true);
         viewResolver.setTemplateEngine(templateEngine(egovKrdsPaginationRenderer));
         return viewResolver;
     }
-    
+
     // jsonView 방식은 @ResponseBody로 전부 전환되어 BeanNameViewResolver·MappingJackson2JsonView를 제거했다.
     // 구 방식이 필요하면 EgovConfigWeb 변경 이력을 참고한다.
 
