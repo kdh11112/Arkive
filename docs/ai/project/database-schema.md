@@ -18,7 +18,7 @@
 
 - `application.properties`는 `Globals.DbType=hsql_server`와 `Globals.hsql_server.Port=9001`을 설정한다. `EgovConfigDatasource.java`는 이 값에서 `./data/ArkiveDB` 파일 HSQLDB 서버를 시작한다. 테스트는 `application-test.properties`에서 경로 `target/test-db`, 포트 9002로 분리한다.
 - 2026-11-08부터 `src/main/resources/db/schema.sql`에 54개 기능 테이블과 최종 컬럼·PK/FK·Unique·인덱스를, `db/seed.sql`에 필수 초기값을 둔다. `spring.sql.init.mode=never`를 유지하고 `HsqlDemoDatabaseInitializer`가 빈 로컬 DB에만 `schema` → `seed`를 한 번 실행한다. 근거: 두 SQL, `EgovConfigDatasource.java`, `HsqlDemoDatabaseInitializer.java`.
-- 초기화기의 `ARKIVE_DB_INIT`은 기능 스키마 밖의 데모 상태표다. 완료 상태·초기화 SQL 체크섬·객체 메타데이터 서명을 확인하고 일반 재시작은 DDL/시드를 실행하지 않는다. 파일 변경·불완전 초기화·구조 불일치는 자동 삭제나 갱신 없이 시작을 중단한다. 구 체인 전체 적용 이력과 구조가 일치하는 DB는 전환 때 한 번 인수하며 기존 데이터는 유지한다. 자세한 조건과 새 DB 경로 사용은 [마이그레이션 기록](migration.md)을 따른다.
+- 초기화기의 `ARKIVE_DB_INIT`은 기능 스키마 밖의 데모 상태표다. 완료 상태·초기화 SQL 체크섬·객체 메타데이터 서명을 확인하고 일반 재시작은 DDL/시드를 실행하지 않는다. 파일 변경·불완전 초기화·구조 불일치는 자동 삭제나 갱신 없이 시작을 중단한다. 구 체인 전체 적용 이력과 구조가 일치하는 DB는 전환 때 한 번 인수하며 기존 데이터는 유지한다. 자세한 조건과 새 DB 경로 사용은 [검증 및 변경 로그](verification-log.md#4-db-마이그레이션-현황-및-개발자-사용법)를 따른다.
 - `seed.sql`은 메뉴 63행, 개발용 admin 1행, 역할 2행, 사용자-역할 1행, 역할-메뉴 권한 92행, `IDS.SAMPLE=1`, 약관 자리표시자 3행을 준비한다. 샘플 CRUD 레코드·회의실·자동 연차 부여·업무 로그·토큰·사용자 동의는 넣지 않는다. 구 DB를 인수할 때 이 시드를 재실행하지 않는다.
 - 전환 전 `db/versions/`의 V1~V18·V30~V35(24개, V19~V29 없음)은 최신 정의로 통합해 제거했다. 덤프 표시용 주석 `db/data.sql`도 제거했으며 `DBJob`은 이 리소스를 읽지 않는다. 구 SQL·실행 결과는 아래 변경 기록과 Git 이력에 남긴다.
 - `db/baseline_schema.sql`(구 복사용 밑그림, V10 시절에서 멈춤)과 `db/sampledb.sql`(레거시, `DROP TABLE` 포함)은 2026-10-11에 삭제했다. `db/system.sql`은 저장소에 이미 없고 문서에만 남아 있던 언급이라 함께 정리했다.
@@ -102,7 +102,7 @@
 - V17은 게시글 SMS 1회 발송 선점 컬럼을 추가한다. SMS 발송은 기본 비활성이며 외부 제공자 연계는 별도 확인이 필요하다.
 - V30은 동영상 파일 경로를 DB에 두고 서버 파일 시스템에서 스트리밍한다. 파일 저장 위치·백업·보존 정책은 운영 담당자 확인이 필요하다.
 - V33은 집계 결과만 저장하고 Spring Batch 실행 이력(`BATCH_*`)은 남기지 않는다. 재실행은 같은 날짜 행을 지우고 다시 넣는 방식이라 과거 실행 감사가 필요하면 별도 이력 설계가 필요하다.
-- 2단계·3단계 마이그레이션은 2026-10-24 `mvn -o test`의 테스트 DB(`target/test-db`) 기동에서 V1→V34 전체 체인 적용을 확인했다. 운영 DB 적용·데이터 이관은 미확인이다. `BOARD_COMMENT`·`MESSAGE`·메일·재설정 토큰·휴가의 애플리케이션 검증·권한 판정은 [current-state-analysis.md](current-state-analysis.md), API 경로는 [api-contract.md](api-contract.md)를 참조한다.
+- 2단계·3단계 마이그레이션은 2026-10-24 `mvn -o test`의 테스트 DB(`target/test-db`) 기동에서 V1→V34 전체 체인 적용을 확인했다. 운영 DB 적용·데이터 이관은 미확인이다. `BOARD_COMMENT`·`MESSAGE`·메일·재설정 토큰·휴가의 애플리케이션 검증·권한 판정은 [검증 및 변경 로그](verification-log.md), API 경로는 [기능 카탈로그](feature-catalog.md#2-api-경로-인벤토리-및-계약)를 참조한다.
 
 ## 스키마 변경 기록
 
@@ -123,6 +123,6 @@
 | 2026-10-24 | `LECTURE`, `LECTURE_PROGRESS`, `MAP_GUIDE`, 메뉴·권한 시드 | 강의형 콘텐츠·동영상 진도, 약도 | `db/versions/V30__lecture.sql`, `V31__map_guide.sql` | `LectureController`/`LectureService`/`LectureMapper`/`Lecture_SQL.xml`, `VideoEncodingService`, `MapController`/`MapGuideService`/`MapGuideMapper`/`MapGuide_SQL.xml` | 2026-10-24 테스트 DB 적용·관련 테스트 통과. FFmpeg·카카오 지도·실행 HTTP·GUI는 미검증(기본 비활성) |
 | 2026-10-24 | `CHAT_MESSAGE`, `STAT_DAILY`, 메뉴·권한 시드 | WebSocket 채팅 이력, Spring Batch 일일 집계 결과 | `db/versions/V32__chat.sql`, `V33__batch.sql` | `ChatController`/`ChatWebSocketHandler`/`ChatService`/`ChatMapper`/`Chat_SQL.xml`, `BatchController`/`BatchService`/`BatchMapper`/`Batch_SQL.xml`, `BatchConfig`/`DailyStatsTasklet` | 2026-10-24 테스트 DB 적용·컨텍스트 기동 확인. WebSocket 실접속·배치 실행·GUI 미검증. 채팅 단일 인스턴스, 배치 스케줄러·실행 이력 없음 |
 
-2026-11-08 최신 schema/seed 전환: 구 24개 SQL의 최종 메타데이터와 새 정의가 일치하고 메뉴·역할·매핑·권한의 차이가 없음을 격리 HSQLDB에서 대조했다. 기존 업무 데이터는 새 시드에서만 제외하며 구 DB에서 지우지 않는다. 실행 조건·검증 제약은 [전환 검증 기록](current-state-analysis.md#2026-11-08-최신-schemaseed-초기화-전환)에 둔다. 이후 신규 DB 정의는 `schema.sql`·`seed.sql`에서 관리하고 기존 DB 갱신과 구분한다.
+2026-11-08 최신 schema/seed 전환: 구 24개 SQL의 최종 메타데이터와 새 정의가 일치하고 메뉴·역할·매핑·권한의 차이가 없음을 격리 HSQLDB에서 대조했다. 기존 업무 데이터는 새 시드에서만 제외하며 구 DB에서 지우지 않는다. 실행 조건·검증 제약은 [전환 검증 기록](verification-log.md#21-2026-11-08-최신-schemaseed-초기화-전환-검증)에 둔다. 이후 신규 DB 정의는 `schema.sql`·`seed.sql`에서 관리하고 기존 DB 갱신과 구분한다.
 
-컬럼 의미, 제약조건 및 실제 운영 데이터는 SQL 파일만으로 추정하지 않는다. 변경은 [sql-standard.md](../common/sql-standard.md) 및 [migration.md](migration.md)를 따른다.
+컬럼 의미, 제약조건 및 실제 운영 데이터는 SQL 파일만으로 추정하지 않는다. 변경은 [sql-standard.md](../common/sql-standard.md) 및 [검증 및 변경 로그](verification-log.md#4-db-마이그레이션-현황-및-개발자-사용법)를 따른다.

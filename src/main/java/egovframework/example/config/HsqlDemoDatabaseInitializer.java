@@ -114,7 +114,7 @@ final class HsqlDemoDatabaseInitializer {
             connection.commit();
         } catch (SQLException | RuntimeException e) {
             rollback(connection, e);
-            throw new IllegalStateException("DB 최초 초기화 실패. 기존 파일은 삭제하지 않았습니다. 부분 생성 여부와 복구 방법은 docs/ai/project/migration.md를 확인하세요. DB: " + databasePath, e);
+            throw new IllegalStateException("DB 최초 초기화 실패. 기존 파일은 삭제하지 않았습니다. 부분 생성 여부와 복구 방법은 docs/ai/project/verification-log.md를 확인하세요. DB: " + databasePath, e);
         } finally {
             connection.setAutoCommit(autoCommit);
         }
@@ -245,7 +245,7 @@ final class HsqlDemoDatabaseInitializer {
     }
 
     private static IllegalStateException incompatible(String databasePath, String reason) {
-        return new IllegalStateException(reason + " DB 파일과 데이터는 자동 삭제하지 않습니다. 앱을 종료한 뒤 별도 갱신을 검토하거나 Globals.hsql_server.DatabasePath를 새 경로로 지정하세요. 보존·복구 절차: docs/ai/project/migration.md. DB: " + databasePath);
+        return new IllegalStateException(reason + " DB 파일과 데이터는 자동 삭제하지 않습니다. 앱을 종료한 뒤 별도 갱신을 검토하거나 Globals.hsql_server.DatabasePath를 새 경로로 지정하세요. 보존·복구 절차: docs/ai/project/verification-log.md. DB: " + databasePath);
     }
 
     private static void rollback(Connection connection, Exception cause) {

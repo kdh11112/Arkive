@@ -4,24 +4,19 @@
 
 방법·양식·프로젝트 사실을 분리한다. 실제 값과 검증 수치는 아래 지정한 기록에서만 관리하며 이 목차에 다시 적지 않는다.
 
-아래 표에서 필요한 절만 읽는다. 큰 표·기록은 기능명·URL·클래스명으로 관련 행을 찾은 뒤 코드·호출처와 대조한다. 작업이 다른 계층에 영향을 줄 때만 추가 문서를 연다.
+작업에 필요한 문서만 읽고, 작업이 다른 계층에 영향을 줄 때만 추가 문서를 연다.
 
 ## 현황의 원본
 
 | 정보 | 관리 위치 |
 | --- | --- |
 | 테스트 개수·커버리지·전체 클래스 목록 | [src/test/README.md](../../src/test/README.md) |
-| 기능별 코드 위치·검증 범위와 공백 | [코드 영역](project/function-inventory.md#확인된-코드-영역) · [자동 테스트 범위](project/function-inventory.md#테스트-자산-현황-2026-11-07) |
-| 계층·공통 호출 흐름·인증/비동기 경계 | [애플리케이션 구성](project/architecture.md#애플리케이션-구성) · [인증·권한](project/architecture.md#인증권한과-공통-처리) · [비동기](project/architecture.md#비동기-및-예약-작업) |
 | 기능 구현·검증완료·미구현 1차 확인 목록 | [README.md](../../README.md) |
-| 항목별 동작·주의점·알림 옵션 | [기능 상세](project/feature-status.md#기능-구현-현황) · [알림 설정](project/feature-status.md#알림-설정과-실패-처리) |
-| GUI·HTTP 확인의 날짜·조건·정리 이력 | [기존 검증 이력](project/current-state-analysis.md#기존-검증-이력) |
-| 실행 설정·운영 미확인 사항 | [실행 설정](project/project-overview.md#실행-전-확인할-설정) · [운영 미확인](project/project-overview.md#아직-확인되지-않은-운영-지식) |
-| DB 연결·최신 객체·초기화/갱신 | [연결·초기화](project/database-schema.md#확인된-연결초기화-설정) · [기능별 객체](project/database-schema.md#추가-기능별-객체-최신-정의) · [개발자 사용법](project/migration.md#개발자-사용법) |
-| DB SQL 배치·13.3인치 필수 CSS 확인 | [schema·seed·업무 SQL](common/sql-standard.md#db-변경을-어느-파일에-넣을지) · [반응형 화면](common/coding-standard.md#css반응형-화면) · [실기기/대체 검사](common/test-standard.md#화면-크기-확인) |
-| API 경로·입출력·오류 처리 | [경로](project/api-contract.md#경로-인벤토리) · [JSON 동작](project/api-contract.md#로그인게시판쪽지휴가-json-동작) · [오류 기록](project/error-code.md) |
-| 공통 변경의 사용처·영향 | [공유 지점](project/change-impact.md#확인된-공유-지점) |
-| 기능 이식의 추가 의존성·설정 | [이식 묶음](project/function-inventory.md#이식-시-함께-확인할-묶음) |
+| 시스템 개요·실행 설정·아키텍처·공유 지점·오류 체계 | [프로젝트 컨텍스트](project/project-context.md) |
+| 기능별 코드 위치·동작 주의점·API 인벤토리·알림 설정·이식 묶음 | [기능 카탈로그](project/feature-catalog.md) |
+| DB 스키마·테이블/컬럼 정의·인덱스·시드 | [DB 스키마](project/database-schema.md) |
+| 기능 흐름·GUI 검증 이력·작업별 변경 영향·DB 마이그레이션 | [검증 및 변경 로그](project/verification-log.md) |
+| DB SQL 배치 기준·13.3인치 필수 CSS 확인 | [schema·seed·업무 SQL](common/sql-standard.md#db-변경을-어느-파일에-넣을지) · [반응형 화면](common/coding-standard.md#css반응형-화면) · [실기기/대체 검사](common/test-standard.md#화면-크기-확인) |
 
 ## 문서 목록·이식 구분
 
@@ -31,7 +26,9 @@
 | 복붙 양식 | [acceptance-template](portable/acceptance-template.md) · [evidence-report-template](portable/evidence-report-template.md) · [portable-regression-checklist](portable/portable-regression-checklist.md) · [scripts](portable/scripts.md) · [project-template-pack](portable/project-template-pack.md) · [feature-porting-sheet](portable/feature-porting-sheet.md) · [test-porting-sheet](portable/test-porting-sheet.md) · [ai-porting-request](portable/ai-porting-request.md) | 빈 양식·스크립트·이식 시트만 복사 |
 | Boot 트랙 | [boot-apply](boot/boot-apply.md) · [test-stack-boot](boot/test-stack-boot.md) | Spring Boot 대상에 선택 |
 | 클래식 트랙 | [classic-apply](classic/classic-apply.md) · [test-stack-classic](classic/test-stack-classic.md) | 전자정부 3.x/4.x 대상에서 관례 확인 후 선택 |
-| Arkive 기록 | [project-overview](project/project-overview.md) · [architecture](project/architecture.md) · [function-inventory](project/function-inventory.md) · [feature-status](project/feature-status.md) · [current-state-analysis](project/current-state-analysis.md) · [api-contract](project/api-contract.md) · [database-schema](project/database-schema.md) · [change-impact](project/change-impact.md) · [error-code](project/error-code.md) · [migration](project/migration.md) | **복사 금지**, 원본에서 참고 |
+| Arkive 기록 | [project-context](project/project-context.md) · [feature-catalog](project/feature-catalog.md) · [database-schema](project/database-schema.md) · [verification-log](project/verification-log.md) | **복사 금지**, 원본에서 참고 |
+
+> 문서 구조 최적화(10개 파일 → 4개 파일 통폐합) 이력과 분석 내용은 [최적화 계획 및 결과](docs-optimization-plan.md)를 참조한다.
 
 Boot·클래식은 대상에 맞는 한 트랙만 선택한다. 대상 지식은 기존 기록을 재사용하거나 [빈 양식](portable/project-template-pack.md) 한 파일로 시작한다. 이식에는 기능·테스트 시트, 승인·검증에는 인수·증거 양식을 필요할 때만 사용하며 모든 문서를 매번 읽거나 작성하지 않는다.
 

@@ -4,7 +4,7 @@
 
 ## 기능 구현 현황
 
-**이 목록이 구현·미구현 여부를 1차 확인하는 기준이다.** `[x]`는 구현, `[ ]`는 미구현을 뜻한다. 구현됐어도 GUI·실제 외부 연동·운영 검증까지 완료됐다는 뜻은 아니다. 상세 동작·주의점·검증 근거는 [기능 상세](docs/ai/project/feature-status.md)를 참고한다.
+**이 목록이 구현·미구현 여부를 1차 확인하는 기준이다.** `[x]`는 구현, `[ ]`는 미구현을 뜻한다. 구현됐어도 GUI·실제 외부 연동·운영 검증까지 완료됐다는 뜻은 아니다. 상세 동작·주의점·검증 근거는 [기능 카탈로그](docs/ai/project/feature-catalog.md)를 참고한다.
 
 ### 구현 및 검증완료
 
@@ -58,42 +58,18 @@
 
 ### 구현 (자동 테스트 통과 · GUI 확인 대기)
 
-- [x] 이전글/다음글
 - [x] 글쓰기 본문 sanitize (Lucy core)
 - [x] 실시간 알림 SSE (역할 필터, 기본 비활성)
-- [x] 메모보고
-- [x] 팝업창관리
-- [x] 배너관리
-- [x] 메인이미지관리
-- [x] 공지 고정 (CK 공지, TOAST 제외)
-- [x] 부서일정관리
-- [x] 일정관리(개인)·일지관리·메모할일
-- [x] 공휴일관리(달력)
-- [x] 카테고리 설정(jstree형)
-- [x] 카테고리 설정(컬럼 드릴다운형)
-- [x] 주소록관리
-- [x] 명함관리
-- [x] 상담관리
-- [x] 온라인POLL (세션 중복투표 차단)
-- [x] 당직관리(단독)
 - [x] 엑셀 업로드/다운로드 + 양식 일괄등록
 - [x] 파일 미리보기(뷰어)
 - [x] 파일 실형식 검증
 - [x] 아이디 저장 체크 (localStorage)
-- [x] 댓글 (1단, 작성자·관리자 삭제)
-- [x] 사용자 관리 (등록·수정·삭제·비밀번호 초기화)
-- [x] 관리자 로그인은 단일 로그인으로 통합됨 (별도 관리자 로그인 페이지 없음)
-- [x] 쪽지관리
 - [x] 중복로그인방지
-- [x] 권한관리 (역할별 메뉴 조회·쓰기, 서버 검사)
 - [x] Q&A 내·외부 구분
-- [x] 로그관리 (로그인·메뉴·개인정보 열람·다운로드)
 - [x] 개인정보 보호 (마스킹·감사 로그·연락처 암호화)
 - [x] 로그인 (OAuth 2.0, 네이버·카카오·구글 연동 코드, 소셜 버튼 실제 연결 미구현)
 - [x] 로그인 (JWT, API용)
-- [x] 통계 (게시판·접속 현황)
 - [x] 외부 웹분석 (GA4 + Clarity, 동의 후 로드·설정 시 활성화)
-- [x] 현황·통계 패턴 (조회→집계→엑셀)
 - [x] SMS 보내기 (게시글 알림 구현, 인증번호 전송 미구현, 기본 비활성)
 - [x] Mail 보내기 + @Async (기본 비활성)
 - [x] 중요글 알림 채널 분리 (SSE·메일·SMS)
@@ -103,17 +79,11 @@
 - [x] 회원가입 + 아이디 찾기(마스킹) + 비밀번호 찾기
 - [x] 비밀번호 재설정 토큰 (30분 유효·1회 사용)
 - [x] DB 암호화 (주소록·명함 연락처, 사용자 휴대전화)
-- [x] 휴가관리 (내 휴가·휴가관리·연차관리)
-- [x] 회의실관리 + 회의실예약관리
-- [x] 약식결재 (단일 결재자)
-- [x] 기념일·경조사·포상·개인연차
 - [x] 설문관리 세트 (템플릿→설문→질문→항목→참여→통계)
 - [x] 강의-설문 연계형 수료
 - [x] 동영상 인코딩 + 강의형 콘텐츠 (FFmpeg 선택 실행)
 - [x] 약도관리 (카카오 지도 키가 있을 때 지도 표시)
 - [x] SSO연계 (연동 코드, 기본 비활성·화면 진입 링크 없음)
-- [x] WebSocket (세션 인증·권한 검사 채팅)
-- [x] Spring Batch (일일 통계 집계, 수동 실행)
 
 ### 미구현
 
@@ -132,9 +102,9 @@ verify.cmd
 - 앱 DB: `data/ArkiveDB`, HSQLDB 9001. 테스트 DB: `target/test-db`, 9002로 분리.
 - Java 17·Maven 준비 후 Git checkout을 실행하면 HSQLDB도 자동 시작한다. 별도 DB 설치·접속 설정은 필요 없다(최초 Maven 의존성 다운로드에는 네트워크가 필요할 수 있다).
 - 빈 DB에만 `src/main/resources/db/schema.sql` → `seed.sql`을 한 번 실행한다. Java·화면 코드를 수정하고 서버를 재시작해도 기존 DB를 다시 CREATE하거나 시드를 덮어쓰지 않는다.
-- 초기화 SQL이 바뀌거나 기존 DB가 비호환이면 자동 삭제·갱신하지 않고 시작을 중단한다. [DB 갱신·새 경로 사용법](docs/ai/project/migration.md#개발자-사용법)을 따른다.
+- 초기화 SQL이 바뀌거나 기존 DB가 비호환이면 자동 삭제·갱신하지 않고 시작을 중단한다. [DB 갱신·새 경로 사용법](docs/ai/project/verification-log.md#4-db-마이그레이션-현황-및-개발자-사용법)을 따른다.
 - 개발용 로그인은 `admin` / `Admin1234!`이며 처음 로그인하면 약관 자리표시자에 대한 동의 화면을 거친다. 실제 서비스에 이 계정·문구를 그대로 이식하지 않는다. 게시물·회의실·연차 등 업무 데이터는 화면에서 등록한다.
-- schema/seed 전환의 실제 기동·GUI·파일 DB 재시작 결과와 미검증 범위는 [전환 검증 기록](docs/ai/project/current-state-analysis.md#2026-11-08-최신-schemaseed-초기화-전환)에 남긴다.
+- schema/seed 전환의 실제 기동·GUI·파일 DB 재시작 결과와 미검증 범위는 [전환 검증 기록](docs/ai/project/verification-log.md#21-2026-11-08-최신-schemaseed-초기화-전환-검증)에 남긴다.
 - 메일 등 외부 연동은 기본 비활성·미설정이다. 실제 발송·계약·운영 환경까지 검증됐다는 뜻은 아니다.
 - Java 17, eGovFrame Boot 5.0.0, Maven, Thymeleaf, MyBatis, HSQLDB 기반이다.
 
@@ -142,16 +112,16 @@ verify.cmd
 
 | 목적 | 시작 문서 |
 | --- | --- |
-| 기능별 상세 동작·주의점·검증 근거 | [기능 상세](docs/ai/project/feature-status.md) |
+| 기능별 상세 동작·주의점·검증 근거 | [기능 카탈로그](docs/ai/project/feature-catalog.md) |
 | 기능을 다른 프로젝트로 가져오기 | [PORTING.md](PORTING.md) |
 | AI에게 이식 요청하기 | [복사용 요청](docs/ai/portable/ai-porting-request.md) |
-| 설정·코드 구조 확인 | [프로젝트 개요](docs/ai/project/project-overview.md), [아키텍처](docs/ai/project/architecture.md) |
+| 설정·코드 구조 확인 | [프로젝트 컨텍스트](docs/ai/project/project-context.md) |
 | DB 변경의 schema·seed·업무 SQL 분류 | [SQL 배치 기준](docs/ai/common/sql-standard.md#db-변경을-어느-파일에-넣을지) |
 | 13.3인치 필수·나머지 화면 유동 CSS 기준 | [반응형 화면 기준](docs/ai/common/coding-standard.md#css반응형-화면) |
 | 최신 테스트 수치·클래스 목록 | [src/test/README.md](src/test/README.md) |
-| 기존 GUI·실행 확인 이력 | [현행 분석](docs/ai/project/current-state-analysis.md) |
+| 기존 GUI·실행 확인 이력 | [검증 및 변경 로그](docs/ai/project/verification-log.md) |
 | AI 작업 규칙·전체 문서 지도 | [AGENTS.md](AGENTS.md), [문서 지도](docs/ai/README.md) |
 
-구현·미구현 구분은 위 체크 목록에서 관리하고, 긴 설명과 주의점은 기능 상세에 둔다. 이식은 **기능 하나씩** 진행한다.
+구현·미구현 구분은 위 체크 목록에서 관리하고, 긴 설명과 주의점은 기능 카탈로그에 둔다. 이식은 **기능 하나씩** 진행한다.
 
 `docs/ai/project/`는 Arkive 전용 기록이므로 대상에 복사하지 않는다. 대상의 지식은 [빈 양식](docs/ai/portable/project-template-pack.md)으로 새로 작성한다. 테스트 준비·수정은 스펙 담당자의 별도 작업이며, 구현 에이전트는 테스트 파일을 수정하지 않는다.
