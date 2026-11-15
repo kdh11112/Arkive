@@ -92,10 +92,90 @@
 
 ---
 
+### 2.6. 2026-11-15: 사이트맵 UI 카드형 전환
+
+- **대상:** `/sitemap` 화면(`comm/sitemap.html`)과 `css/krds-local.css`의 `.sitemap-*` 규격.
+- **변경:** 대메뉴/하위메뉴 2열 표를 대메뉴별 카드 그리드로 교체. 하위 메뉴는 알약형 링크(`.sitemap-link`)로 표시하고 카드 hover·focus 시 테두리 강조. 575px 이하 1열 전환.
+- **검증:** `verify.cmd` 338/338 통과, JaCoCo 게이트 통과(`BUILD SUCCESS`, 2026-11-15 21:34). ego-browser 0.6.3.14로 admin 로그인 후 확인.
+- **측정값(대체 viewport):** 기본 창 innerWidth 1422px에서 4열(카드 폭 260px)·카드 11개·링크 49개·가로 넘침 0px. 533px 폭에서 1열 전환·가로 넘침 0px. 링크 최소 높이 32px. 테스트 3건(`SitemapControllerTest`)이 요구하는 "사이트맵"·"공지사항관리"·"표시할 메뉴가 없습니다." 문구 유지 확인.
+- **미수행/제약:** 13.3인치 실기기 확인은 미수행(대체 viewport만 측정). 화면 폭이 1023px 이하일 때 측면 내비가 전폭으로 펼쳐져 사이트맵이 아래로 밀리는 동작은 기존 레이아웃 규칙이며 이번 변경 범위가 아니다.
+
+---
+
 ### 2.5. 2026-11-13: GUI 추가 확인
 
 - **도구:** ego-browser.
 - **결과:** 로그인·약관동의·통합검색·공지/게시판관리·FAQ·Q&A·공통코드·Swagger·멀티파트/TUS 업로드·사이트맵·TOTP 화면 렌더링 정상. README의 "구현 및 검증완료" 이동 항목과 동일 범위다.
+
+---
+
+### 2.7. 2026-11-15: 전역 헤더의 약관·2단계 인증 링크 정리
+
+- **배경:** 2단계 인증은 로그인할 때 확인하는 관문인데, 설정 화면(`/login/totpSetup`) 링크가 전역 헤더에 있어 로그인 후 화면에서도 로그인 절차처럼 보였다. 약관도 마찬가지로 헤더에 고정 노출되고 있었다.
+- **변경:** `layout.html` 헤더에서 `약관`·`2단계 인증` 링크 제거(이름·사이트맵·로그아웃은 유지). `footer.html`에 `이용약관·개인정보 처리방침`(`/terms`) 링크 추가. `main/dashboard.html`에 `계정 보안` 표를 추가해 2단계 인증 설정(`/login/totpSetup`)·약관 보기(`/terms`)를 로그인 후 화면에서 제공.
+- **DB·권한 영향:** 없음. 링크 위치만 바꿨고 두 기능의 URL·인터셉터·세션 규칙은 그대로다.
+- **검증(ego-browser):** admin 로그인 후 `/dashboard` 확인. 헤더 링크는 `관리자`·`사이트맵`·`로그아웃` 3개, 푸터에 `/terms` 링크 1개, 본문 `계정 보안` 표에 `설정`·`보기` 버튼 노출.
+- **자동 검증:** `verify.cmd` → 테스트 338개 통과, 실패 0, JaCoCo 기준 충족, `BUILD SUCCESS`(3분 14초).
+
+---
+
+### 2.8. 2026-11-15: 통계 화면 카드형 그래프 전환
+
+- **참고:** ADTM `illegalAdvertiseStat.jsp`(전자정부 클래식 JSP)의 `cont_half` + `graph_area` + 숫자 표 구성을 기준으로 삼았다. 원본은 toastui-chart로 그리지만, Arkive는 차트 라이브러리를 새로 넣지 않고 CSS 막대(`.stat-bar`)로 같은 정보를 보여준다.
+- **변경:** `stats/statsList.html`을 카드 그리드(`.stat-grid`·`.stat-card`)로 재작성. 카드마다 제목·단위·막대 그래프·숫자 표를 함께 두고, 막대 높이는 페이지 스크립트가 카드 안 최대값을 100%로 계산한다. `survey/stats.html`의 질문 블록을 같은 카드로 감싸고 비율 막대를 `.stat-track`·`.stat-bar`로 통일. 공통 규격은 `krds-local.css`에 추가.
+- **막대 색:** 항목이 모두 같은 색이라 구분이 안 되던 문제를 고쳐, 8색 팔레트를 열·행 순서대로 돌려 쓴다(toastui-chart 기본 팔레트 계열). 막대형은 `.stat-bar-col:nth-child`, 설문 비율형은 표 행 순서 기준이다.
+- **DB·권한 영향:** 없음. Controller·Mapper·모델 속성은 그대로이고 화면 마크업만 바꿨다.
+- **검증(ego-browser, 캐시 비활성):** `/stats/statsList` 카드 5개, 2열 그리드(534px×2), 그래프 높이 220px, 막대 최대 폭 160px(항목이 적을 때 막대가 카드 전폭으로 늘어나지 않게 함), 가로 넘침 0px. 막대 높이는 카드별 최대값 기준(게시판 1건 100%, 이벤트 4종 100/21.9/17.1/12.2%, 일별 로그인·접속 각 2일, 다운로드 카드는 '데이터 없음'). `/survey/stats`는 등록 설문이 없어 선택 안내만 표시(카드 0개).
+- **자동 검증:** `verify.cmd` → 테스트 338개 통과, 실패 0, JaCoCo 기준 충족, `BUILD SUCCESS`(3분 27초).
+- **미수행:** 설문 응답이 있는 설문으로 `/survey/stats?surveyId=...` 카드 렌더 확인, 13.3인치 실기기 확인.
+
+---
+
+### 2.9. 2026-11-15: 통계 막대 색상 구분과 날짜 입력 폭 보정
+
+- **변경:** ① 막대가 모두 같은 파랑이라 항목 구분이 안 되던 문제를 8색 팔레트 순환으로 고쳤다(ADTM 원본의 toastui-chart 팔레트 계열, 막대형은 `.stat-bar-col:nth-child`, 설문 비율형은 표 행 순서 기준). ② 날짜 입력이 `width:160px`에서 `2026-11-0`처럼 잘려 보이던 문제를 `input[type="date"].krds-input { min-width: 190px }` 한 규칙으로 보정했다(통계·감사로그처럼 인라인 폭을 준 화면 공통).
+- **검증(ego-browser, 캐시 비활성):** `/stats/statsList`의 날짜 입력 2개 모두 190px, 값(`2026-11-09`·`2026-11-15`)이 잘리지 않음(scrollWidth 189 = clientWidth 189). 막대 색이 항목별로 다르게 계산됨(파랑·하늘·청록·주황·빨강). `/system/auditLogList`도 190px, 가로 넘침 0px.
+- **자동 검증:** `verify.cmd` → 테스트 338개 통과, 실패 0, JaCoCo 기준 충족, `BUILD SUCCESS`(3분 08초).
+- **미수행:** 13.3인치 실기기 확인.
+- **참고:** 날짜 표시는 공통코드가 아니라 화면별 코드로 관리된다. 각 화면이 `<input type="date">`와 `#dates.format(..., 'yyyy-MM-dd')`를 직접 쓰고 있어 형식 규칙이 화면마다 흡어져 있다.
+
+---
+
+### 2.10. 2026-11-15: 메뉴 관리 정렬 보정과 메뉴 ID 규칙 통일
+
+- **배경:** 하위메뉴 목록에서 메뉴ID(`ME0203110` + `0`)와 경로가 두 줄로 갈라지고 관리 버튼이 세로로 쌓였다. 메뉴 ID도 부모별 규칙 없이 흡어져 있었다(`ME02060000` 아래 `ME02031100`·`ME02031400`·`ME02031000`).
+- **화면:** `system/menuList.html`에 colgroup(150/150/자동/70/90/150)을 두고 생성 셀에 `menu-id`·`menu-path`·`menu-ordr`·`menu-use`·`menu-actions` 클래스를 붙였다. 경로는 한 줄 말줄임 + `title` 툴툥, 트리는 `#jstree` 규격으로 행 높이(38px)·선택·호버를 정리했다(jsTree 기본 CSS가 페이지 안에서 나중에 로드되므로 `#jstree`로 우선순위를 올림).
+- **ID 규칙:** 2단계 부모 `ME020X0000`의 자식을 순서대로 `ME020X0100`·`0200`… 으로 재번호했다. 부모가 바뀌는 5개 그룹(게시판·화면·일정·주소분류·보고) 20건이 대상이며, `seed.sql`·`MenuPermissionInterceptor`·`AuditInterceptor`·`MailServiceImpl`·`SmsServiceImpl`·`ChatHandshakeInterceptor`·`BoardNotificationEventListener`와 테스트 상수를 같은 매핑으로 치환했다(예: `ME02031100`→`ME02060100`).
+- **DB:** `seed.sql`의 체크섬이 바뀌면 기존 DB는 기동을 거부하므로, 기존 `data/ArkiveDB` 파일을 `data/ArkiveDB-backup-20261115/`로 옮기고 새 DB로 초기화했다(기존 데모 데이터는 백업에만 있다).
+- **검증(2026-11-15):** `verify.cmd` → 테스트 338개 통과, 실패 0, JaCoCo 기준 충족, `BUILD SUCCESS`(3분 17초). 기동 로그 `Initialized empty HSQLDB with schema.sql and seed.sql`. ego-browser로 `/system/menuList` 확인: 주소·분류관리 하위 ID가 `ME02060100`·`ME02060200`·`ME02060300`으로 순서대로 나오고, ID·경로가 한 줄로 표시되며 관리 버튼이 가로로 나열됨. 가로 넘침 0px.
+- **미수행:** 13.3인치 실기기 확인.
+- **미수행:** 13.3인치 실기기 확인(대체 viewport만 측정).
+
+---
+
+### 2.11. 2026-11-15: 메뉴 관리 화면 정리와 2단계 메뉴 경로 제거
+
+- **배경:** 화면이 없는 묶음 메뉴(`시스템관리`·`업로드`)에 화면 경로가 남아 있었고, 메뉴 관리 화면이 투박했다.
+- **변경:** `seed.sql`에서 `ME02010000`(시스템관리)·`ME02020000`(업로드)의 `MENU_COURS`를 NULL로 바꿔, 2단계(묶음) 메뉴에는 경로를 두지 않도록 통일했다. `menuList.html`은 두 패널에 제목·설명을 넣고, 사용여부를 Y/N 칩으로 보여주며, 빈 목록 안내를 별도 스타일로 처리한다. 공통 규격은 `krds-local.css`에 추가.
+- **가로 스크롤 제거(3차):** 표의 기본 `min-width:720px`과 고정 px 열 폭 때문에 세로 스크롤바 폭만큼 가로 스크롤이 생겼다. `.menu-table table.tbl.col.data`를 `width:100%`·`min-width:0`으로 두고, colgroup을 비율(18/16/auto/8/11/18%)로 바꿔 패널 폭에 맞춰 줄어들게 했다. 측정값: 넓은 화면·533px 모두 표·트리 박스의 `scrollWidth - clientWidth = 0`, 페이지 가로 넘침 0.
+- **도움말(4차):** 제목 아래 상시 노출되던 설명을 제목 옆 `?` 아이콘(`.menu-help`)으로 옮기고, hover/focus일 때만 말품선(`::after` + `attr(data-tip)`)이 보이게 했다. ego-browser 검증: 기본 `opacity:0/visibility:hidden` → hover `1/visible` → 마우스 이탈 `0/hidden`.
+- **레이아웃(2차):** 두 패널 높이를 맞추고(648/686px), 왼쪽 트리는 300px 고정·460px 영역, 오른쪽 표는 520px까지만 보이고 나머지는 내부 스크롤(헤더 sticky). 행 높이를 68→61px로 줄이고, 경로가 빈 메뉴는 `-` 자리표시자로 보여준다. 트리 기본 테두리를 없애고 연한 배경으로 바꾼 뒤 `width:100%`로 패널 폭을 채웠다.
+- **DB:** 체크섬 때문에 기존 DB 파일을 `data/ArkiveDB-backup-20261115-b/`로 옮기고 새 DB로 초기화했다(개발용 admin·약관 시드만 있는 상태).
+- **검증:** `verify.cmd` → 테스트 338개 통과, 실패 0, JaCoCo 기준 충족, `BUILD SUCCESS`(3분 22초). 기동 로그 `Initialized empty HSQLDB with schema.sql and seed.sql`. ego-browser로 `/system/menuList`를 열어 패널 제목·설명, Y 칩(`menu-chip on`), 2단계 메뉴 11행(`외부포털`·`내부포털`·`시스템관리`·`업로드` 포함)의 경로가 모두 공백인 것을 확인. 가로 넘침 0px.
+- **미수행:** 13.3인치 실기기 확인.
+
+---
+
+### 2.12. 2026-11-15: 전 화면 도움말 ? 아이콘 전환
+
+- **목적:** 메뉴 관리에만 있던 `?` 도움말을 화면 공통 규격으로 정리하고, 페이지 상단의 설명 문단을 제목 옆 `?` 아이콘 호버 방식으로 통일.
+- **변경 파일:** `krds-local.css`(`.menu-help` → `.help-tip`), `system/menuList.html`, `system/auditLogList.html`, `stats/statsList.html`, `comm/sitemap.html`, `batch/batchList.html`, `board/boardViewStats.html`, `terms/termsList.html`, `login/termsAgree.html`, `login/totpSetup.html`, `login/apiDemo.html`, `survey/participateList.html`, `lecture/lectureList.html`, `lecture/myLecture.html`, `lecture/completionList.html`, `map/mapList.html`, `chat/chat.html`, `user/qna/qnaWrite.html`.
+- **변경 내용:** 페이지 레벨 설명 문단 17개 화면(도움말 18개)을 `<span class="help-tip" data-tip="...">?</span>`로 제목(`h2`) 옆으로 옮겼다. 폼 필드 단위 12px 안내문과 조건부 운영 경고(`FFmpeg 인코딩 꺼짐`, `카카오 지도 키 미설정`)는 화면에 그대로 남긴다. 말품선은 `::after` + `content: attr(data-tip)` CSS 전용이라 JS와 요청이 늘지 않는다.
+- **GUI 검증 (ego-browser 0.6.3.14, 1280×720, 캐시 비활성):** 15개 URL에서 `::after`가 `opacity 0 / visibility hidden` → 호버 시 `1 / visible` → 마우스 이탈 시 `0 / hidden`. 말품선 260px 폭이 제목 오른쪽에 표시되고 화면 밖으로 나가지 않으며, 각 화면 가로 넘침 0. 확인 URL: `/system/menuList`(도움말 2개), `/system/auditLogList`, `/stats/statsList`, `/batch/batchList`, `/sitemap`, `/lecture/lectureList`, `/map/mapList`, `/board/viewStats`, `/survey/participateList`, `/chat/chat`, `/terms`, `/user/qna/qnaWrite`, `/login/totpSetup`, `/login/apiDemo`.
+- **증거:** `ego-browser-shot-545921.png`(배치관리, 호버 상태).
+- **미확인/대상 아님:** `/login/termsAgree`는 이미 동의한 admin 계정에서 `/user/userMain`으로 리다이렉트되어 화면 미노출(미동의 계정 필요). `/qna/qnaWrite`(관리자 Q&A 등록)는 원래 설명 문구가 없어 `?` 대상이 아니다.
+- **13.3인치 실기기 확인:** 미수행(실기기 미보유, 이번 변경은 제목 옆 아이콘 위치 이동뿐).
+- **자동 검증:** `verify.cmd` → Tests run 338, Failures 0, Errors 0, JaCoCo 충족, BUILD SUCCESS(02:35 min).
 
 ---
 

@@ -39,12 +39,13 @@
         }
     </style>
 
-    <h2 class="heading-large">조회수 통계</h2>
+    <h2 class="heading-large">조회수 통계
+        <span class="help-tip" tabindex="0" role="img"
+              aria-label="최근 14일 동안 집계된 조회수입니다. 게시글 1건은 브라우저당 24시간에 한 번만 집계됩니다."
+              data-tip="최근 14일 동안 집계된 조회수입니다. 게시글 1건은 브라우저당 24시간에 한 번만 집계됩니다.">?</span>
+    </h2>
 
-    <div class="view-stats-head">
-        <p>
-            최근 14일 동안 집계된 조회수입니다. 게시글 1건은 브라우저당 24시간에 한 번만 집계됩니다.
-        </p>
+    <div class="view-stats-head" style="justify-content: flex-end;">
         <a th:href="@{/board/ckeditorList}" class="krds-btn medium secondary">공지사항관리</a>
     </div>
 

@@ -63,7 +63,7 @@ class RoleManageControllerTest {
 				.param("description", "테스트 역할")
 				.param("useYn", "Y")
 				.param("readMenuIds", "ME02030300")
-				.param("writeMenuIds", "ME02030600")
+				.param("writeMenuIds", "ME02040100")
 				.param("userIds", "admin"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.success").value(true))
@@ -81,7 +81,7 @@ class RoleManageControllerTest {
 		assertThat(faq.get("writeYn")).isEqualTo("N");
 
 		// 쓰기만 보내도 조회는 자동으로 함께 부여된다.
-		EgovMap popup = findMenu(menus, "ME02030600");
+		EgovMap popup = findMenu(menus, "ME02040100");
 		assertThat(popup.get("readYn")).isEqualTo("Y");
 		assertThat(popup.get("writeYn")).isEqualTo("Y");
 

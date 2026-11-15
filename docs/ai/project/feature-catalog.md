@@ -112,7 +112,7 @@
   - **테스트:** `AuthInterceptorTest` (5), `LoginSessionRegistryTest` (5), `LoginSessionControllerTest` (1)
 - [x] **사용자 관리 / 권한 관리 / 사이트맵**
   - **위치:** `UserManageController`, `RoleManageController`, `PermissionService`, `SitemapController`
-  - **주의점:** 사용자 등록/수정/삭제/잠금해제. `APP_ROLE`·`APP_USER_ROLE`·`APP_ROLE_MENU` 기반 메뉴별 READ/WRITE 권한 OR 집계 및 서버 인터셉터 강제. `/system`·`/auth`는 슈퍼관리자 전용. 사이트맵은 권한 필터 메뉴 재사용.
+  - **주의점:** 사용자 등록/수정/삭제/잠금해제. `APP_ROLE`·`APP_USER_ROLE`·`APP_ROLE_MENU` 기반 메뉴별 READ/WRITE 권한 OR 집계 및 서버 인터셉터 강제. `/system`·`/auth`는 슈퍼관리자 전용. 사이트맵은 권한 필터 메뉴를 재사용해 대메뉴별 카드 그리드로 렌더한다(`comm/sitemap.html`, 스타일 `.sitemap-*`는 `css/krds-local.css`, 575px 이하 1열).
   - **테스트:** `UserManageControllerTest` (4), `PermissionMapperTest` (4), `RoleManageControllerTest` (7), `MenuPermissionControllerTest` (5), `SitemapControllerTest` (3)
 - [x] **감사 로그 / 개인정보 마스킹 및 암호화**
   - **위치:** `AuditInterceptor`, `AuditEvent`, `AuditLogService`, `MaskingInterceptor`, `FieldCryptoService`, `PiiFieldService`

@@ -8,14 +8,15 @@
 </head>
 <body>
 <div layout:fragment="content">
-    <h2 class="heading-large">약도관리</h2>
+    <h2 class="heading-large">약도관리
+        <span class="help-tip" tabindex="0" role="img"
+              aria-label="주소와 위·경도를 등록하면 상세 화면에서 카카오 지도로 위치를 표시합니다."
+              data-tip="주소와 위·경도를 등록하면 상세 화면에서 카카오 지도로 위치를 표시합니다.">?</span>
+    </h2>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <p style="color: #555; margin: 0;">
-            주소와 위·경도를 등록하면 상세 화면에서 카카오 지도로 위치를 표시합니다.
-            <span th:if="${!mapKeyConfigured}" style="color: #b45309;">
-                (카카오 지도 키 미설정: KAKAO_MAP_KEY 환경값을 넣으면 지도가 표시됩니다)
-            </span>
+    <div th:if="${!mapKeyConfigured}" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <p style="margin: 0; color: #b45309;">
+            카카오 지도 키 미설정: KAKAO_MAP_KEY 환경값을 넣으면 지도가 표시됩니다
         </p>
         <a th:href="@{/map/mapWrite}" class="krds-btn medium primary">등록</a>
     </div>

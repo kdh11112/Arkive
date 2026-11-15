@@ -22,10 +22,11 @@
 </head>
 <body>
 <div layout:fragment="content">
-    <h2 class="heading-large">채팅</h2>
-    <p style="margin-bottom: 12px; color: #555;">
-        로그인 사용자 전체가 참여하는 샘플 채팅방입니다. 메시지는 서버에 저장되며 최근 100건을 보여줍니다.
-    </p>
+    <h2 class="heading-large">채팅
+        <span class="help-tip" tabindex="0" role="img"
+              aria-label="로그인 사용자 전체가 참여하는 샘플 채팅방입니다. 메시지는 서버에 저장되며 최근 100건을 보여줍니다."
+              data-tip="로그인 사용자 전체가 참여하는 샘플 채팅방입니다. 메시지는 서버에 저장되며 최근 100건을 보여줍니다.">?</span>
+    </h2>
 
     <div id="chatApp" class="chat-panel"
          th:attr="data-ws-path=@{/ws/chat},data-user-id=${loginUserId},data-user-nm=${loginUserNm}">

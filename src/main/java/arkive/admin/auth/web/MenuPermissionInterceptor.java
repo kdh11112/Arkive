@@ -41,26 +41,26 @@ public class MenuPermissionInterceptor implements HandlerInterceptor {
 
 	private static final String CK_MENU = "ME02030100";
 	private static final String TOAST_MENU = "ME02030200";
-	private static final String SCHEDULE_MENU = "ME02030800";
-	private static final String HOLIDAY_MENU = "ME02030900";
+	private static final String SCHEDULE_MENU = "ME02050100";
+	private static final String HOLIDAY_MENU = "ME02050200";
 	private static final String LEAVE_MY_MENU = "ME02090100";
 	private static final String LEAVE_MANAGE_MENU = "ME02090200";
 	private static final String LEAVE_BALANCE_MENU = "ME02090300";
-	private static final String MEETING_ROOM_MENU = "ME02050100";
-	private static final String MEETING_RESERVE_MENU = "ME02050200";
-	private static final String APPROVAL_MENU = "ME02070100";
+	private static final String MEETING_ROOM_MENU = "ME02050400";
+	private static final String MEETING_RESERVE_MENU = "ME02050500";
+	private static final String APPROVAL_MENU = "ME02070200";
 	private static final String HR_ANNIVERSARY_MENU = "ME02090400";
 	private static final String HR_EVENT_MENU = "ME02090500";
 	private static final String HR_REWARD_MENU = "ME02090600";
 	private static final String HR_PERSONAL_LEAVE_MENU = "ME02090700";
-	private static final String SURVEY_TEMPLATE_MENU = "ME02031600";
-	private static final String SURVEY_MANAGE_MENU = "ME02031700";
-	private static final String SURVEY_PARTICIPATE_MENU = "ME02031800";
-	private static final String SURVEY_STATS_MENU = "ME02031900";
+	private static final String SURVEY_TEMPLATE_MENU = "ME02030700";
+	private static final String SURVEY_MANAGE_MENU = "ME02030800";
+	private static final String SURVEY_PARTICIPATE_MENU = "ME02030900";
+	private static final String SURVEY_STATS_MENU = "ME02031000";
 	private static final String LECTURE_MANAGE_MENU = "ME020A0100";
 	private static final String LECTURE_MY_MENU = "ME020A0200";
 	private static final String LECTURE_COMPLETE_MENU = "ME020A0300";
-	private static final String MAP_GUIDE_MENU = "ME02040200";
+	private static final String MAP_GUIDE_MENU = "ME02040300";
 	private static final String CHAT_MENU = "ME020B0100";
 	private static final String BATCH_MENU = "ME02010800";
 
@@ -68,16 +68,16 @@ public class MenuPermissionInterceptor implements HandlerInterceptor {
 	private static final Map<String, String> CONTROLLER_MENU = Map.ofEntries(
 			Map.entry("arkive.admin.faq.web.FaqController", "ME02030300"),
 			Map.entry("arkive.admin.qna.web.QnaController", "ME02030400"),
-			Map.entry("arkive.admin.poll.web.PollController", "ME02031200"),
-			Map.entry("arkive.admin.counsel.web.CounselController", "ME02031500"),
-			Map.entry("arkive.admin.popup.web.PopupController", "ME02030600"),
-			Map.entry("arkive.admin.banner.web.BannerController", "ME02030700"),
+			Map.entry("arkive.admin.poll.web.PollController", "ME02030500"),
+			Map.entry("arkive.admin.counsel.web.CounselController", "ME02030600"),
+			Map.entry("arkive.admin.popup.web.PopupController", "ME02040100"),
+			Map.entry("arkive.admin.banner.web.BannerController", "ME02040200"),
 			Map.entry("arkive.admin.schedule.web.ScheduleController", SCHEDULE_MENU),
-			Map.entry("arkive.admin.duty.web.DutyController", "ME02031300"),
-			Map.entry("arkive.admin.address.web.AddressController", "ME02031100"),
-			Map.entry("arkive.admin.card.web.CardController", "ME02031400"),
-			Map.entry("arkive.admin.category.web.CategoryController", "ME02031000"),
-			Map.entry("arkive.admin.memo.web.MemoController", "ME02030500"),
+			Map.entry("arkive.admin.duty.web.DutyController", "ME02050300"),
+			Map.entry("arkive.admin.address.web.AddressController", "ME02060100"),
+			Map.entry("arkive.admin.card.web.CardController", "ME02060200"),
+			Map.entry("arkive.admin.category.web.CategoryController", "ME02060300"),
+			Map.entry("arkive.admin.memo.web.MemoController", "ME02070100"),
 			Map.entry("arkive.admin.system.web.SystemController", "ME02010100"),
 			Map.entry("arkive.admin.system.web.CommCodeController", "ME02010200"),
 			Map.entry("arkive.admin.auth.web.UserManageController", "ME02010400"),

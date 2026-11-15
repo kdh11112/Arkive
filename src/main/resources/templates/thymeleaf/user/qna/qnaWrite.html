@@ -8,11 +8,14 @@
 </head>
 <body>
 <div layout:fragment="content">
-    <h2 class="heading-large">Q&A 질문등록<div th:replace="~{cmm/doubleSubmit :: badge}"></div></h2>
+    <h2 class="heading-large">Q&A 질문등록
+        <span class="help-tip" tabindex="0" role="img"
+              aria-label="외부 Q&A에 등록되는 질문은 전체 공개됩니다. 내부 문의는 관리자에게 별도로 요청하세요."
+              data-tip="외부 Q&A에 등록되는 질문은 전체 공개됩니다. 내부 문의는 관리자에게 별도로 요청하세요.">?</span><div th:replace="~{cmm/doubleSubmit :: badge}"></div></h2>
     <div class="conts-wrap">
         <div class="fieldset input-form">
             <div th:replace="~{cmm/doubleSubmit :: token}"></div>
-            <p style="color:#555; font-size:14px;">외부 Q&A에 등록되는 질문은 전체 공개됩니다. 내부 문의는 관리자에게 별도로 요청하세요.</p>
+            
             <div class="form-group">
                 <div class="form-tit"><label for="title">질문</label></div>
                 <div class="form-conts"><input type="text" id="title" class="krds-input"></div>

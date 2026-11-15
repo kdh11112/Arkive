@@ -38,9 +38,9 @@
             객관식 질문이 없거나 아직 응답이 없습니다.
         </div>
 
-        <div class="conts-wrap" th:each="group : ${statGroups}" style="margin-bottom: 12px;">
-            <div style="margin-bottom: 8px;">
-                <strong th:text="${group['questionNo']} + '. ' + ${group['questionTxt']}"></strong>
+        <div class="stat-card" th:each="group : ${statGroups}" style="margin-bottom: 16px;">
+            <div class="stat-card-head" style="margin-bottom: 8px;">
+                <h3 class="stat-card-tit" th:text="${group['questionNo']} + '. ' + ${group['questionTxt']}"></h3>
                 <span th:switch="${group['questionType']}" style="margin-left: 6px; font-size: 12px; color: #666;">
                     <span th:case="'SINGLE'">단일선택</span>
                     <span th:case="*">복수선택</span>
@@ -68,9 +68,8 @@
                     <td th:text="${item['answerCnt']} + '명'"></td>
                     <td th:text="${item['rate']} + '%'"></td>
                     <td>
-                        <div style="background: #e9eef7; height: 10px; border-radius: 5px; overflow: hidden;">
-                            <div style="background: #2f7cf6; height: 10px;"
-                                 th:style="'width: ' + ${item['rate']} + '%;'"></div>
+                        <div class="stat-track">
+                            <div class="stat-bar" th:style="'width: ' + ${item['rate']} + '%;'"></div>
                         </div>
                     </td>
                 </tr>

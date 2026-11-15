@@ -8,8 +8,11 @@
 </head>
 <body>
 <div layout:fragment="content">
-    <h2 class="heading-large">로그관리</h2>
-    <p style="color:#555;">로그인, 메뉴 접근, 개인정보 열람·다운로드 기록을 조회합니다. 원문 비밀번호와 본문은 저장하지 않습니다.</p>
+    <h2 class="heading-large">로그관리
+        <span class="help-tip" tabindex="0" role="img"
+              aria-label="로그인, 메뉴 접근, 개인정보 열람·다운로드 기록을 조회합니다. 원문 비밀번호와 본문은 저장하지 않습니다."
+              data-tip="로그인, 메뉴 접근, 개인정보 열람·다운로드 기록을 조회합니다. 원문 비밀번호와 본문은 저장하지 않습니다.">?</span>
+    </h2>
 
     <form id="listForm" method="post" th:action="@{/system/auditLogList}">
         <input type="hidden" id="pageIndex" name="pageIndex" th:value="${pageIndex}">

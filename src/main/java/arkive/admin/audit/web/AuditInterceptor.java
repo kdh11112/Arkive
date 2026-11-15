@@ -34,15 +34,15 @@ public class AuditInterceptor implements HandlerInterceptor {
 		MENU_BY_PREFIX.put("/qna/", "ME02030400");
 		MENU_BY_PREFIX.put("/faq/", "ME02030300");
 		MENU_BY_PREFIX.put("/board/", "ME02030100");
-		MENU_BY_PREFIX.put("/popup/", "ME02030600");
-		MENU_BY_PREFIX.put("/banner/", "ME02030700");
-		MENU_BY_PREFIX.put("/schedule/", "ME02030800");
-		MENU_BY_PREFIX.put("/duty/", "ME02031300");
-		MENU_BY_PREFIX.put("/address/", "ME02031100");
-		MENU_BY_PREFIX.put("/card/", "ME02031400");
-		MENU_BY_PREFIX.put("/counsel/", "ME02031500");
-		MENU_BY_PREFIX.put("/memo/", "ME02030500");
-		MENU_BY_PREFIX.put("/poll/", "ME02031200");
+		MENU_BY_PREFIX.put("/popup/", "ME02040100");
+		MENU_BY_PREFIX.put("/banner/", "ME02040200");
+		MENU_BY_PREFIX.put("/schedule/", "ME02050100");
+		MENU_BY_PREFIX.put("/duty/", "ME02050300");
+		MENU_BY_PREFIX.put("/address/", "ME02060100");
+		MENU_BY_PREFIX.put("/card/", "ME02060200");
+		MENU_BY_PREFIX.put("/counsel/", "ME02030600");
+		MENU_BY_PREFIX.put("/memo/", "ME02070100");
+		MENU_BY_PREFIX.put("/poll/", "ME02030500");
 
 		TARGET_BY_PREFIX.put("/auth/user", "APP_USER");
 		TARGET_BY_PREFIX.put("/auth/role", "APP_ROLE");

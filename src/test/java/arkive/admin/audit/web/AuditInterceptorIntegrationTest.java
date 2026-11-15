@@ -65,7 +65,7 @@ class AuditInterceptorIntegrationTest {
 		List<EgovMap> rows = find("piiUser", "PII_VIEW");
 		assertThat(rows).isNotEmpty();
 		assertThat(String.valueOf(rows.get(0).get("targetType"))).isEqualTo("ADDRESS_BOOK");
-		assertThat(String.valueOf(rows.get(0).get("menuId"))).isEqualTo("ME02031100");
+		assertThat(String.valueOf(rows.get(0).get("menuId"))).isEqualTo("ME02060100");
 	}
 
 	@Test

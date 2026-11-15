@@ -40,7 +40,7 @@ class AuditLogServiceTest {
 	void auditEventsShouldBeStoredAndAggregated() throws Exception {
 		auditLogService.record(AuditEvent.access("MENU_ACCESS", "auditUser", "감사사용자", "ME02010700",
 				null, null, "/stats/statsList", "GET", "127.0.0.1"));
-		auditLogService.record(AuditEvent.access("PII_DOWNLOAD", "auditUser", "감사사용자", "ME02031300",
+		auditLogService.record(AuditEvent.access("PII_DOWNLOAD", "auditUser", "감사사용자", "ME02050300",
 				"DUTY", "202610", "/duty/downloadDutyExcel.do", "GET", "127.0.0.1"));
 
 		EgovMap param = new EgovMap();

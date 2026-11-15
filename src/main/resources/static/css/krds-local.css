@@ -512,17 +512,523 @@
   .user-main-bottom-panel { padding: 20px; }
 }
 
-/* [추가] 사이트맵 하위 메뉴 목록. [기본] 사이트맵 전용 목록 규격 없음. */
-.sitemap-list {
+/* [추가] 사이트맵: 표 대신 대메뉴별 카드 그리드와 알약형 링크로 보여준다.
+   [기본] 사이트맵 전용 화면 규격 없음. */
+.sitemap-head {
+  margin-bottom: 24px;
+}
+.sitemap-head .heading-large {
+  margin-bottom: 8px;
+}
+.sitemap-desc {
+  margin: 0;
+  color: #4b5563;
+  font-size: 1.5rem;
+  line-height: 1.6;
+}
+.sitemap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+.sitemap-card {
+  padding: 20px 22px 18px;
+  border: 1px solid #dde3ec;
+  border-radius: 12px;
+  background: #fff;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.sitemap-card:hover,
+.sitemap-card:focus-within {
+  border-color: #256ef4;
+  box-shadow: 0 6px 16px rgb(11 80 208 / 8%);
+}
+.sitemap-card-tit {
+  position: relative;
+  margin: 0 0 14px;
+  padding-left: 12px;
+  color: #111827;
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -.02em;
+}
+.sitemap-card-tit::before {
+  position: absolute;
+  top: .25em;
+  bottom: .25em;
+  left: 0;
+  width: 3px;
+  border-radius: 2px;
+  background: #256ef4;
+  content: "";
+}
+.sitemap-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 20px;
+  gap: 6px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.sitemap-list a {
-  text-decoration: underline;
+.sitemap-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #344054;
+  font-size: 1.4rem;
+  font-weight: 500;
+  line-height: 1.3;
+  text-decoration: none;
+  transition: border-color .15s ease, background-color .15s ease, color .15s ease;
+}
+.sitemap-link:hover,
+.sitemap-link:focus-visible {
+  border-color: #256ef4;
+  background: #256ef4;
+  color: #fff;
+  text-decoration: none;
+}
+.sitemap-empty {
+  margin: 24px 0 0;
+  padding: 32px 16px;
+  border: 1px dashed #d8dee8;
+  border-radius: 12px;
+  color: #6b7280;
+  font-size: 1.5rem;
+  text-align: center;
+}
+@media (max-width: 575px) {
+  .sitemap-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .sitemap-card {
+    padding: 16px 18px 14px;
+  }
+  .sitemap-card-tit {
+    font-size: 1.7rem;
+    margin-bottom: 12px;
+  }
+}
+
+/* [추가] 통계 카드: 제목·그래프·숫자 표를 카드 하나에 묶고 2열 그리드로 배치한다.
+   ADTM illegalAdvertiseStat.jsp의 'cont_half(graph_area + dg 표)' 구성을 차트 라이브러리 없이
+   CSS 막대로 옮긴 형태다. 막대 높이·너비는 화면 스크립트가 계산해 넣는다.
+   [기본] 통계 전용 규격 없음. */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 20px;
+}
+.stat-card {
+  min-width: 0;
+  padding: 20px 22px 16px;
+  border: 1px solid #dde3ec;
+  border-radius: 12px;
+  background: #fff;
+}
+.stat-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.stat-card-tit {
+  position: relative;
+  margin: 0;
+  padding-left: 12px;
+  color: #111827;
+  font-size: 1.7rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -.02em;
+}
+.stat-card-tit::before {
+  position: absolute;
+  top: .2em;
+  bottom: .2em;
+  left: 0;
+  width: 3px;
+  border-radius: 2px;
+  background: #256ef4;
+  content: "";
+}
+.stat-card-unit {
+  margin: 0 0 12px;
+  color: #6b7280;
+  font-size: 1.2rem;
+}
+.stat-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 220px;
+  padding: 8px 2px 0;
+  border-bottom: 1px solid #d1d5db;
+}
+.stat-bar-col {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100%;
+  min-width: 0;
+  max-width: 160px;
+  text-align: center;
+}
+.stat-bar-val {
+  color: #374151;
+  font-size: 11px;
+  line-height: 1.3;
+}
+.stat-bar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background: #2563eb;
+}
+/* 막대 색: 항목마다 색을 돌려 써 한 카드 안에서 구분되게 한다.
+   (ADTM 원본의 toastui-chart 기본 팔레트 계열을 CSS로 재현)
+   막대형은 열 순서, 설문 비율형은 표의 행 순서를 기준으로 한다. */
+.stat-bar-col:nth-child(8n+1) .stat-bar,
+.stat-card tbody tr:nth-child(8n+1) .stat-bar {
+  background: #2563eb;
+}
+.stat-bar-col:nth-child(8n+2) .stat-bar,
+.stat-card tbody tr:nth-child(8n+2) .stat-bar {
+  background: #0ea5e9;
+}
+.stat-bar-col:nth-child(8n+3) .stat-bar,
+.stat-card tbody tr:nth-child(8n+3) .stat-bar {
+  background: #14b8a6;
+}
+.stat-bar-col:nth-child(8n+4) .stat-bar,
+.stat-card tbody tr:nth-child(8n+4) .stat-bar {
+  background: #f59e0b;
+}
+.stat-bar-col:nth-child(8n+5) .stat-bar,
+.stat-card tbody tr:nth-child(8n+5) .stat-bar {
+  background: #ef4444;
+}
+.stat-bar-col:nth-child(8n+6) .stat-bar,
+.stat-card tbody tr:nth-child(8n+6) .stat-bar {
+  background: #8b5cf6;
+}
+.stat-bar-col:nth-child(8n+7) .stat-bar,
+.stat-card tbody tr:nth-child(8n+7) .stat-bar {
+  background: #ec4899;
+}
+.stat-bar-col:nth-child(8n+8) .stat-bar,
+.stat-card tbody tr:nth-child(8n+8) .stat-bar {
+  background: #64748b;
+}
+.stat-axis {
+  display: flex;
+  gap: 6px;
+  margin: 6px 2px 14px;
+}
+.stat-axis span {
+  flex: 1;
+  min-width: 0;
+  max-width: 160px;
+  overflow: hidden;
+  color: #374151;
+  font-size: 11px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stat-track {
+  height: 10px;
+  border-radius: 5px;
+  background: #e9eef7;
+  overflow: hidden;
+}
+.stat-track .stat-bar {
+  height: 10px;
+  border-radius: 0;
+}
+.stat-card .tbl {
+  margin-top: 4px;
+}
+.stat-empty {
+  padding: 40px 0;
+  color: #9ca3af;
+  font-size: 1.4rem;
+  text-align: center;
+}
+
+/* [추가] 메뉴 관리: 트리를 한 줄씩 읽기 좋게 다듬고, 하위메뉴 표의 열 폭을 고정해
+   메뉴ID·경로·관리 버튼이 두 줄로 갈라지지 않게 한다.
+   [기본] 메뉴 관리 전용 규격 없음. */
+/* 메뉴 관리: 왼쪽은 고정 폭 트리, 오른쪽은 스크롤되는 표. 두 패널은 위쪽을 맞춘다. */
+.menu-cols {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+.menu-cols > .menu-tree {
+  flex: 0 0 300px;
+  min-width: 0;
+}
+.menu-cols > .menu-table {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.menu-panel {
+  padding: 18px 20px;
+  border: 1px solid #dde3ec;
+  border-radius: 12px;
+  background: #fff;
+}
+.menu-panel .form-tit {
+  margin-bottom: 12px;
+}
+.menu-tree-box {
+  box-sizing: border-box;
+  width: 100%;
+  height: 460px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  overflow: auto;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+.menu-tree-box .jstree {
+  width: 100%;
+}
+.menu-table .krds-table-wrap {
+  max-height: 520px;
+  overflow: auto;
+}
+/* 표가 패널 폭에 맞춰 줄어들게 한다. 기본 min-width(720px)을 두면
+   세로 스크롤바 폭 때문에 가로 스크롤이 생긴다. */
+.menu-table table.tbl.col.data {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+.menu-table table.tbl.col.data th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 10px 12px;
+  background: #eef1f6;
+}
+.menu-table table.tbl.col.data td {
+  padding: 8px 12px;
+}
+.menu-table table.tbl.col.data .krds-btn {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 1.3rem;
+}
+.menu-path-empty {
+  color: #b8bec9;
+}
+@media (max-width: 1023px) {
+  .menu-cols {
+    flex-direction: column;
+  }
+  .menu-cols > .menu-tree {
+    flex: none;
+    width: 100%;
+  }
+  .menu-tree-box {
+    height: 320px;
+  }
+  /* 좁은 화면에서는 경로 열을 감지고 관리 버튼을 세로로 쌓아 표가 화면을 밀지 않게 한다. */
+  .menu-table table.tbl.col.data th:nth-child(3),
+  .menu-table table.tbl.col.data td:nth-child(3),
+  .menu-table table.tbl.col.data col:nth-child(3) {
+    display: none;
+  }
+  .menu-table table.tbl.col.data .menu-actions {
+    white-space: normal;
+  }
+  .menu-table table.tbl.col.data .menu-actions .krds-btn {
+    display: block;
+    width: 100%;
+    margin: 2px 0;
+  }
+}
+.menu-panel-tit {
+  display: inline-block;
+  color: #111827;
+  font-size: 1.7rem;
+  font-weight: 700;
+}
+/* [추가] 화면 공통 도움말: 제목 옆 ? 아이콘에 마우스를 올리면 말품선으로 설명이 보인다.
+   각 화면은 h2 옆에 <span class="help-tip" data-tip="설명">?</span>을 둔다.
+   [기본] 공통 도움말 규격 없음. */
+.help-tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  border: 1px solid #c3c9d4;
+  border-radius: 50%;
+  color: #6b7280;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+  cursor: help;
+}
+.help-tip:hover,
+.help-tip:focus-visible {
+  border-color: #256ef4;
+  color: #256ef4;
+  outline: none;
+}
+.help-tip::after {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 8px);
+  z-index: 30;
+  width: max-content;
+  max-width: 260px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #1f2937;
+  color: #fff;
+  content: attr(data-tip);
+  font-size: 1.2rem;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-50%);
+  transition: opacity .15s ease;
+  pointer-events: none;
+}
+.help-tip:hover::after,
+.help-tip:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+}
+.menu-chip {
+  display: inline-block;
+  min-width: 26px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: center;
+}
+.menu-chip.on {
+  background: #e6f4ea;
+  color: #14713c;
+}
+.menu-chip.off {
+  background: #f1f3f6;
+  color: #6b7280;
+}
+.menu-table .menu-empty {
+  padding: 36px 0;
+  color: #9ca3af;
+  text-align: center;
+}
+
+/* jstree 기본 CSS가 화면 안에서 나중에 로드되므로 #jstree로 우선순위를 올린다. */
+#jstree {
+  padding: 10px 8px;
+  font-size: 1.4rem;
+}
+#jstree .jstree-node {
+  line-height: 2.8rem;
+}
+#jstree .jstree-anchor {
+  height: auto;
+  padding: 5px 9px;
+  border-radius: 6px;
+  line-height: 2.8rem;
+  vertical-align: middle;
+}
+#jstree .jstree-anchor:link,
+#jstree .jstree-anchor:visited {
+  color: #344054;
+}
+#jstree .jstree-anchor.jstree-hovered {
+  background: #eef4ff;
+  color: #1d4ed8;
+  box-shadow: none;
+}
+#jstree .jstree-anchor.jstree-clicked {
+  background: #256ef4;
+  color: #fff;
+}
+#jstree .jstree-icon,
+#jstree .jstree-ocl {
+  vertical-align: middle;
+}
+#jstree .jstree-children {
+  padding-left: 4px;
+}
+.menu-table table {
+  min-width: 720px;
+}
+.menu-table .menu-id {
+  overflow: hidden;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.3rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.menu-table .menu-path {
+  overflow: hidden;
+  font-size: 1.3rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.menu-table .menu-ordr,
+.menu-table .menu-use {
+  text-align: center;
+  white-space: nowrap;
+}
+.menu-table .menu-actions {
+  white-space: nowrap;
+}
+.menu-table .menu-actions .krds-btn {
+  margin: 2px 0;
+}
+
+/* [추가] 날짜 입력: 브라우저 달력 버튼과 yyyy-MM-dd가 한 화면에 보이도록 최소 폭을 둔다.
+   화면마다 인라인 width:160px을 줘도 잘리지 않도록 min-width로 하한을 잡는다.
+   [기본] 날짜 전용 입력 규격 없음. */
+input[type="date"].krds-input {
+  min-width: 190px;
+}
+@media (max-width: 1023px) {
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .stat-card {
+    padding: 16px 14px 12px;
+  }
+  .stat-chart {
+    height: 180px;
+    gap: 4px;
+  }
+  .stat-axis {
+    gap: 4px;
+  }
+  .stat-axis-dense span:nth-child(even) {
+    visibility: hidden;
+  }
 }
 
 /* [추가] 통합검색 결과 요약문. [기본] 검색 요약 규격 없음. */
