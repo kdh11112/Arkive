@@ -166,6 +166,20 @@
 
 ---
 
+### 2.13. 2026-11-16: 미확인 GUI 항목 추가 검증 (프로필 5)
+
+- **도구:** ego-browser 0.6.3.14, 프로필 "프로필 5" (Profile 7), `http://127.0.0.1:8080`, admin 세션.
+- **검증 결과:**
+  - 실시간 알림 SSE: `/board/subscribe?boardType=ALL` 스트림 개방(장시간 연결, fetch 타임아웃으로 확인), `ARKIVE_SSE_ENABLED=false` 기본 킬스위치 확인.
+  - 외부 웹분석: `window.ARKIVE_ANALYTICS` 주입 확인(enabled=false, ga4Id/clarityId 빈값, requireConsent=true). 기본 비활성·동의 전 외부 요청 없음.
+  - ApplicationEvent 기반 로그: `/system/auditLogList` 렌더링 및 메뉴 접근(MENU_ACCESS) 기록 확인.
+  - 내부 API: 미설정 시 `/internal/v1/health` → 503, 잘못된 토큰 → 503 동작 확인.
+  - 동영상 인코딩: `/lecture/lectureList` 렌더링 및 "FFmpeg 인코딩 꺼짐" 상태 표시 확인.
+  - SSO: `/sso/login` 기본 비활성 404 확인.
+  - OAuth 2.0: 네이버 로그인 버튼 클릭 시 "준비중" 알림 확인(실제 연결 미구현).
+  - DB 암호화: `ARKIVE_FIELD_KEY` 미설정으로 주소록 등록 시 "필드 암호화 키가 설정되지 않았습니다" 알림 확인. 키 주입 후 재검증 필요.
+- **미수행/제약:** 중복로그인방지·SMS·Mail·중요글 알림 채널·NICE 본인인증은 환경·외부 계약 의존으로 GUI 검증 미수행.
+
 ### 2.12. 2026-11-15: 전 화면 도움말 ? 아이콘 전환
 
 - **목적:** 메뉴 관리에만 있던 `?` 도움말을 화면 공통 규격으로 정리하고, 페이지 상단의 설명 문단을 제목 옆 `?` 아이콘 호버 방식으로 통일.
