@@ -177,8 +177,8 @@
   - 동영상 인코딩: `/lecture/lectureList` 렌더링 및 "FFmpeg 인코딩 꺼짐" 상태 표시 확인.
   - SSO: `/sso/login` 기본 비활성 404 확인.
   - OAuth 2.0: 네이버 로그인 버튼 클릭 시 "준비중" 알림 확인(실제 연결 미구현).
-  - DB 암호화: `ARKIVE_FIELD_KEY` 미설정으로 주소록 등록 시 "필드 암호화 키가 설정되지 않았습니다" 알림 확인. 키 주입 후 재검증 필요.
-- **미수행/제약:** 중복로그인방지·SMS·Mail·중요글 알림 채널·NICE 본인인증은 환경·외부 계약 의존으로 GUI 검증 미수행.
+  - DB 암호화: `ARKIVE_FIELD_KEY` 주입(32바이트 AES 키) 후 주소록 등록 → TEL_NO/EMAIL이 `enc:v1:` 접두사로 DB 저장 확인. UI 목록에서 `010-****-5678`·`te***@example.com` 마스킹 확인. FieldCryptoServiceTest(12) 통과.
+- **미수행/제약:** 중복로그인방지·SMS·Mail·중요글 알림 채널·NICE 본인인증은 환경·외부 계약 의존으로 GUI 검증 미수행. 중복로그인방지는 LoginSessionRegistryTest(5)로 단위 검증 완료(브라우저 cookie 공유로 GUI 이중 세션 검증 불가). NICE는 미계약 시 /login/nice/start → "NICE 미계약 상태입니다" 에러 페이지 확인.
 
 ### 2.12. 2026-11-15: 전 화면 도움말 ? 아이콘 전환
 
