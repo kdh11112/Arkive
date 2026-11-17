@@ -178,7 +178,13 @@
   - SSO: `/sso/login` 기본 비활성 404 확인.
   - OAuth 2.0: 네이버 로그인 버튼 클릭 시 "준비중" 알림 확인(실제 연결 미구현).
   - DB 암호화: `ARKIVE_FIELD_KEY` 주입(32바이트 AES 키) 후 주소록 등록 → TEL_NO/EMAIL이 `enc:v1:` 접두사로 DB 저장 확인. UI 목록에서 `010-****-5678`·`te***@example.com` 마스킹 확인. FieldCryptoServiceTest(12) 통과.
-- **미수행/제약:** 중복로그인방지·SMS·Mail·중요글 알림 채널·NICE 본인인증은 환경·외부 계약 의존으로 GUI 검증 미수행. 중복로그인방지는 LoginSessionRegistryTest(5)로 단위 검증 완료(브라우저 cookie 공유로 GUI 이중 세션 검증 불가). NICE는 미계약 시 /login/nice/start → "NICE 미계약 상태입니다" 에러 페이지 확인.
+- **미수행/제약:** 아래 6개 항목은 코드·단위 테스트는 완료됐으나, 외부 서비스 계약·자격증명·독립 브라우저 세션이 없어 GUI/E2E 검증이 불가하다. 필요 조건 충족 시 GUI 확인 후 "구현 및 검증완료"로 이동한다.
+  - **중복로그인방지:** 같은 계정으로 두 개의 독립 브라우저 세션(쿠키 공유 없는 별도 프로필/시크릿 창)에서 동시 로그인 → 이전 세션 만료·"세션 종료" 안내 확인. Chrome 프로필 간 쿠키 공유로 자동화 불가. 단위 테스트 `LoginSessionRegistryTest`(5)로 매핑·만료·정리 규칙 검증 완료.
+  - **OAuth 2.0 (네이버·카카오·구글):** 네이버/카카오/구글 개발자 콘솔에서 클라이언트 ID·Secret 발급 + 콜백 URL 등록 후 `Globals.{provider}.clientId` 설정. 현재 미설정 시 소셜 버튼 클릭 → "준비중" 알림. `OauthControllerTest`(3)로 미지원·미설정·잘못된 state 거부 검증 완료.
+  - **SMS 보내기:** 알리고(Aligo) 계정 생성 → `ARKIVE_SMS_ENABLED=true`, `arkive.sms.aligo.id`, `arkive.sms.aligo.api-key`, `arkive.sms.aligo.sender`(발신번호) 환경변수 주입. 게시글 중요글 등록 시 수신 동의(`SMS_YN='Y'`) 사용자에게 실제 SMS 발송 확인. 인증번호 전송 기능은 미구현(게시글 알림만 구현). `AligoSmsSenderTest`(7), `SmsServiceImplTest`(5) 통과.
+  - **Mail 보내기 + @Async:** SMTP 서버·계정 확보 → `arkive.mail.enabled=true`, `arkive.mail.from`, `spring.mail.host/port/username/password` 설정. 회원가입 환영 메일·비밀번호 재설정 메일·게시글 중요글 알림 메일 수신 확인. `MailServiceImplTest`(10) 통과.
+  - **중요글 알림 채널 분리 (SSE·메일·SMS):** 위 Mail·SMS 활성화 + SSE 스트림 개방 상태에서 중요글 등록 → 3개 채널(SSE 브라우저 알림, 메일 수신, SMS 수신) 독립 발송 확인. SSE 채널은 이미 "구현 및 검증완료"에서 GUI 확인 완료. 메일·SMS 채널은 위 두 항목의 조건 충족 시 검증 가능. `BoardNotificationEventListenerTest`(13) 통과.
+  - **본인인증 (NICE/휴대폰):** NICE 계약 체결 → `Globals.nice.siteCode`, `Globals.nice.sitePassword`, `Globals.nice.returnUrl`, `Globals.nice.errorUrl` 설정. `/login/nice/start` 접근 → NICE 인증 페이지 이동 → 콜백 → 세션 `NICE_VERIFIED` 저장 확인. 현재 미계약 시 "NICE 미계약 상태입니다" 에러 페이지 표시(확인 완료). `NiceVerifyControllerTest`(2) 통과. 회원가입·비밀번호 찾기 화면에서 인증 진입 링크는 미연결(코드만 존재).
 
 ### 2.12. 2026-11-15: 전 화면 도움말 ? 아이콘 전환
 

@@ -78,12 +78,14 @@
 
 ### 구현 (자동 테스트 통과 · GUI 확인 대기)
 
-- [x] 중복로그인방지
-- [x] 로그인 (OAuth 2.0, 네이버·카카오·구글 연동 코드, 소셜 버튼 실제 연결 미구현)
-- [x] SMS 보내기 (게시글 알림 구현, 인증번호 전송 미구현, 기본 비활성)
-- [x] Mail 보내기 + @Async (기본 비활성)
-- [x] 중요글 알림 채널 분리 (SSE·메일·SMS)
-- [x] 본인인증 (NICE/휴대폰 연동 코드, 화면 진입 링크 없음·실계약 미확인)
+아래 6개 항목은 코드·단위 테스트는 완료됐으나, 실제 외부 서비스 계약·자격증명·독립 브라우저 세션이 없어 GUI/E2E 검증이 불가하다. 필요 조건이 충족되면 GUI 확인 후 "구현 및 검증완료"로 이동한다.
+
+- [x] 중복로그인방지 — **GUI 확인 조건:** 같은 계정으로 두 개의 독립 브라우저 세션(쿠키 공유 없는 별도 프로필/시크릿 창)에서 동시 로그인 → 이전 세션 만료·"세션 종료" 안내 확인. Chrome 프로필 간 쿠키 공유로 자동화 불가. 단위 테스트 `LoginSessionRegistryTest` (5)로 매핑·만료·정리 규칙 검증 완료.
+- [x] 로그인 (OAuth 2.0, 네이버·카카오·구글) — **GUI 확인 조건:** 네이버/카카오/구글 개발자 콘솔에서 클라이언트 ID·Secret 발급 + 콜백 URL(`Globals.{provider}.callbackUrl`) 등록 후 `Globals.{provider}.clientId` 설정. 현재 미설정 시 소셜 버튼 클릭 → "준비중" 알림. `OauthControllerTest` (3)로 미지원·미설정·잘못된 state 거부 검증 완료.
+- [x] SMS 보내기 (게시글 알림, 인증번호 전송 미구현, 기본 비활성) — **GUI 확인 조건:** 알리고(Aligo) 계정 생성 → `ARKIVE_SMS_ENABLED=true`, `arkive.sms.aligo.id`, `arkive.sms.aligo.api-key`, `arkive.sms.aligo.sender`(발신번호) 환경변수 주입. 게시글 중요글 등록 시 수신 동의(`SMS_YN='Y'`) 사용자에게 실제 SMS 발송 확인. 인증번호 전송 기능은 미구현(게시글 알림만 구현). `AligoSmsSenderTest` (7), `SmsServiceImplTest` (5) 통과.
+- [x] Mail 보내기 + @Async (기본 비활성) — **GUI 확인 조건:** SMTP 서버·계정 확보 → `arkive.mail.enabled=true`, `arkive.mail.from`, `spring.mail.host/port/username/password` 설정. 회원가입 환영 메일·비밀번호 재설정 메일·게시글 중요글 알림 메일 수신 확인. `MailServiceImplTest` (10) 통과.
+- [x] 중요글 알림 채널 분리 (SSE·메일·SMS) — **GUI 확인 조건:** 위 Mail·SMS 활성화 + SSE 스트림 개방 상태에서 중요글 등록 → 3개 채널(SSE 브라우저 알림, 메일 수신, SMS 수신) 독립 발송 확인. SSE 채널은 이미 "구현 및 검증완료"에서 GUI 확인 완료. 메일·SMS 채널은 위 두 항목의 조건 충족 시 검증 가능. `BoardNotificationEventListenerTest` (13) 통과.
+- [x] 본인인증 (NICE/휴대폰, 화면 진입 링크 없음·실계약 미확인) — **GUI 확인 조건:** NICE 계약 체결 → `Globals.nice.siteCode`, `Globals.nice.sitePassword`, `Globals.nice.returnUrl`, `Globals.nice.errorUrl` 설정. `/login/nice/start` 접근 → NICE 인증 페이지 이동 → 콜백 → 세션 `NICE_VERIFIED` 저장 확인. 현재 미계약 시 "NICE 미계약 상태입니다" 에러 페이지 표시(확인 완료). `NiceVerifyControllerTest` (2) 통과. 회원가입·비밀번호 찾기 화면에서 인증 진입 링크는 미연결(코드만 존재).
 
 ### 미구현
 
