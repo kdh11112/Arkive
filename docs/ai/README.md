@@ -23,6 +23,7 @@
 | 구분 | 전체 문서 | 대상에 적용할 때 |
 | --- | --- | --- |
 | 공통 방법 | [coding-standard](common/coding-standard.md) · [sql-standard](common/sql-standard.md) · [test-standard](common/test-standard.md) · [verification-standard](common/verification-standard.md) · [migration-standard](common/migration-standard.md) | 파일째 복사하되 대상 기준으로 판단 |
+| AI 운영 | [ai-orchestration](common/ai-orchestration.md) | Orca·Freebuff·Sol 환경일 때만 복사 |
 | 복붙 양식 | [acceptance-template](portable/acceptance-template.md) · [evidence-report-template](portable/evidence-report-template.md) · [portable-regression-checklist](portable/portable-regression-checklist.md) · [scripts](portable/scripts.md) · [project-template-pack](portable/project-template-pack.md) · [feature-porting-sheet](portable/feature-porting-sheet.md) · [test-porting-sheet](portable/test-porting-sheet.md) · [ai-porting-request](portable/ai-porting-request.md) | 빈 양식·스크립트·이식 시트만 복사 |
 | Boot 트랙 | [boot-apply](boot/boot-apply.md) · [test-stack-boot](boot/test-stack-boot.md) | Spring Boot 대상에 선택 |
 | 클래식 트랙 | [classic-apply](classic/classic-apply.md) · [test-stack-classic](classic/test-stack-classic.md) | 전자정부 3.x/4.x 대상에서 관례 확인 후 선택 |

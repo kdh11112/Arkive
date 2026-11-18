@@ -16,6 +16,7 @@ Arkive는 다른 프로젝트에 기능 이식을 편하게 만들기 위해 만
 | SQL·DB 변경 | [SQL 표준](docs/ai/common/sql-standard.md), 해당 Mapper/XML·스키마/시드 SQL | [마이그레이션 절차](docs/ai/common/migration-standard.md), 프로젝트 DB 기록 |
 | 기능 이식 | [PORTING.md](PORTING.md), 해당 기능 코드·기록 | [기능 시트](docs/ai/portable/feature-porting-sheet.md), [테스트 시트](docs/ai/portable/test-porting-sheet.md), 선택한 트랙 |
 | 검증·증거 작성 | [테스트 표준](docs/ai/common/test-standard.md), [검증 절차](docs/ai/common/verification-standard.md) | [인수 조건](docs/ai/portable/acceptance-template.md), [증거 양식](docs/ai/portable/evidence-report-template.md) |
+| Worker 분배 (오케스트레이션 승인 후) | [AI 오케스트레이션 운영 규칙](docs/ai/common/ai-orchestration.md) | 해당 작업 유형의 위 문서 |
 
 공통 방법은 `docs/ai/common/`, 빈 양식은 `docs/ai/portable/`, 프로젝트 사실은 `docs/ai/project/`에 둔다. Arkive 원본의 전체 문서 지도는 `docs/ai/README.md`다. Boot·클래식 경로는 `PORTING.md`에서 선택하며, 대상에 없는 반대 트랙은 읽지 않는다.
 
@@ -44,6 +45,16 @@ Verifier·Guard 등 자동화 도구와 배포·롤백·Health·Canary Runbook�
 7. 기존 기능을 이관할 때 Arkive의 공통 기능, 의존성, 설정, 보안 및 DB 구조를 확인한 뒤 필요한 부분만 통합한다.
 8. Arkive에서 타 프로젝트로 기능을 이식할 때는 기능별 화면·Controller·Service·Mapper/XML·SQL·의존성·설정(Globals 키 등)·DB 객체를 함께 확인하고, 대상 프로젝트의 패키지·테이블·DB 문법에 맞게 최소한만 조정한다. 기능별 실행·복사 기록은 [feature-porting-sheet.md](docs/ai/portable/feature-porting-sheet.md)에, 테스트 이식 기록은 [test-porting-sheet.md](docs/ai/portable/test-porting-sheet.md)에 남긴다.
 
+## AI 오케스트레이션
+
+Worker(Freebuff, OpenCode2 Sol)에게 작업을 나누는 규칙이다. 상세 기준(역할·비용·Freebuff 시간·Orca 명령·spec 양식)은 [AI 오케스트레이션 운영 규칙](docs/ai/common/ai-orchestration.md)을 오케스트레이션할 때만 읽는다.
+
+- 기본은 **일반 단독 처리**다. 사용자 승인 없이 Worker를 만들거나 Orca orchestration 명령을 실행하지 않는다.
+- 작업이 크거나 독립 단위로 나뉘면(여러 계층·화면에 걸친 구현, 조사와 구현을 나눌 수 있는 이식, 별도 검증이 필요한 작업, 대량 조사) 착수 전에 한 번 묻는다: "Worker에게 나눌까요? (배정안: Freebuff ○○ / Sol ○○, 예상 소모: Freebuff 세션 ○ / Sol 사용 여부)". 거절하거나 답이 없으면 단독 처리한다. 간단한 질문·작은 수정·조회에는 묻지 않는다.
+- 활성화: `오케스트레이션으로 진행해줘`, `오케스트라로 해줘`, `Worker에게 나눠서 진행해줘` → 그 세션의 후속 작업도 오케스트레이션. 해제: `일반 모드로 전환해줘`, `오케스트레이션 중지`, `Worker를 사용하지 마` → 즉시 단독 처리, 그 세션에서는 제안도 하지 않는다. 새 세션은 단독 처리 + 자동 제안으로 시작한다.
+- 어렵거나 중요한 작업(원인 불명 오류, 권한·데이터 정합성, 여러 계층 변경, 이식 설계, 스키마 변경)이면 착수 전에 한 번 추론 강도 상향을 제안한다(`ultrathink` 또는 세션 effort 설정 안내). 총괄은 강도를 직접 바꿀 수 없다.
+- Worker는 Freebuff 우선, 실패·제한 시에만 OpenCode2(Sol, 유료·하루 약 $20 이내). 파일 수정은 한 Worker만, 검증 Worker는 수정 금지. Worker에게도 이 문서의 작업 원칙·품질 관문(테스트 파일 수정 금지 포함)이 그대로 적용되며, `verify.cmd`와 화면 확인은 총괄이 직접 최종 확인한다.
+
 ## 품질 관문 (Quality Gates)
 
 코드를 직접 전부 검토하는 대신, 아래 관문을 통과해야 완료로 처리한다.
@@ -65,6 +76,7 @@ Verifier·Guard 등 자동화 도구와 배포·롤백·Health·Canary Runbook�
 ## 작업 완료 시 자동 검증
 
 - 작업이 끝나면 루트의 `verify.cmd`를 실행한다 (`verify.cmd [-Dtest=...]`).
+- 예외: 변경이 Markdown 문서(`*.md`)뿐이면 `verify.cmd`를 생략한다. 대신 바꾼 링크·앵커가 실제 파일·제목과 맞는지 확인하고, `AGENTS.md`나 `docs/ai/portable/scripts.md`를 바꿨으면 `doctor.cmd`를 실행한다. `.cmd`·`pom.xml`·`src/**`·설정 파일이 하나라도 함께 바뀌면 예외가 아니다.
 - 실패하면 원인을 고치고 다시 실행한다. 실패 상태에서는 작업을 완료했다고 선언하지 않는다.
 - 실행하지 못한 검증은 성공했다고 보고하지 않고, 사유와 남은 위험을 기록한다.
 - 화면이 있는 변경은 ego-browser로 GUI 확인까지 수행한다. 다른 브라우저 자동화나 computer-use 같은 데스크톱 자동화로 대체하지 않으며, ego-browser를 사용할 수 없으면 `미수행`과 사유를 기록한다.

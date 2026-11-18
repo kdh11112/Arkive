@@ -9,6 +9,7 @@
 | 구분 | 복사 | 이유 |
 | --- | --- | --- |
 | `docs/ai/common/` 5종 | **예** | 코딩·SQL·테스트·검증·마이그레이션 공통 방법 |
+| `docs/ai/common/ai-orchestration.md` | **조건부** | Orca·Freebuff·Sol 환경에서 AI Worker를 쓸 때만. 없으면 대상 `AGENTS.md`의 AI 오케스트레이션 절도 뺀다 |
 | `docs/ai/portable/` | **예** | 빈 양식·스크립트·기능 이식 시트 |
 | `docs/ai/boot/` 또는 `docs/ai/classic/` | **택 1** | 대상이 Spring Boot인지 전자정부 클래식인지 |
 | `docs/ai/project/` | **아니오** | Arkive 기록이다. 대상의 기존 지식 또는 [빈 양식](docs/ai/portable/project-template-pack.md)을 사용한다 |
