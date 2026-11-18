@@ -28,7 +28,7 @@ Verifier·Guard 등 자동화 도구와 배포·롤백·Health·Canary Runbook�
 
 별도 지시가 없어도 아래를 수행한다.
 
-1. `doctor.cmd`로 빠진 항목을 확인한다. `verify.cmd`·`doctor.cmd`가 없으면 `docs/ai/portable/scripts.md` 전문으로 생성한다.
+1. `PORTING.md` 2절로 테스트 준비 항목(테스트 의존성, JaCoCo, 테스트 DB 분리)을 확인한다. `verify.cmd`가 없으면 `docs/ai/portable/scripts.md` 전문으로 생성한다.
 2. Arkive의 `docs/ai/project/`는 복사하지 않는다. 대상의 기존 기록을 재사용하거나 빈 양식으로 `docs/ai/project/project-context.md`를 만든다. 한 파일로 시작해도 되고 필요하면 주제별로 나눈다. 패키지·테이블·URL·메뉴·DB·Globals 키는 대상 근거로 채운다.
 3. 대상에는 Boot·클래식 중 맞는 트랙만 복사한다. Arkive 원본의 두 트랙과 대상의 기존 사용자 파일은 임의로 삭제하지 않는다.
 4. 코드에서 확인 안 되는 값은 `미확인`으로 두고 추측하지 않는다. 확인자는 대상 담당자로 지정한다.
@@ -76,7 +76,7 @@ Worker(Freebuff, OpenCode2 Sol)에게 작업을 나누는 규칙이다. 상세 �
 ## 작업 완료 시 자동 검증
 
 - 작업이 끝나면 루트의 `verify.cmd`를 실행한다 (`verify.cmd [-Dtest=...]`).
-- 예외: 변경이 Markdown 문서(`*.md`)뿐이면 `verify.cmd`를 생략한다. 대신 바꾼 링크·앵커가 실제 파일·제목과 맞는지 확인하고, `AGENTS.md`나 `docs/ai/portable/scripts.md`를 바꿨으면 `doctor.cmd`를 실행한다. `.cmd`·`pom.xml`·`src/**`·설정 파일이 하나라도 함께 바뀌면 예외가 아니다.
+- 예외: 변경이 Markdown 문서(`*.md`)뿐이면 `verify.cmd`를 생략한다. 대신 바꾼 링크·앵커가 실제 파일·제목과 맞는지 확인한다. `.cmd`·`pom.xml`·`src/**`·설정 파일이 하나라도 함께 바뀌면 예외가 아니다.
 - 실패하면 원인을 고치고 다시 실행한다. 실패 상태에서는 작업을 완료했다고 선언하지 않는다.
 - 실행하지 못한 검증은 성공했다고 보고하지 않고, 사유와 남은 위험을 기록한다.
 - 화면이 있는 변경은 ego-browser로 GUI 확인까지 수행한다. 다른 브라우저 자동화나 computer-use 같은 데스크톱 자동화로 대체하지 않으며, ego-browser를 사용할 수 없으면 `미수행`과 사유를 기록한다.

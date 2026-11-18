@@ -123,6 +123,6 @@
 | 2026-10-24 | `LECTURE`, `LECTURE_PROGRESS`, `MAP_GUIDE`, 메뉴·권한 시드 | 강의형 콘텐츠·동영상 진도, 약도 | `db/versions/V30__lecture.sql`, `V31__map_guide.sql` | `LectureController`/`LectureService`/`LectureMapper`/`Lecture_SQL.xml`, `VideoEncodingService`, `MapController`/`MapGuideService`/`MapGuideMapper`/`MapGuide_SQL.xml` | 2026-10-24 테스트 DB 적용·관련 테스트 통과. FFmpeg·카카오 지도·실행 HTTP·GUI는 미검증(기본 비활성) |
 | 2026-10-24 | `CHAT_MESSAGE`, `STAT_DAILY`, 메뉴·권한 시드 | WebSocket 채팅 이력, Spring Batch 일일 집계 결과 | `db/versions/V32__chat.sql`, `V33__batch.sql` | `ChatController`/`ChatWebSocketHandler`/`ChatService`/`ChatMapper`/`Chat_SQL.xml`, `BatchController`/`BatchService`/`BatchMapper`/`Batch_SQL.xml`, `BatchConfig`/`DailyStatsTasklet` | 2026-10-24 테스트 DB 적용·컨텍스트 기동 확인. WebSocket 실접속·배치 실행·GUI 미검증. 채팅 단일 인스턴스, 배치 스케줄러·실행 이력 없음 |
 
-2026-11-08 최신 schema/seed 전환: 구 24개 SQL의 최종 메타데이터와 새 정의가 일치하고 메뉴·역할·매핑·권한의 차이가 없음을 격리 HSQLDB에서 대조했다. 기존 업무 데이터는 새 시드에서만 제외하며 구 DB에서 지우지 않는다. 실행 조건·검증 제약은 [전환 검증 기록](verification-log.md#21-2026-11-08-최신-schemaseed-초기화-전환-검증)에 둔다. 이후 신규 DB 정의는 `schema.sql`·`seed.sql`에서 관리하고 기존 DB 갱신과 구분한다.
+2026-11-08 최신 schema/seed 전환: 구 24개 SQL의 최종 메타데이터와 새 정의가 일치하고 메뉴·역할·매핑·권한의 차이가 없음을 격리 HSQLDB에서 대조했다. 기존 업무 데이터는 새 시드에서만 제외하며 구 DB에서 지우지 않는다. 실행 조건·검증 제약은 [전환 검증 기록](verification-log.md#22-2026-11-08-최신-schemaseed-초기화-전환-검증)에 둔다. 이후 신규 DB 정의는 `schema.sql`·`seed.sql`에서 관리하고 기존 DB 갱신과 구분한다.
 
 컬럼 의미, 제약조건 및 실제 운영 데이터는 SQL 파일만으로 추정하지 않는다. 변경은 [sql-standard.md](../common/sql-standard.md) 및 [검증 및 변경 로그](verification-log.md#4-db-마이그레이션-현황-및-개발자-사용법)를 따른다.

@@ -2,6 +2,7 @@
 
 > 이식 구분: 환경형. Orca·Freebuff·OpenCode(Sol)를 쓰는 작업 환경에서만 복사한다. 이 도구가 없는 대상이면 복사하지 않거나 `해당 없음`으로 둔다.
 > 기준: 2026-11-18 `D:\project\eGovFrameDev_RECS\workspace`에서 실측한 내용을 Arkive에 맞게 옮긴 것이다. 모델·요금·시간 규칙이 바뀌면 이 문서를 갱신한다.
+> 재확인: 2026-11-18 Arkive 작업 PC(`C:` 드라이브만 있음)에서 Freebuff·OpenCode2 읽기 전용 Worker 테스트로 다시 확인했다(9장). 원 기록의 `D:\` 경로는 이 PC에 없으므로 해당 항목은 `미확인`으로 표시한다.
 
 이 문서는 총괄(현재 세션의 메인 에이전트)이 Worker에게 작업을 나눌 때만 읽는다. 모드 전환·자동 제안·강도 제안의 핵심 규칙은 [AGENTS.md](../../../AGENTS.md#ai-오케스트레이션)에 있으며, 여기에는 상세 기준을 둔다.
 
@@ -31,12 +32,16 @@
 | 역할 | 에이전트 (Orca agent id) | 실제 모델 | 사용 기준 |
 | --- | --- | --- | --- |
 | 총괄 | 현재 세션의 메인 에이전트 (기본: Claude Code) | - | 요청 분석, 작업 분배, 결과 비교·검증, `verify.cmd`·GUI 최종 확인, 최종 판단과 보고 |
-| Worker 1 (주력) | Freebuff (`freebuff`) | DeepSeek V4.1 Flash Fast | 대부분의 분석·구현·검증. 무료, 아래 시간 규칙 적용 |
+| Worker 1 (주력) | Freebuff (`freebuff`) | DeepSeek V4.1 Flash Fast (이 PC 테스트에서 Worker 자체 보고는 `DeepSeek V4.1 Flash`, 외부 검증 불가) | 대부분의 분석·구현·검증. 무료, 아래 시간 규칙 적용 |
 | Worker 2 (보조·대체) | OpenCode2 (`opencode2`) | GPT-6.1 Sol (AgentRouter, `ar-sol/gpt-6.1-sol`) | Freebuff가 불가할 때, 또는 어렵고 중요한 판단·최종 리뷰 |
 
 - Worker는 **Freebuff를 우선** 사용한다. Freebuff가 시작 실패, 제한 도달, 반복 오류일 때만 OpenCode2(GPT-6.1 Sol)로 전환한다.
 - **GPT-6.1 Sol은 유료(AgentRouter 잔액 차감)이며 하루 약 $20 이내로 사용한다.** 범위를 좁히고 읽을 파일을 지정해 토큰을 줄인다. 오늘 사용량이 한도에 가까운지 판단이 서지 않으면 Sol에 맡기기 전에 사용자에게 확인한다.
 - 실행된 모델이 위 표와 다르면 임의로 진행하지 말고 먼저 사용자에게 알린다.
+- **OpenCode2의 전제 조건: KR bridge가 켜져 있어야 한다.** OpenCode 설정(`~/.config/opencode/opencode.jsonc`)의 `ar-sol` provider는 AgentRouter에 직접 붙지 않고 로컬 KR bridge(`http://127.0.0.1:8790/v1`, `~/.config/opencode/kr-bridge/proxy.js`)를 거친다. 브리지는 한글 때문에 `400 content-blocked`가 나면 이스케이프로 1회 재시도한다.
+  - 브리지가 꺼졌거나 멈추면 OpenCode2는 오류 없이 응답을 기다리기만 한다. Sol을 배정하기 전에 `netstat -ano | findstr "127.0.0.1:8790"`으로 LISTENING을 확인한다.
+  - 실행: 바탕화면 바로가기 `AgentRouter KR bridge` → `kr-bridge/start-bg.cmd`(창 없이 실행, 로그 `kr-bridge/bridge.log`, 이미 실행 중이면 알림만 표시). 종료: `kr-bridge/stop.cmd`. 재부팅하면 다시 실행해야 한다.
+  - 콘솔 창 방식(`kr-bridge/start.cmd`)은 창 안을 클릭해 제목에 "선택"이 붙으면 로그 출력이 막혀 프록시 전체가 멈춘다(2026-11-18 관측). 이 경우 창에서 `Esc`를 누르거나 브리지를 다시 시작한다.
 
 ## 4. Freebuff 사용 시간 규칙
 
@@ -46,8 +51,9 @@
 - 세션은 계정 단위다. 세션이 살아 있을 때 새 Freebuff 터미널(Orca Worker 포함)을 띄우면 **기존 세션에 합류하고 만료 시각을 그대로 이어받는다** (2026-11-18 관측: 17:37:41 시작 프로세스의 만료가 18:23:29로, 새 1시간이 아니었음).
 - 따라서 Worker를 띄우기 전에 활성 세션이 있는지 먼저 확인하고, **활성 세션이 있으면 그 안에서 진행**한다. Freebuff 작업은 세션이 살아 있는 1시간 안에 몰아서 배정하고, 짧은 작업 하나를 위해 새 세션을 열지 않는다.
 - 사용자 허락 없이 Freebuff의 `End session`을 누르거나 세션을 종료하지 않는다. 종료 후 새로 시작하면 남은 시간을 잃고 배수만큼 다시 차감된다.
-- 남은 시간과 현재 세션 만료 시각 확인 (읽기 전용, 인증 정보는 출력하지 않음). 스크립트는 RECS workspace에 있으며 설정 경로가 절대경로라 어느 폴더에서 실행해도 된다:
+- 남은 시간과 현재 세션 만료 시각 확인 (읽기 전용, 인증 정보는 출력하지 않음). 원 기록 PC에서는 RECS workspace의 스크립트를 썼다:
   `node D:/project/eGovFrameDev_RECS/workspace/.freebuff-usage/usage.mjs --once --full`
+  - **이 PC에서는 `미확인`:** 위 경로가 없다(D 드라이브 없음, 2026-11-18 확인). 확인 방법을 정하기 전에는 활성 세션·남은 시간을 미리 알 수 없으므로, Freebuff Worker를 새로 띄우기 전에 일일 시간 차감(Flash Fast 3시간) 가능성을 사용자에게 알린다. 완성 방법: 스크립트를 이 PC로 옮기거나 대체 확인 방법을 찾아 이 항목을 갱신한다.
 - 남은 일일 시간이 다음 세션 차감량보다 적거나, 세션이 없는데 작업이 짧다면 Freebuff 대신 총괄이 직접 처리하거나 사용자에게 확인한다.
 
 ## 5. Freebuff 세션 유지 규칙 (실측)
@@ -79,7 +85,7 @@
 | 항목 | 적을 내용 |
 | --- | --- |
 | 목적 | 해결할 문제 한두 문장 |
-| 읽을 파일 | 경로를 지정한다 (토큰 절약). 소스 프로젝트는 `D:\ai\<프로젝트>` 절대경로 |
+| 읽을 파일 | 경로를 지정한다 (토큰 절약). 소스 프로젝트는 절대경로로 적는다(원 기록 PC는 `D:\ai\<프로젝트>`, 이 PC의 소스 프로젝트 위치는 `미확인`) |
 | 수정 허용 범위 | 수정해도 되는 파일·폴더. 조사·검증 Worker는 "파일을 수정하지 말 것" |
 | 금지 | 테스트 파일(`src/test/**`) 생성·수정·삭제·skip 금지, 소스 프로젝트(`D:\ai\ADTM` 등) 수정 금지, `data/`·`target/`·`backup/` 수정 금지, 실행 중인 DB에 직접 쓰기 금지(스키마 변경은 `schema.sql` 등 파일로만), 비밀값 출력 금지, 커밋·푸시 금지 |
 | 근거 규칙 | 업무 규칙·권한·상태값·DB 의미는 근거 파일과 줄 번호로 보고하고, 근거가 없으면 `미확인`으로 남긴다 |
@@ -93,13 +99,23 @@ orca status --json
 orca terminal list --json          # 열린 Freebuff/OpenCode 터미널 handle 확인 (agentIdentity 필드)
 
 # Freebuff Worker 새로 시작 (확인됨). 이어서 쓸 거면 --keep-open 추가
+# spec이 길거나 따옴표가 많으면 --spec 대신 --spec-file <파일>을 쓴다 (확인됨)
 orca orchestration worker-start --agent freebuff --worktree current --spec "<자기완결적 작업 지시>" --json
 
+# OpenCode2(Sol) Worker 새로 시작 (확인됨, 2026-11-18). 설정 모델 GPT-6.1 Sol로 뜬다. KR bridge 필요(3장)
+# 같은 Run에 묶으려면 --run <runId>를 붙인다 (확인됨)
+orca orchestration worker-start --agent opencode2 --worktree current --run <runId> --spec-file <spec 파일> --json
+
 # 이미 열린 터미널(OpenCode2 Sol 등)에 작업 넣기 (확인됨). --worktree, --model 같이 쓰지 않음
+# 사용자가 대화 중인 터미널에는 넣지 않는다
 orca orchestration worker-start --terminal <term_handle> --spec "<작업 지시>" --json
 
-# 결과 대기 (확인됨). run id는 worker-start 결과의 runId
-orca orchestration check --wait --run <runId> --types worker_done,escalation,question --timeout-ms 600000 --json
+# 결과 수신: Worker를 모두 시작한 뒤 총괄은 차례를 끝낸다. Worker가 보고하면 Orca가 총괄을 깨우고
+# 실행할 check 명령을 알려준다 (확인됨). 그 명령만 실행한다
+orca orchestration check --run <runId> --terminal <총괄 terminal handle>
+
+# 진행 상황 보기 (확인됨). 깨움을 기다리는 동안 한 번 확인할 때만 쓴다
+orca orchestration worker-read --dispatch <dispatchId> --source auto
 
 # 후속 지시 (확인됨). 닫힌 Worker면 새로 시작되며 이전 기억 없음
 orca orchestration send --to dispatch:<dispatchId> --subject "<제목>" --body "<지시>" --json
@@ -108,7 +124,16 @@ orca orchestration send --to dispatch:<dispatchId> --subject "<제목>" --body "
 orca orchestration worker-list --run <runId> --json
 ```
 
-- `worker-start --agent opencode2`로 새 OpenCode2 터미널을 띄우는 방식은 아직 검증하지 않았다. 새로 띄우면 OpenCode2 설정의 모델을 쓰므로, 처음 쓸 때 작은 읽기 전용 작업으로 모델을 확인한다.
+- **결과를 기다리려고 `check --wait`를 돌리거나 `check`를 반복 실행하지 않는다.** 현재 Orca 가이드(`orca skills get orchestration`)에 따르면 직접 실행한 `check`가 메일을 가져가 버려 Orca가 총괄을 깨울 신호가 사라진다. 원 기록의 `check --wait` 방식은 쓰지 않는다.
+- Worker는 작업을 마치면 `reclaimable` 상태가 되고, 약 10분 뒤(`autoReleaseAt`) Orca가 자동으로 닫는다.
 - `--agent opencode`(OpenCode 1)는 Orca에서 비활성 상태다 (`agent_unconfigured`).
 - `worker-start`가 실패하면 같은 명령을 그대로 다시 실행하지 말고 `failedStage`를 확인한다 (`orca skills get orchestration --reference references/recovery-and-cleanup.md`).
 - 별도 Orca 데스크톱 화면 없이 CLI만으로 제어할 수 있다. 상세 사용법은 `orca skills get orchestration --full`.
+
+## 9. 동작 테스트 기록
+
+| 일시 | 환경 | 내용 | 결과 |
+| --- | --- | --- | --- |
+| 2026-11-18 | Arkive 작업 PC, Orca 1.4.263, Freebuff 0.2.36, OpenCode v2.0.22, 기준 SHA `3dcc202` | Run `run_7feeb672f354`에 Freebuff·OpenCode2 Worker를 `--worktree current`로 각각 시작. 같은 읽기 전용 spec(`src/test/java`의 테스트 클래스 수·`@Test` 수 집계, 수정·빌드·커밋 금지) | 둘 다 `worker_done`·`succeeded`, 둘 다 84개 / 338개 / `@ParameterizedTest` 0개로 정답(`src/test/README.md`)과 일치. 작업 전후 `git status` 동일(수정 없음). Orca 깨움으로 결과 수신 확인. Freebuff는 빠르고 첫 집계 오류(`@TestPropertySource` 혼입)를 스스로 수정, OpenCode2는 느리지만 기준 SHA·전후 상태까지 보고. Sol 비용은 진행 중 화면 기준 $0.07 이상(최종 금액 미확인) |
+
+- 아직 검증하지 않은 것: `--worktree new-child`(별도 작업 폴더) 생성·병합·정리 흐름, 파일을 수정하는 Worker와 검증 Worker를 나눈 실제 작업, 이 PC의 Freebuff 남은 시간 확인 방법.

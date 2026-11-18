@@ -10,189 +10,179 @@
 완료 기준: 대상 기능의 검증 범위·코드 위치·API 계약·남은 위험이 명시되고, 미수행 항목이 실제 확인 결과로 갱신되어 있다.
 -->
 
-기존 `feature-status.md`, `function-inventory.md`, `api-contract.md`의 내용을 통합한 기능별 단일 참조 카탈로그다.
-기능 구현 여부의 1차 기준은 [README.md](../../../README.md)를 따르며, 최신 자동 테스트 실행 수치는 [테스트 자산](../../../src/test/README.md), 실제 GUI/전환 검증 이력은 [검증 및 변경 로그](verification-log.md)에서 확인한다.
+기능별 코드 위치·동작 주의점·API 계약을 모은 단일 참조 카탈로그다.
+구현·미구현·검증완료 **상태는 [README.md](../../../README.md)에서만 관리**하고 이 문서에는 다시 적지 않는다. 최신 자동 테스트 실행 수치는 [테스트 자산](../../../src/test/README.md), 실제 GUI/전환 검증 이력은 [검증 및 변경 로그](verification-log.md)에서 확인한다.
 
 ---
 
-## 1. 기능 구현 현황 및 주의점
+## 1. 기능별 상세 및 주의점
 
-### 1.1. 구현 및 검증완료 (자동 테스트 + GUI 확인)
-
-- [x] **게시판 조회수 통계**
+- **게시판 조회수 통계**
   - **위치:** `arkive.admin.board.web.BoardController` (`/board/viewStats`), `BoardMapper`, `Board_SQL.xml`, `templates/thymeleaf/board/viewStats.html`, `db/schema.sql` (`BOARD_VIEW_LOG`)
   - **동작 및 주의점:** 24시간 집계 창을 통과할 때만 로그 1건 적재. 일별 추이는 `CAST(VIEW_DT AS DATE)` 그룹핑, 빈 날짜는 0, 막대는 최대값 대비 % 표시. 순위의 `BOARD.VIEW_CNT`에는 로그 도입 전 누적값도 포함. 640px 이하 모바일 폭 대응 적용(격일 라벨 표시, 오늘 항상 표시). 누적 순위 표는 5열로 좁은 화면에서 가로 스크롤 발생. 조회 로그 보관·정리 정책 미확인.
   - **테스트:** `BoardViewStatsControllerTest` (3)
-- [x] **게시판 검색 범위 분리 (제목/내용/제목+내용)**
+- **게시판 검색 범위 분리 (제목/내용/제목+내용)**
   - **위치:** `Board_SQL.xml` (`selectBoardList`, `selectBoardListCount`, `selectToastBoardCursorList`)
   - **동작 및 주의점:** `searchCondition` 분기(`title`/`content`/`all`) 적용, 미지원 값은 `title`로 폴백. 본문 검색은 CONTENT 원문 LIKE라 `table`·`style` 태그 문자열도 검색될 수 있음(평문 컬럼 또는 DB별 `REGEXP_REPLACE` 필요).
   - **테스트:** `BoardSearchScopeControllerTest` (7)
-- [x] **게시판 기본 기능 (공지사항·자료실, CK·TOAST, HWP 복붙, 이미지 업로드, 댓글)**
+- **게시판 기본 기능 (공지사항·자료실, CK·TOAST, HWP 복붙, 이미지 업로드, 댓글)**
   - **위치:** `arkive.admin.board.*`, `Board_SQL.xml`, `templates/thymeleaf/board/*`, `db/schema.sql` (`BOARD`, `BOARD_COMMENT`)
   - **동작 및 주의점:** HTML sanitize, 이중등록 방지, 첨부파일 삭제, 오프셋/커서 페이징, CLOB 변환, 초성 색인 이벤트 구현. 조회수는 게시글당 브라우저 24시간 1회 쿠키·세션 복합 집계. 댓글은 1단 평문 저장(대댓글 없음), 작성자 및 관리자만 삭제 가능.
   - **테스트:** `BoardMapperTest` (4), `BoardServiceImplTest` (11), `BoardControllerTest` (5), `BoardCommentControllerTest` (3), `BoardViewCountDailyWindowTest` (6)
-- [x] **GUI 추가 확인 (2026-11-13, ego-browser):** 로그인·약관동의·통합검색·공지/게시판관리·FAQ·Q&A·공통코드·Swagger·멀티파트/TUS 업로드·사이트맵·TOTP 화면 렌더링 정상. README의 "구현 및 검증완료" 이동 항목과 동일 범위. 상세는 [검증 및 변경 로그](verification-log.md#25-2026-11-13-gui-추가-확인) 참조.
-
----
-
-### 1.2. 구현 (자동 테스트 통과 · GUI 확인 대기)
-
-- [x] **페이징 (공지사항: 오프셋, 자료실: 커서+더보기)**
+- **페이징 (공지사항: 오프셋, 자료실: 커서+더보기)**
   - **위치:** `BoardController`, `Board_SQL.xml`, `user/board/*`
-  - **주의점:** 공지는 eGov `paginationInfo` + KRDS 블록(10건 단위, 검색 조건 유지). 자료실은 `toastList.json` 커서(`BOARD_ID` 기준, `hasNext`가 false면 더보기 숨김). 관리자·사용자 화면 모두 GUI 확인 완료 이력 보존됨.
+  - **주의점:** 공지는 eGov `paginationInfo` + KRDS 블록(10건 단위, 검색 조건 유지). 자료실은 `toastList.json` 커서(`BOARD_ID` 기준, `hasNext`가 false면 더보기 숨김).
   - **테스트:** `BoardPagingControllerTest` (2)
-- [x] **이전글 / 다음글**
+- **이전글 / 다음글**
   - **위치:** `Board_SQL.xml` (`selectPrevBoard`, `selectNextBoard`), `boardDetail.html`, `user/board/*`
   - **주의점:** 동일 `BOARD_TYPE` 내 `REGIST_DT`·`BOARD_ID` 기준 1건씩 노출, 대상 없으면 "없습니다" 안내. 관리자 상세 및 사용자 공지/자료실 상세에 적용.
-- [x] **공통코드 관리**
+- **공통코드 관리**
   - **위치:** `arkive.admin.system.web.CommCodeController`, `CommCode_SQL.xml`, `templates/thymeleaf/system/`
   - **주의점:** 마스터·상세 코드 관리, 하위 코드 연쇄 삭제, 필수값 검증.
   - **테스트:** `CommCodeControllerTest` (2)
-- [x] **파일 업로드 (멀티파트·TUS·드롭존, temp→확정 2단계)**
+- **파일 업로드 (멀티파트·TUS·드롭존, temp→확정 2단계)**
   - **위치:** `arkive.admin.comm.web.FileController`, `FileService`, `File_SQL.xml`, `templates/thymeleaf/comm/`
   - **주의점:** 임시 업로드 후 글 저장 시 확정(물리 이동 `MP_` 및 DB 기록). TUS 프로토콜(청크 전송·이어올리기·삭제) 지원. OPTIONS CORS 프리플라이트는 무인증 허용, 실제 요청은 세션 필수. 경로 이탈 차단.
   - **테스트:** `FileControllerTest` (7)
-- [x] **본문 HTML Sanitize**
+- **본문 HTML Sanitize**
   - **위치:** `HtmlSanitizer` (Lucy core 직접 사용, jakarta 미지원 서블릿 필터 대체)
   - **주의점:** `<script>`, 위험 `<iframe>`, 이벤트 핸들러 제거. 표, 이미지, 안전한 스타일 유지.
   - **테스트:** `HtmlSanitizerTest` (6)
-- [x] **실시간 알림 SSE**
+- **실시간 알림 SSE**
   - **위치:** `BoardSseService`, `BoardNotificationEventListener`, `layout/layout.html`
   - **주의점:** `ARKIVE_SSE_ENABLED=false` 기본(화면 설정). ALL 단일 연결 및 메뉴 조회 역할 필터링 발송. 단일 서버 메모리 기반.
   - **테스트:** `BoardSseServiceTest` (5), `BoardNotificationEventListenerTest` (13)
-- [x] **Swagger (OpenAPI 3.0)**
+- **Swagger (OpenAPI 3.0)**
   - **위치:** `springdoc-openapi`, `/swagger-ui.html`, `/v3/api-docs`
   - **주의점:** 운영 배포 시 민감 API 노출 위험(내부망 제한 또는 비활성화 검토).
   - **테스트:** `OpenApiDocsTest` (2)
-- [x] **이중등록 방지 (Double Submit Preventer)**
+- **이중등록 방지 (Double Submit Preventer)**
   - **위치:** Thymeleaf fragment `comm/doubleSubmit`, `DoubleSubmitPreventer`
   - **주의점:** 게시판, FAQ, Q&A, 메모, 팝업, 배너, 일정, 주소록, 명함, POLL, 당직, 지도 전반 적용. 여러 폼 동시 사용 시 tokenKey 분리 필요.
-- [x] **FAQ 관리 / Q&A 관리**
+- **FAQ 관리 / Q&A 관리**
   - **위치:** `arkive.admin.faq.*`, `arkive.admin.qna.*`, `arkive.user.qna.*`, `Qna_SQL.xml`
   - **주의점:** FAQ는 `BOARD_TYPE='FAQ'` 아코디언 목록. Q&A는 `BOARD_TYPE='QNA'` + `QNA_ANSWER` 1:1 결합(답변 유무로 상태 판정). `ASK_TYPE`으로 PUBLIC/INTERNAL 구분(외부 작성은 PUBLIC 강제, 답변은 관리자만).
   - **테스트:** `FaqControllerTest` (2), `QnaControllerTest` (3), `UserQnaControllerTest` (6), `QnaMapperTest` (3)
-- [x] **메모보고**
+- **메모보고**
   - **위치:** `arkive.admin.memo.*`, `Memo_SQL.xml`, `templates/thymeleaf/memo/`
   - **주의점:** `MEMO_REPORT`. 보고→확인/의견 상태 전이를 SQL 조건으로 강제.
   - **테스트:** `MemoControllerTest` (2)
-- [x] **팝업창 / 배너 / 메인이미지 관리**
+- **팝업창 / 배너 / 메인이미지 관리**
   - **위치:** `arkive.admin.popup.*`, `arkive.admin.banner.*`, `templates/thymeleaf/popup/`, `banner/`
   - **주의점:** 팝업은 게시기간·사용여부 필터. 배너는 `POSITION`으로 위치 구분하며, 메인이미지는 `POSITION='MAIN'`으로 배너 테이블에 통합 관리.
   - **테스트:** `PopupControllerTest` (2), `BannerControllerTest` (2)
-- [x] **공지 고정**
+- **공지 고정**
   - **위치:** `BOARD.NOTICE_YN`, `BoardController` (`/board/updateNotice.json`)
   - **주의점:** CK 공지 목록 상단 우선 정렬(`NOTICE_YN DESC, REGIST_DT DESC`). 관리자만 변경 가능. 화면에서 '공지' 배지로 식별.
   - **테스트:** `BoardNoticeMapperTest` (2), `BoardNoticeControllerTest` (4)
-- [x] **부서일정 / 개인일정 / 일지 / 메모할일 / 공휴일**
+- **부서일정 / 개인일정 / 일지 / 메모할일 / 공휴일**
   - **위치:** `arkive.admin.schedule.*`, `Schedule_SQL.xml`, `templates/thymeleaf/schedule/`, `db/schema.sql` (`SCHEDULE`, `HOLIDAY`)
   - **주의점:** `SCHEDULE_TYPE`(`DEPT`/`PERSONAL`/`DAILY`/`TODO`) 단일 테이블 및 공통 쿼리 재사용. 공휴일(`HOLIDAY`)과 연계 렌더링.
   - **테스트:** `ScheduleControllerTest` (3)
-- [x] **카테고리 설정 (jstree형 / 컬럼 드릴다운형)**
+- **카테고리 설정 (jstree형 / 컬럼 드릴다운형)**
   - **위치:** `arkive.admin.category.*`, `templates/thymeleaf/category/` (`CATEGORY` 테이블)
   - **주의점:** 자기참조(`UP_CAT_ID`) N단 트리. 동일 테이블을 공유하며 jstree JSON 규격 및 컬럼 드릴다운 화면 2종 제공.
-- [x] **주소록 / 명함 관리**
+- **주소록 / 명함 관리**
   - **위치:** `arkive.admin.address.*`, `arkive.admin.card.*`, `templates/thymeleaf/address/`, `card/`
   - **주의점:** 연락처·이메일 AES-GCM 암호화 저장, 목록 조회 시 마스킹 처리, 상세 조회 시 복호화. 명함은 공개/내 명함 분리 및 사용 등록 추적.
   - **테스트:** `AddressControllerTest` (2), `CardControllerTest` (2)
-- [x] **상담 관리 / 온라인 POLL**
+- **상담 관리 / 온라인 POLL**
   - **위치:** `arkive.admin.counsel.*`, `arkive.admin.poll.*`, `user/counsel/`, `user/poll/`
   - **주의점:** 상담은 비밀번호 확인 후 답변/상세 열람. POLL은 세션 기반 중복 투표 차단(문항 스키마는 `POLL`/`POLL_ITEM`).
   - **테스트:** `CounselControllerTest` (2), `PollControllerTest` (2)
-- [x] **당직 관리 / 엑셀 일괄 등록**
+- **당직 관리 / 엑셀 일괄 등록**
   - **위치:** `arkive.admin.duty.*`, `ExcelUtil`, `templates/thymeleaf/duty/` (`DUTY` 테이블)
   - **주의점:** 당직 CRUD, 엑셀 샘플 다운로드 및 POI 기반 일괄 업로드(1000행 제한 메모리 보호).
   - **테스트:** `DutyControllerTest` (3)
-- [x] **파일 미리보기 / 파일 실형식 검증**
+- **파일 미리보기 / 파일 실형식 검증**
   - **위치:** `PreviewController` (`/preview/fileView`), `FileTypeUtil`
   - **주의점:** 이미지·PDF inline 뷰어. 확장자 위조 방지를 위한 매직바이트 검사.
   - **테스트:** `FileTypeUtilTest` (5)
-- [x] **단일 로그인 / 세션 레지스트리 / 중복 로그인 방지**
+- **단일 로그인 / 세션 레지스트리 / 중복 로그인 방지**
   - **위치:** `LoginController`, `LoginSessionRegistry`, `AuthInterceptor`
   - **주의점:** `ADMIN_YN` 플래그로 대시보드/사용자메인 분기(별도 관리자 로그인 URL 없음). 사용자당 최신 1개 세션만 유지(새 로그인 시 이전 세션 만료).
   - **테스트:** `AuthInterceptorTest` (5), `LoginSessionRegistryTest` (5), `LoginSessionControllerTest` (1)
-- [x] **사용자 관리 / 권한 관리 / 사이트맵**
+- **사용자 관리 / 권한 관리 / 사이트맵**
   - **위치:** `UserManageController`, `RoleManageController`, `PermissionService`, `SitemapController`
   - **주의점:** 사용자 등록/수정/삭제/잠금해제. `APP_ROLE`·`APP_USER_ROLE`·`APP_ROLE_MENU` 기반 메뉴별 READ/WRITE 권한 OR 집계 및 서버 인터셉터 강제. `/system`·`/auth`는 슈퍼관리자 전용. 사이트맵은 권한 필터 메뉴를 재사용해 대메뉴별 카드 그리드로 렌더한다(`comm/sitemap.html`, 스타일 `.sitemap-*`는 `css/krds-local.css`, 575px 이하 1열).
   - **테스트:** `UserManageControllerTest` (4), `PermissionMapperTest` (4), `RoleManageControllerTest` (7), `MenuPermissionControllerTest` (5), `SitemapControllerTest` (3)
-- [x] **감사 로그 / 개인정보 마스킹 및 암호화**
+- **감사 로그 / 개인정보 마스킹 및 암호화**
   - **위치:** `AuditInterceptor`, `AuditEvent`, `AuditLogService`, `MaskingInterceptor`, `FieldCryptoService`, `PiiFieldService`
   - **주의점:** 비동기 감사 로그 적재(`AUDIT_LOG`), 화면 모델 `EgovMap` 자동 마스킹, DB 필드 암호화(연락처/휴대전화 AES-GCM, `ARKIVE_FIELD_KEY` 필수). `APP_USER.EMAIL`은 평문 유지.
   - **테스트:** `AuditInterceptorIntegrationTest` (4), `AuditLogServiceTest` (2), `MaskingUtilTest` (4), `FieldCryptoServiceTest` (6), `PiiFieldServiceTest` (6)
-- [x] **소셜 로그인 (OAuth 2.0) / API JWT**
+- **소셜 로그인 (OAuth 2.0) / API JWT**
   - **위치:** `OauthController`, `OAUTH_LINK`, `JwtUtil`, `JwtAuthFilter`
   - **주의점:** 네이버·카카오·구글 code flow 직접 구현. API 접근은 JWT 토큰 검증 필터(`/api/**`).
   - **테스트:** `OauthControllerTest` (3), `JwtUtilTest` (4), `ApiControllerTest` (2)
-- [x] **2차 인증 (TOTP)**
+- **2차 인증 (TOTP)**
   - **위치:** `LoginController` (`/login/totp*`), `TotpService`, `APP_USER_TOTP`
   - **주의점:** 로그인 후 TOTP 검증 단계, 비밀키 AES-GCM 암호화, 복구코드 SHA-256 해시 저장, 5회 실패 시 세션 폐기.
   - **테스트:** `TotpServiceTest` (4), `LoginTotpFlowTest` (1)
-- [x] **약관 동의**
+- **약관 동의**
   - **위치:** `TermsController`, `TermsService`, `TermsInterceptor`, `TERMS`, `USER_TERMS_CONSENT`
   - **주의점:** 버전별 필수/선택 약관 관리 및 동의 이력 보관. 미동의 시 동의 화면으로 리다이렉트.
   - **테스트:** `TermsServiceTest` (4), `TermsInterceptorTest` (4)
-- [x] **통합검색 + 초성검색**
+- **통합검색 + 초성검색**
   - **위치:** `SearchController`, `SearchService`, `KoreanSearchUtil`, `ElasticsearchSearchIndexService`
   - **주의점:** BOARD(CK·TOAST·FAQ·QNA) 제목 LIKE + `SEARCH_CHOSUNG` 초성 검색. 본문은 태그 제거 요약 표시. Elasticsearch 선택 연동 지원.
   - **테스트:** `SearchMapperTest` (4), `SearchServiceImplTest` (9), `SearchControllerTest` (4), `KoreanSearchUtilTest` (3)
-- [x] **메일 발송 / SMS 발송 (알림 채널 격리)**
+- **메일 발송 / SMS 발송 (알림 채널 격리)**
   - **위치:** `MailAsyncService`, `MailServiceImpl`, `SmsServiceImpl`, `BoardNotificationEventListener`
   - **주의점:** 게시판 중요글 등록 시 `BoardNotificationEvent`를 발행해 SSE·메일·SMS로 독립 발송. `BOARD.MAIL_SENT_YN`, `BOARD.SMS_SENT_YN`으로 1회 선점 발송. 비동기 Executor 분리.
   - **테스트:** `MailServiceImplTest` (10), `AligoSmsSenderTest` (7), `SmsServiceImplTest` (5), `BoardNotificationEventListenerTest` (13)
-- [x] **비밀번호 재설정**
+- **비밀번호 재설정**
   - **위치:** `LoginController` (`/login/findPw*`, `/login/resetPw*`), `AuthServiceImpl`, `PASSWORD_RESET_TOKEN`
   - **주의점:** 아이디·이름·이메일 일치 시 1회용 토큰 해시 저장(SHA-256), 30분 유효, 60초 쿨다운, 메일 링크 전송, 성공 시 세션 만료.
   - **테스트:** `PasswordResetControllerTest` (5)
-- [x] **내부 API 제공**
+- **내부 API 제공**
   - **위치:** `InternalApiController`, `InternalApiAuthFilter` (`/internal/v1/*`)
   - **주의점:** `X-Internal-Token` 헤더 검증. 미설정 시 503, 불일치 시 401. 헬스 체크 및 공지 최신 10건(개인정보 제외) 제공.
   - **테스트:** `InternalApiControllerTest` (3)
-- [x] **휴가 관리**
+- **휴가 관리**
   - **위치:** `LeaveController`, `LeaveService`, `LeaveDaysCalculator`, `Leave_SQL.xml`, `LEAVE_BALANCE`, `LEAVE_REQUEST`
   - **주의점:** 내 휴가, 휴가관리, 연차관리 3개 화면. 주말·공휴일 제외 평일 일수 계산, 반차 0.5일. 신청중 포함 잔여 초과 금지, 승인 시 차감·취소 시 환원.
   - **테스트:** `LeaveDaysCalculatorTest` (5), `LeaveControllerTest` (7)
-- [x] **회의실 관리 및 예약**
+- **회의실 관리 및 예약**
   - **위치:** `MeetingController`, `MeetingService`, `MEETING_ROOM`, `MEETING_RESERVATION`
   - **주의점:** 회의실 마스터 선행, 동일 회의실·날짜 시간대(`HH:mm`) 중복 차단, 본인 및 관리자만 예약 취소 가능.
   - **테스트:** `MeetingControllerTest` (5)
-- [x] **약식결재**
+- **약식결재**
   - **위치:** `ApprovalController`, `ApprovalService`, `APPROVAL_DOC`, `APPROVAL_HISTORY`
   - **주의점:** 기안(DRAFT) → 상신(SUBMITTED) → 승인(APPROVED)/반려(REJECTED)/취소(CANCELLED). 지정 결재자 서버 검증, 이력 추적.
   - **테스트:** `ApprovalControllerTest` (5)
-- [x] **HR 세트 (기념일·경조사·포상·개인연차)**
+- **HR 세트 (기념일·경조사·포상·개인연차)**
   - **위치:** `HrController`, `HrService`, `HR_ANNIVERSARY`, `HR_EVENT`, `HR_REWARD`
   - **주의점:** 기념일·경조사·포상 CRUD 및 개인연차 통합 조회(휴가·당직 연계). 관리자 역할 전용.
   - **테스트:** `HrControllerTest` (4)
-- [x] **설문 관리 세트**
+- **설문 관리 세트**
   - **위치:** `SurveyController`, `SurveyService`, `SURVEY_TEMPLATE`, `SURVEY`, `SURVEY_QUESTION`, `SURVEY_ITEM`, `SURVEY_PARTICIPATION`, `SURVEY_ANSWER`
   - **주의점:** 템플릿·설문·질문·보기·참여·통계 6종. 단일/복수/주관식, 1인 1회 참여, 공개 후 수정 잠금, 문항별 통계.
   - **테스트:** `SurveyControllerTest` (5)
-- [x] **동영상 인코딩 및 강의형 콘텐츠**
+- **동영상 인코딩 및 강의형 콘텐츠**
   - **위치:** `LectureController`, `LectureService`, `VideoEncodingService`, `LECTURE`, `LECTURE_PROGRESS`
   - **주의점:** 동영상 업로드(FFmpeg 선택), HTTP Range 스트리밍(200/206), 진도율 저장, 시청 완료율 + 설문 참여 결합 수료 판정.
   - **테스트:** `LectureControllerTest` (2), `FfmpegVideoEncodingServiceTest` (7)
-- [x] **약도 관리**
+- **약도 관리**
   - **위치:** `MapController`, `MapGuideService`, `MAP_GUIDE`
   - **주의점:** 주소·위도·경도·설명. 카카오 지도 키가 설정된 경우에만 JS SDK 로드, 미설정 시 주소/좌표 텍스트만 표시.
   - **테스트:** `MapControllerTest` (2)
-- [x] **SSO 연계**
+- **SSO 연계**
   - **위치:** `SsoController`, `OAUTH_LINK` (`PROVIDER='sso'`)
   - **주의점:** OAuth2 authorization code 흐름. 토큰 교환 및 사전 연계 계정 로그인. 기본 비활성(404).
   - **테스트:** `SsoControllerTest` (1)
-- [x] **WebSocket 채팅**
+- **WebSocket 채팅**
   - **위치:** `ChatController`, `ChatWebSocketHandler`, `ChatWebSocketConfig`, `CHAT_MESSAGE`
   - **주의점:** `/ws/chat`, 세션 쿠키 인증 및 메뉴 권한 검사, 최근 100건 이력 전송, 메모리 브로드캐스트.
   - **테스트:** `ChatWebSocketTest` (6)
-- [x] **Spring Batch 일일 집계**
+- **Spring Batch 일일 집계**
   - **위치:** `BatchController`, `DailyStatsTasklet`, `DailyStatsAggregator`, `STAT_DAILY`
   - **주의점:** `dailyStatsJob`/`dailyStatsStep` 수동 실행. 게시판 건수·로그인·접속·강의수료·설문참여 집계, 멱등 재실행 지원.
   - **테스트:** `BatchControllerTest` (2)
 
----
+### 미구현 기능 메모
 
-### 1.3. 미구현 항목
-
-- [ ] **목록 썸네일 + 상세 지도 표시 패턴** (카카오 appkey 환경 분리 및 JSP 정리 필요. `CommUtil.createThumbnail` 유틸은 존재)
-- [ ] **외부 API 연계 (수신)** (타 시스템 수신 API 연동. 타임아웃, 재시도, 서킷브레이커 설계 선행 필요)
+- **목록 썸네일 + 상세 지도 표시 패턴** (카카오 appkey 환경 분리 및 JSP 정리 필요. `CommUtil.createThumbnail` 유틸은 존재)
+- **외부 API 연계 (수신)** (타 시스템 수신 API 연동. 타임아웃, 재시도, 서킷브레이커 설계 선행 필요)
 
 ---
 
@@ -290,24 +280,24 @@
 
 ---
 
-## 4. 테스트 자산 현황 (2026-11-07 기준)
+## 4. 기능 영역별 테스트 범위와 남은 공백
 
-최신 실행 통계 및 클래스 목록은 [src/test/README.md](../../../src/test/README.md)에서 관리한다.
+테스트 클래스·개수·최신 실행 수치는 [src/test/README.md](../../../src/test/README.md)에서만 관리한다. 기능별 테스트 클래스는 1절의 **테스트** 항목을 본다. 아래는 자동 테스트가 덮는 범위와 남은 공백이다(2026-11-07 작성).
 
-| 기능/영역 | 주요 테스트 클래스 | 검증 범위 | 남은 공백 및 주의점 |
-| --- | --- | --- | --- |
-| 컨텍스트·MyBatis | `ArkiveSmokeTest` | 컨텍스트 로딩, SqlSessionFactory 배선 | - |
-| 게시판 CRUD·조회수 | `BoardMapperTest`, `BoardServiceImplTest`, `BoardControllerTest`, `BoardViewCountDailyWindowTest`, `BoardViewStatsControllerTest` | CRUD, CLOB, 초성, Sanitize, 이중등록, 24시간 조회수 1회 집계, 통계 14일 그래프 | HWP 복붙 브라우저 동작, 조회 로그 정리 정책 |
-| 페이징·검색범위 | `BoardPagingControllerTest`, `BoardSearchScopeControllerTest` | 공지 오프셋 페이징, 자료실 커서 페이징, 제목/내용/전체 검색 분리 | 본문 검색 HTML 태그 오탐 |
-| 댓글·공지고정 | `BoardCommentControllerTest`, `BoardNoticeMapperTest`, `BoardNoticeControllerTest` | 1단 댓글 등록/삭제, 공지 상단 고정 정렬, 권한 검증 | 댓글 신고/수정 기능 미구현 |
-| 알림·SSE | `BoardNotificationEventListenerTest`, `BoardNotificationControllerTest`, `BoardSseServiceTest` | SSE/메일 이벤트 분리, 역할 필터링, 채널 격리, 1회 선점 | 브라우저 실제 EventSource E2E, 실제 SMTP E2E |
-| 파일·TUS | `FileControllerTest`, `FileTypeUtilTest` | temp→확정, TUS 청크 업로드/재개, 매직바이트 검사 | 드롭존 UI 실제 동작, 운영 스토리지 권한 |
-| 세션·보안 | `AuthInterceptorTest`, `LoginSessionRegistryTest`, `JwtUtilTest`, `TotpServiceTest`, `LoginTotpFlowTest` | 중복 로그인 방지, JWT 발급/검증, TOTP 코드 검증 및 5회 실패 잠금 | 다중 서버 공유 세션, 세션 타임아웃 |
-| 권한·사이트맵 | `PermissionMapperTest`, `RoleManageControllerTest`, `MenuPermissionControllerTest`, `SitemapControllerTest` | 역할 CRUD, 메뉴별 READ/WRITE OR 집계, 사이드바 필터 | 시스템 메뉴 권한 예외 처리 |
-| 휴가·회의실·결재 | `LeaveDaysCalculatorTest`, `LeaveControllerTest`, `MeetingControllerTest`, `ApprovalControllerTest` | 평일 계산, 반차 0.5일, 회의실 시간 중복 차단, 기안→상신→승인/반려 | 결재선 다단계·대결자 미지원 |
-| 설문·강의·채팅 | `SurveyControllerTest`, `LectureControllerTest`, `FfmpegVideoEncodingServiceTest`, `ChatWebSocketTest` | 설문 6종 CRUD/참여, 영상 스트리밍/진도, 채팅 핸드셰이크/이력 | FFmpeg 미설치 환경, 채팅 다중 서버 브로커 |
-| 감사·개인정보 | `AuditInterceptorIntegrationTest`, `AuditLogServiceTest`, `MaskingUtilTest`, `FieldCryptoServiceTest`, `PiiFieldServiceTest` | 감사 로그 적재/엑셀, 화면 마스킹, AES-GCM 암복호화 | 상세 화면 마스킹 누락 지점 점검 |
-| 외부연계(Mock) | `AligoSmsSenderTest`, `SmsServiceImplTest`, `InternalApiControllerTest`, `AnalyticsModelAdviceTest`, `OauthControllerTest` | SMS 자격증명 검증, 내부 API 토큰 보호, GA4/Clarity 동의 주입 | 실제 서비스 계정 연동 검증 |
+| 기능/영역 | 자동 테스트 범위 | 남은 공백 및 주의점 |
+| --- | --- | --- |
+| 컨텍스트·MyBatis | 컨텍스트 로딩, SqlSessionFactory 배선 | - |
+| 게시판 CRUD·조회수 | CRUD, CLOB, 초성, Sanitize, 이중등록, 24시간 조회수 1회 집계, 통계 14일 그래프 | HWP 복붙 브라우저 동작, 조회 로그 정리 정책 |
+| 페이징·검색범위 | 공지 오프셋 페이징, 자료실 커서 페이징, 제목/내용/전체 검색 분리 | 본문 검색 HTML 태그 오탐 |
+| 댓글·공지고정 | 1단 댓글 등록/삭제, 공지 상단 고정 정렬, 권한 검증 | 댓글 신고/수정 기능 미구현 |
+| 알림·SSE | SSE/메일 이벤트 분리, 역할 필터링, 채널 격리, 1회 선점 | 브라우저 실제 EventSource E2E, 실제 SMTP E2E |
+| 파일·TUS | temp→확정, TUS 청크 업로드/재개, 매직바이트 검사 | 드롭존 UI 실제 동작, 운영 스토리지 권한 |
+| 세션·보안 | 중복 로그인 방지, JWT 발급/검증, TOTP 코드 검증 및 5회 실패 잠금 | 다중 서버 공유 세션, 세션 타임아웃 |
+| 권한·사이트맵 | 역할 CRUD, 메뉴별 READ/WRITE OR 집계, 사이드바 필터 | 시스템 메뉴 권한 예외 처리 |
+| 휴가·회의실·결재 | 평일 계산, 반차 0.5일, 회의실 시간 중복 차단, 기안→상신→승인/반려 | 결재선 다단계·대결자 미지원 |
+| 설문·강의·채팅 | 설문 6종 CRUD/참여, 영상 스트리밍/진도, 채팅 핸드셰이크/이력 | FFmpeg 미설치 환경, 채팅 다중 서버 브로커 |
+| 감사·개인정보 | 감사 로그 적재/엑셀, 화면 마스킹, AES-GCM 암복호화 | 상세 화면 마스킹 누락 지점 점검 |
+| 외부연계(Mock) | SMS 자격증명 검증, 내부 API 토큰 보호, GA4/Clarity 동의 주입 | 실제 서비스 계정 연동 검증 |
 
 ---
 

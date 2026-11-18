@@ -106,7 +106,7 @@ verify.cmd
 - 빈 DB에만 `src/main/resources/db/schema.sql` → `seed.sql`을 한 번 실행한다. Java·화면 코드를 수정하고 서버를 재시작해도 기존 DB를 다시 CREATE하거나 시드를 덮어쓰지 않는다.
 - 초기화 SQL이 바뀌거나 기존 DB가 비호환이면 자동 삭제·갱신하지 않고 시작을 중단한다. [DB 갱신·새 경로 사용법](docs/ai/project/verification-log.md#4-db-마이그레이션-현황-및-개발자-사용법)을 따른다.
 - 개발용 로그인은 `admin` / `Admin1234!`이며 처음 로그인하면 약관 자리표시자에 대한 동의 화면을 거친다. 실제 서비스에 이 계정·문구를 그대로 이식하지 않는다. 게시물·회의실·연차 등 업무 데이터는 화면에서 등록한다.
-- schema/seed 전환의 실제 기동·GUI·파일 DB 재시작 결과와 미검증 범위는 [전환 검증 기록](docs/ai/project/verification-log.md#21-2026-11-08-최신-schemaseed-초기화-전환-검증)에 남긴다.
+- schema/seed 전환의 실제 기동·GUI·파일 DB 재시작 결과와 미검증 범위는 [전환 검증 기록](docs/ai/project/verification-log.md#22-2026-11-08-최신-schemaseed-초기화-전환-검증)에 남긴다.
 - 메일 등 외부 연동은 기본 비활성·미설정이다. 실제 발송·계약·운영 환경까지 검증됐다는 뜻은 아니다.
 - Java 17, eGovFrame Boot 5.0.0, Maven, Thymeleaf, MyBatis, HSQLDB 기반이다.
 

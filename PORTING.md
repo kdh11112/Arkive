@@ -1,7 +1,6 @@
 # Arkive 이식 가이드 (복붙용)
 
-> 이 문서는 대상에도 복사하는 실행 매뉴얼이다. Arkive 소개·기능 현황은 원본의 `README.md`에서 확인한다(대상에는 복사하지 않아도 된다).
-> 이 문서만 보고 이식할 수 있게 만든 실행 매뉴얼이다. 세부 기준은 링크된 문서를 본다.
+> 이 문서만 보고 이식할 수 있게 만든 실행 매뉴얼이며 대상에도 복사한다. 세부 기준은 링크된 문서를 본다. Arkive 소개·기능 현황은 원본의 `README.md`에서 확인한다(대상에는 복사하지 않아도 된다).
 > 원칙: **Arkive를 먼저 실행해 기능을 확인하고, 확인한 기능만 복사한다.**
 
 ## 0. 결론: 복사할 것과 복사하지 않을 것
@@ -14,7 +13,7 @@
 | `docs/ai/boot/` 또는 `docs/ai/classic/` | **택 1** | 대상이 Spring Boot인지 전자정부 클래식인지 |
 | `docs/ai/project/` | **아니오** | Arkive 기록이다. 대상의 기존 지식 또는 [빈 양식](docs/ai/portable/project-template-pack.md)을 사용한다 |
 | `AGENTS.md`, `PORTING.md` | **예** | 프로젝트명·패키지·DB만 대상에 맞게 수정 |
-| `verify.cmd`, `doctor.cmd` | **예** | 없으면 [scripts.md](docs/ai/portable/scripts.md) 전문으로 생성 |
+| `verify.cmd` | **예** | 없으면 [scripts.md](docs/ai/portable/scripts.md) 전문으로 생성 |
 | `.github/workflows/verify.yml` | **예 (GitHub 사용 시)** | CI 게이트. GitLab/Jenkins면 대상 CI로 옮긴다 |
 | `README.md`, `docs/ai/README.md`, `src/test/README.md` | **아니오** | Arkive 전용 소개·문서 지도·테스트 현황. 원본에서 참고한다 |
 | `.github/modernize/`, `data/`, `target/`, `backup/` | **아니오** | 도구 로그·로컬 DB·빌드 산출물 |
@@ -37,12 +36,7 @@ robocopy .github\workflows "%TARGET%\.github\workflows" /E /XC /XN /XO
 if not exist "%TARGET%\AGENTS.md" copy AGENTS.md "%TARGET%\AGENTS.md"
 if not exist "%TARGET%\PORTING.md" copy PORTING.md "%TARGET%\PORTING.md"
 if not exist "%TARGET%\verify.cmd" copy verify.cmd "%TARGET%\verify.cmd"
-if not exist "%TARGET%\doctor.cmd" copy doctor.cmd "%TARGET%\doctor.cmd"
 if not exist "%TARGET%\docs\ai\project" mkdir "%TARGET%\docs\ai\project"
-
-cd /d "%TARGET%"
-rem 누락 항목을 알려준다. 2번에서 보완한 뒤 다시 실행한다.
-doctor.cmd
 ```
 
 - `robocopy`는 exit code 0~7이 정상이다. 8 이상이면 실패다.
@@ -52,12 +46,11 @@ doctor.cmd
 
 ## 2. 대상 프로젝트에서 먼저 할 일
 
-1. `doctor.cmd`로 빠진 항목(테스트 스타터, JaCoCo, 테스트 DB 격리, 회귀 체크리스트)을 확인한다.
-2. `pom.xml`에 `spring-boot-starter-test`(클래식은 `spring-test`)와 JaCoCo를 넣는다.
-3. `src/test/resources/application-test.properties`에 **대상 DB와 다른 테스트 DB 경로/포트**를 둔다.
-4. 스펙 담당자가 [테스트 이식 시트](docs/ai/portable/test-porting-sheet.md)로 테스트 팩을 별도 준비한다. 공통 합성 애노테이션으로 컨텍스트를 통일하고 테스트 DB 오버라이드를 적용한다. 구현 에이전트는 테스트 파일을 만들거나 수정하지 않고 필요한 맞춤 항목을 보고한다.
-5. `verify.cmd`가 실제로 `mvn clean verify`를 돌리고 실패 시 exit 1을 반환하는지 확인한다.
-6. 대상의 기존 `docs/ai/project/` 기록을 재사용한다. 기록이 없으면 [빈 양식](docs/ai/portable/project-template-pack.md)으로 `project-context.md` 한 파일을 만들고 실제 값(패키지·DB·URL·메뉴)을 채운다. 필요할 때만 주제별로 분리한다.
+1. `pom.xml`에 `spring-boot-starter-test`(클래식은 `spring-test`)와 JaCoCo를 넣는다.
+2. `src/test/resources/application-test.properties`에 **대상 DB와 다른 테스트 DB 경로/포트**를 둔다.
+3. 스펙 담당자가 [테스트 이식 시트](docs/ai/portable/test-porting-sheet.md)로 테스트 팩을 별도 준비한다. 공통 합성 애노테이션으로 컨텍스트를 통일하고 테스트 DB 오버라이드를 적용한다. 구현 에이전트는 테스트 파일을 만들거나 수정하지 않고 필요한 맞춤 항목을 보고한다.
+4. `verify.cmd`가 실제로 `mvn clean verify`를 돌리고 실패 시 exit 1을 반환하는지 확인한다.
+5. 대상의 기존 `docs/ai/project/` 기록을 재사용한다. 기록이 없으면 [빈 양식](docs/ai/portable/project-template-pack.md)으로 `project-context.md` 한 파일을 만들고 실제 값(패키지·DB·URL·메뉴)을 채운다. 필요할 때만 주제별로 분리한다.
 
 ## 3. 기능 하나를 이식하는 순서
 

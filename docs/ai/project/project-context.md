@@ -11,7 +11,7 @@
 -->
 
 Arkive는 기능 이식용 아카이브/레퍼런스 프로젝트다. 아래는 저장소 코드와 설정에서 확인한 로컬 구성 및 아키텍처이며, 승인된 운영 사양이 아니다.
-기존 `project-overview.md`, `architecture.md`, `change-impact.md`(공유 지점), `error-code.md`의 내용을 통합·정리했다.
+시스템 개요·실행 설정·아키텍처·공유 지점·오류 체계를 다룬다.
 
 ---
 
@@ -27,7 +27,7 @@ Arkive는 기능 이식용 아카이브/레퍼런스 프로젝트다. 아래는 
 | 데이터 접근 | MyBatis, Java Config, Mapper/XML | `egovframework.example.config.EgovConfigMapper`, `EgovConfigDatasource` |
 | 기본 포트 | 8080 | `application.properties` |
 | 현재 설정 DB | `Globals.DbType=hsql_server`; `./data/ArkiveDB` 파일 DB를 `Globals.hsql_server.Port=9001`에서 제공. 테스트는 9002 | `application.properties`, `EgovConfigDatasource.java` |
-| 데모 DB 초기화 | 빈 DB에 최신 `schema.sql` → 필수 `seed.sql` 1회. 정상 재시작은 읽기 확인 후 재사용, 불일치는 자동 삭제 없이 중단 | `EgovConfigDatasource`, `HsqlDemoDatabaseInitializer`, `src/main/resources/db/schema.sql`·`seed.sql`; 상세는 [검증 및 변경 로그](verification-log.md#db-마이그레이션-및-배포) |
+| 데모 DB 초기화 | 빈 DB에 최신 `schema.sql` → 필수 `seed.sql` 1회. 정상 재시작은 읽기 확인 후 재사용, 불일치는 자동 삭제 없이 중단 | `EgovConfigDatasource`, `HsqlDemoDatabaseInitializer`, `src/main/resources/db/schema.sql`·`seed.sql`; 상세는 [검증 및 변경 로그](verification-log.md#4-db-마이그레이션-현황-및-개발자-사용법) |
 | 모니터링 | Actuator `health,info,metrics`, `health.show-details=always`; 메일 헬스 기본 비활성 | `application.properties`; 운영 공개 범위 미확인 |
 | 운영 배포 / 실서비스 DB | 미확인. 로컬 설정으로 운영 구성을 추정하지 않는다. | 운영 담당자 확인 필요 |
 
@@ -44,7 +44,7 @@ Arkive는 기능 이식용 아카이브/레퍼런스 프로젝트다. 아래는 
 | 웹분석 / 검색 | `ARKIVE_ANALYTICS_ENABLED=false`, `ARKIVE_SEARCH_ES_ENABLED=false` | GA4·Clarity ID와 동의, ES 인프라·동기화 |
 | 내부 API | `ARKIVE_INTERNAL_API_TOKEN` 빈 값 | 미설정 시 503; 토큰 발급·회전·소비자 계약 |
 | 필드 암호화 | `ARKIVE_FIELD_KEY` 빈 값 | TOTP·연락처·사용자 휴대전화 저장이 거부됨. 키 분실 시 암호문 복구 불가 |
-| SSE | `layout.html`의 `ARKIVE_SSE_ENABLED=false` | 환경변수가 아닌 화면 설정; 활성화·화면별 옵션은 [기능 카탈로그](feature-catalog.md#알림-설정과-실패-처리) |
+| SSE | `layout.html`의 `ARKIVE_SSE_ENABLED=false` | 환경변수가 아닌 화면 설정; 활성화·화면별 옵션은 [기능 카탈로그](feature-catalog.md#3-알림-설정과-실패-처리-sse-mail-sms) |
 
 - **로컬 데모 실행:** Java 17·Maven이 준비된 환경에서 `mvn spring-boot:run` 실행 시 HSQLDB가 자동 구동된다. DB URL과 `Globals.hsql_server.Port`를 일치시킨다. `data/`는 로컬 DB이며 실행 중 `.lck`를 직접 삭제하지 않는다.
 - **예약 백업:** `QuartzConfig`는 10분 Trigger로 `DBJob`을 호출해 `Globals.dumpPath`(기본 `./backup/ArkiveDB.sql`)에 HSQLDB `SCRIPT` 덤프를 남긴다.
@@ -124,9 +124,9 @@ Thymeleaf + JS → Controller → Service/Impl → Mapper 인터페이스 → Ma
 
 | 작업 | 확인된 호출 흐름 |
 | --- | --- |
-| 게시글 알림 | `BoardController` → `BoardNotificationEvent` → `BoardNotificationEventListener` → SSE·메일·SMS 채널 격리 발송. 구독·수신 동의·선점·실패 규칙은 [기능 카탈로그](feature-catalog.md#알림-설정과-실패-처리) 참조 |
+| 게시글 알림 | `BoardController` → `BoardNotificationEvent` → `BoardNotificationEventListener` → SSE·메일·SMS 채널 격리 발송. 구독·수신 동의·선점·실패 규칙은 [기능 카탈로그](feature-catalog.md#3-알림-설정과-실패-처리-sse-mail-sms) 참조 |
 | 비동기 메일 | 회원가입·OAuth 가입·관리자 등록·비밀번호 찾기 → `MailAsyncService` → `@Async("mailTaskExecutor")` → `MailServiceImpl` → `JavaMailSender`. Executor는 `EgovConfigAsync`, 기본 비활성 |
-| DB 자동 백업 | `arkive.com.config.QuartzConfig`의 10분 Trigger → `DBJob` → HSQLDB `SCRIPT` 덤프. 경로·기존 파일 삭제 주의점은 [검증 및 변경 로그](verification-log.md#보존복구-주의) 참조 |
+| DB 자동 백업 | `arkive.com.config.QuartzConfig`의 10분 Trigger → `DBJob` → HSQLDB `SCRIPT` 덤프. 경로·기존 파일 삭제 주의점은 [검증 및 변경 로그](verification-log.md#44-보존복구-주의) 참조 |
 | 일일 집계 배치 | `BatchConfig`의 `@EnableBatchProcessing`·`DefaultBatchConfiguration` (`ResourcelessJobRepository`·`txManager` 사용). `dailyStatsJob` → `dailyStatsStep` → `DailyStatsTasklet` → `DailyStatsAggregator` → `BatchMapper` → `STAT_DAILY`. 수동 실행만 지원하며 재집계 시 기존 집계 삭제 후 재삽입(멱등) |
 
 ---

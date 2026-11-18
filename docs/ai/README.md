@@ -29,7 +29,7 @@
 | 클래식 트랙 | [classic-apply](classic/classic-apply.md) · [test-stack-classic](classic/test-stack-classic.md) | 전자정부 3.x/4.x 대상에서 관례 확인 후 선택 |
 | Arkive 기록 | [project-context](project/project-context.md) · [feature-catalog](project/feature-catalog.md) · [database-schema](project/database-schema.md) · [verification-log](project/verification-log.md) | **복사 금지**, 원본에서 참고 |
 
-> 문서 구조 최적화(10개 파일 → 4개 파일 통폐합) 이력과 분석 내용은 [최적화 계획 및 결과](docs-optimization-plan.md)를 참조한다.
+> 문서 구조 변경 이력(2026-11-13 `project/` 10개 → 4개 통폐합 등)은 [검증 및 변경 로그](project/verification-log.md#6-주요-동작문서-구조-변경-이력)에 남긴다.
 
 Boot·클래식은 대상에 맞는 한 트랙만 선택한다. 대상 지식은 기존 기록을 재사용하거나 [빈 양식](portable/project-template-pack.md) 한 파일로 시작한다. 이식에는 기능·테스트 시트, 승인·검증에는 인수·증거 양식을 필요할 때만 사용하며 모든 문서를 매번 읽거나 작성하지 않는다.
 

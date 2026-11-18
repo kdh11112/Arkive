@@ -10,7 +10,7 @@
 완료 기준: 검증 일시·환경·결과·잔여 위험이 명확히 기록되고, 미수행 항목의 사유가 기술되어 있다.
 -->
 
-기존 `current-state-analysis.md`, `migration.md`, `change-impact.md`(작업별 기록)의 내용을 통합한 검증 및 변경 이력 로그다.
+확인된 기능 흐름, 날짜별 검증 이력, 작업별 변경 영향, DB 마이그레이션 현황을 기록하는 검증 및 변경 이력 로그다.
 현재 구현 및 검증 분류의 1차 기준은 [README.md](../../../README.md), 최신 자동 테스트 통계는 [src/test/README.md](../../../src/test/README.md)를 따른다.
 
 ---
@@ -45,7 +45,14 @@
 
 ## 2. 날짜별 검증 이력 (GUI 및 시스템 전환)
 
-### 2.1. 2026-11-08: 최신 schema/seed 초기화 전환 검증
+### 2.1. 2026-11-07: 게시판 화면 및 조회수 통계 검증
+
+- **게시판 기본 GUI:** 관리자 CK 목록·등록·상세·댓글·삭제 및 HWP 표 붙여넣기, TOAST 에디터 등록·상세·삭제, 이미지 업로드(10×10 PNG 본문 삽입 및 서빙) 정상 확인.
+- **조회수 통계 GUI:** `/board/viewStats` 14일 막대 차트 렌더링 확인. 동일 브라우저 재조회 시 24시간 중복 집계 차단 확인.
+
+---
+
+### 2.2. 2026-11-08: 최신 schema/seed 초기화 전환 검증
 
 - **목적:** 다른 PC의 Git checkout에서도 별도 DB 설치 없이 HSQLDB 자동 시작으로 데모가 구동되도록 하되, 빈 DB만 최신 스키마·필수값으로 초기화하고 일반 재시작은 기존 데이터를 재사용하도록 전환.
 - **기준 버전:** `1008db2901315a96f512b07d5df7655ad8f59e38` + 최신 변경.
@@ -65,7 +72,7 @@
 
 ---
 
-### 2.2. 2026-11-08: 페이징과 이전글/다음글 GUI 확인
+### 2.3. 2026-11-08: 페이징과 이전글/다음글 GUI 확인
 
 - **대상:** 공지사항 오프셋 페이징, 자료실 커서+더보기 페이징, 상세 화면 이전글/다음글.
 - **도구 및 환경:** ego-browser 0.6.2.7, `127.0.0.1:8080` 관리자 세션.
@@ -77,7 +84,7 @@
 
 ---
 
-### 2.3. 2026-11-08: 조회수 통계 화면 폭 반응형 대응
+### 2.4. 2026-11-08: 조회수 통계 화면 폭 반응형 대응
 
 - **대상:** `/board/viewStats` 화면.
 - **수정:** 누적 순위 표 등록일 셀 `white-space: nowrap` 적용, 640px 이하 모바일 폭 대응(차트 날짜 라벨 격일 표시, 오늘 라벨 항상 표시, 일별 표 최소 폭 해제).
@@ -85,10 +92,10 @@
 
 ---
 
-### 2.4. 2026-11-07: 게시판 화면 및 조회수 통계 검증
+### 2.5. 2026-11-13: GUI 추가 확인
 
-- **게시판 기본 GUI:** 관리자 CK 목록·등록·상세·댓글·삭제 및 HWP 표 붙여넣기, TOAST 에디터 등록·상세·삭제, 이미지 업로드(10×10 PNG 본문 삽입 및 서빙) 정상 확인.
-- **조회수 통계 GUI:** `/board/viewStats` 14일 막대 차트 렌더링 확인. 동일 브라우저 재조회 시 24시간 중복 집계 차단 확인.
+- **도구:** ego-browser.
+- **결과:** 로그인·약관동의·통합검색·공지/게시판관리·FAQ·Q&A·공통코드·Swagger·멀티파트/TUS 업로드·사이트맵·TOTP 화면 렌더링 정상. README의 "구현 및 검증완료" 이동 항목과 동일 범위다.
 
 ---
 
@@ -99,13 +106,6 @@
 - **검증:** `verify.cmd` 338/338 통과, JaCoCo 게이트 통과(`BUILD SUCCESS`, 2026-11-15 21:34). ego-browser 0.6.3.14로 admin 로그인 후 확인.
 - **측정값(대체 viewport):** 기본 창 innerWidth 1422px에서 4열(카드 폭 260px)·카드 11개·링크 49개·가로 넘침 0px. 533px 폭에서 1열 전환·가로 넘침 0px. 링크 최소 높이 32px. 테스트 3건(`SitemapControllerTest`)이 요구하는 "사이트맵"·"공지사항관리"·"표시할 메뉴가 없습니다." 문구 유지 확인.
 - **미수행/제약:** 13.3인치 실기기 확인은 미수행(대체 viewport만 측정). 화면 폭이 1023px 이하일 때 측면 내비가 전폭으로 펼쳐져 사이트맵이 아래로 밀리는 동작은 기존 레이아웃 규칙이며 이번 변경 범위가 아니다.
-
----
-
-### 2.5. 2026-11-13: GUI 추가 확인
-
-- **도구:** ego-browser.
-- **결과:** 로그인·약관동의·통합검색·공지/게시판관리·FAQ·Q&A·공통코드·Swagger·멀티파트/TUS 업로드·사이트맵·TOTP 화면 렌더링 정상. README의 "구현 및 검증완료" 이동 항목과 동일 범위다.
 
 ---
 
@@ -137,18 +137,17 @@
 - **검증(ego-browser, 캐시 비활성):** `/stats/statsList`의 날짜 입력 2개 모두 190px, 값(`2026-11-09`·`2026-11-15`)이 잘리지 않음(scrollWidth 189 = clientWidth 189). 막대 색이 항목별로 다르게 계산됨(파랑·하늘·청록·주황·빨강). `/system/auditLogList`도 190px, 가로 넘침 0px.
 - **자동 검증:** `verify.cmd` → 테스트 338개 통과, 실패 0, JaCoCo 기준 충족, `BUILD SUCCESS`(3분 08초).
 - **미수행:** 13.3인치 실기기 확인.
-- **참고:** 날짜 표시는 공통코드가 아니라 화면별 코드로 관리된다. 각 화면이 `<input type="date">`와 `#dates.format(..., 'yyyy-MM-dd')`를 직접 쓰고 있어 형식 규칙이 화면마다 흡어져 있다.
+- **참고:** 날짜 표시는 공통코드가 아니라 화면별 코드로 관리된다. 각 화면이 `<input type="date">`와 `#dates.format(..., 'yyyy-MM-dd')`를 직접 쓰고 있어 형식 규칙이 화면마다 흩어져 있다.
 
 ---
 
 ### 2.10. 2026-11-15: 메뉴 관리 정렬 보정과 메뉴 ID 규칙 통일
 
-- **배경:** 하위메뉴 목록에서 메뉴ID(`ME0203110` + `0`)와 경로가 두 줄로 갈라지고 관리 버튼이 세로로 쌓였다. 메뉴 ID도 부모별 규칙 없이 흡어져 있었다(`ME02060000` 아래 `ME02031100`·`ME02031400`·`ME02031000`).
-- **화면:** `system/menuList.html`에 colgroup(150/150/자동/70/90/150)을 두고 생성 셀에 `menu-id`·`menu-path`·`menu-ordr`·`menu-use`·`menu-actions` 클래스를 붙였다. 경로는 한 줄 말줄임 + `title` 툴툥, 트리는 `#jstree` 규격으로 행 높이(38px)·선택·호버를 정리했다(jsTree 기본 CSS가 페이지 안에서 나중에 로드되므로 `#jstree`로 우선순위를 올림).
+- **배경:** 하위메뉴 목록에서 메뉴ID(`ME0203110` + `0`)와 경로가 두 줄로 갈라지고 관리 버튼이 세로로 쌓였다. 메뉴 ID도 부모별 규칙 없이 흩어져 있었다(`ME02060000` 아래 `ME02031100`·`ME02031400`·`ME02031000`).
+- **화면:** `system/menuList.html`에 colgroup(150/150/자동/70/90/150)을 두고 생성 셀에 `menu-id`·`menu-path`·`menu-ordr`·`menu-use`·`menu-actions` 클래스를 붙였다. 경로는 한 줄 말줄임 + `title` 툴팁, 트리는 `#jstree` 규격으로 행 높이(38px)·선택·호버를 정리했다(jsTree 기본 CSS가 페이지 안에서 나중에 로드되므로 `#jstree`로 우선순위를 올림).
 - **ID 규칙:** 2단계 부모 `ME020X0000`의 자식을 순서대로 `ME020X0100`·`0200`… 으로 재번호했다. 부모가 바뀌는 5개 그룹(게시판·화면·일정·주소분류·보고) 20건이 대상이며, `seed.sql`·`MenuPermissionInterceptor`·`AuditInterceptor`·`MailServiceImpl`·`SmsServiceImpl`·`ChatHandshakeInterceptor`·`BoardNotificationEventListener`와 테스트 상수를 같은 매핑으로 치환했다(예: `ME02031100`→`ME02060100`).
 - **DB:** `seed.sql`의 체크섬이 바뀌면 기존 DB는 기동을 거부하므로, 기존 `data/ArkiveDB` 파일을 `data/ArkiveDB-backup-20261115/`로 옮기고 새 DB로 초기화했다(기존 데모 데이터는 백업에만 있다).
 - **검증(2026-11-15):** `verify.cmd` → 테스트 338개 통과, 실패 0, JaCoCo 기준 충족, `BUILD SUCCESS`(3분 17초). 기동 로그 `Initialized empty HSQLDB with schema.sql and seed.sql`. ego-browser로 `/system/menuList` 확인: 주소·분류관리 하위 ID가 `ME02060100`·`ME02060200`·`ME02060300`으로 순서대로 나오고, ID·경로가 한 줄로 표시되며 관리 버튼이 가로로 나열됨. 가로 넘침 0px.
-- **미수행:** 13.3인치 실기기 확인.
 - **미수행:** 13.3인치 실기기 확인(대체 viewport만 측정).
 
 ---
@@ -158,11 +157,24 @@
 - **배경:** 화면이 없는 묶음 메뉴(`시스템관리`·`업로드`)에 화면 경로가 남아 있었고, 메뉴 관리 화면이 투박했다.
 - **변경:** `seed.sql`에서 `ME02010000`(시스템관리)·`ME02020000`(업로드)의 `MENU_COURS`를 NULL로 바꿔, 2단계(묶음) 메뉴에는 경로를 두지 않도록 통일했다. `menuList.html`은 두 패널에 제목·설명을 넣고, 사용여부를 Y/N 칩으로 보여주며, 빈 목록 안내를 별도 스타일로 처리한다. 공통 규격은 `krds-local.css`에 추가.
 - **가로 스크롤 제거(3차):** 표의 기본 `min-width:720px`과 고정 px 열 폭 때문에 세로 스크롤바 폭만큼 가로 스크롤이 생겼다. `.menu-table table.tbl.col.data`를 `width:100%`·`min-width:0`으로 두고, colgroup을 비율(18/16/auto/8/11/18%)로 바꿔 패널 폭에 맞춰 줄어들게 했다. 측정값: 넓은 화면·533px 모두 표·트리 박스의 `scrollWidth - clientWidth = 0`, 페이지 가로 넘침 0.
-- **도움말(4차):** 제목 아래 상시 노출되던 설명을 제목 옆 `?` 아이콘(`.menu-help`)으로 옮기고, hover/focus일 때만 말품선(`::after` + `attr(data-tip)`)이 보이게 했다. ego-browser 검증: 기본 `opacity:0/visibility:hidden` → hover `1/visible` → 마우스 이탈 `0/hidden`.
+- **도움말(4차):** 제목 아래 상시 노출되던 설명을 제목 옆 `?` 아이콘(`.menu-help`)으로 옮기고, hover/focus일 때만 말풍선(`::after` + `attr(data-tip)`)이 보이게 했다. ego-browser 검증: 기본 `opacity:0/visibility:hidden` → hover `1/visible` → 마우스 이탈 `0/hidden`.
 - **레이아웃(2차):** 두 패널 높이를 맞추고(648/686px), 왼쪽 트리는 300px 고정·460px 영역, 오른쪽 표는 520px까지만 보이고 나머지는 내부 스크롤(헤더 sticky). 행 높이를 68→61px로 줄이고, 경로가 빈 메뉴는 `-` 자리표시자로 보여준다. 트리 기본 테두리를 없애고 연한 배경으로 바꾼 뒤 `width:100%`로 패널 폭을 채웠다.
 - **DB:** 체크섬 때문에 기존 DB 파일을 `data/ArkiveDB-backup-20261115-b/`로 옮기고 새 DB로 초기화했다(개발용 admin·약관 시드만 있는 상태).
 - **검증:** `verify.cmd` → 테스트 338개 통과, 실패 0, JaCoCo 기준 충족, `BUILD SUCCESS`(3분 22초). 기동 로그 `Initialized empty HSQLDB with schema.sql and seed.sql`. ego-browser로 `/system/menuList`를 열어 패널 제목·설명, Y 칩(`menu-chip on`), 2단계 메뉴 11행(`외부포털`·`내부포털`·`시스템관리`·`업로드` 포함)의 경로가 모두 공백인 것을 확인. 가로 넘침 0px.
 - **미수행:** 13.3인치 실기기 확인.
+
+---
+
+### 2.12. 2026-11-15: 전 화면 도움말 ? 아이콘 전환
+
+- **목적:** 메뉴 관리에만 있던 `?` 도움말을 화면 공통 규격으로 정리하고, 페이지 상단의 설명 문단을 제목 옆 `?` 아이콘 호버 방식으로 통일.
+- **변경 파일:** `krds-local.css`(`.menu-help` → `.help-tip`), `system/menuList.html`, `system/auditLogList.html`, `stats/statsList.html`, `comm/sitemap.html`, `batch/batchList.html`, `board/boardViewStats.html`, `terms/termsList.html`, `login/termsAgree.html`, `login/totpSetup.html`, `login/apiDemo.html`, `survey/participateList.html`, `lecture/lectureList.html`, `lecture/myLecture.html`, `lecture/completionList.html`, `map/mapList.html`, `chat/chat.html`, `user/qna/qnaWrite.html`.
+- **변경 내용:** 페이지 레벨 설명 문단 17개 화면(도움말 18개)을 `<span class="help-tip" data-tip="...">?</span>`로 제목(`h2`) 옆으로 옮겼다. 폼 필드 단위 12px 안내문과 조건부 운영 경고(`FFmpeg 인코딩 꺼짐`, `카카오 지도 키 미설정`)는 화면에 그대로 남긴다. 말풍선은 `::after` + `content: attr(data-tip)` CSS 전용이라 JS와 요청이 늘지 않는다.
+- **GUI 검증 (ego-browser 0.6.3.14, 1280×720, 캐시 비활성):** 15개 URL에서 `::after`가 `opacity 0 / visibility hidden` → 호버 시 `1 / visible` → 마우스 이탈 시 `0 / hidden`. 말풍선 260px 폭이 제목 오른쪽에 표시되고 화면 밖으로 나가지 않으며, 각 화면 가로 넘침 0. 확인 URL: `/system/menuList`(도움말 2개), `/system/auditLogList`, `/stats/statsList`, `/batch/batchList`, `/sitemap`, `/lecture/lectureList`, `/map/mapList`, `/board/viewStats`, `/survey/participateList`, `/chat/chat`, `/terms`, `/user/qna/qnaWrite`, `/login/totpSetup`, `/login/apiDemo`.
+- **증거:** `ego-browser-shot-545921.png`(배치관리, 호버 상태).
+- **미확인/대상 아님:** `/login/termsAgree`는 이미 동의한 admin 계정에서 `/user/userMain`으로 리다이렉트되어 화면 미노출(미동의 계정 필요). `/qna/qnaWrite`(관리자 Q&A 등록)는 원래 설명 문구가 없어 `?` 대상이 아니다.
+- **13.3인치 실기기 확인:** 미수행(실기기 미보유, 이번 변경은 제목 옆 아이콘 위치 이동뿐).
+- **자동 검증:** `verify.cmd` → Tests run 338, Failures 0, Errors 0, JaCoCo 충족, BUILD SUCCESS(02:35 min).
 
 ---
 
@@ -178,24 +190,7 @@
   - SSO: `/sso/login` 기본 비활성 404 확인.
   - OAuth 2.0: 네이버 로그인 버튼 클릭 시 "준비중" 알림 확인(실제 연결 미구현).
   - DB 암호화: `ARKIVE_FIELD_KEY` 주입(32바이트 AES 키) 후 주소록 등록 → TEL_NO/EMAIL이 `enc:v1:` 접두사로 DB 저장 확인. UI 목록에서 `010-****-5678`·`te***@example.com` 마스킹 확인. FieldCryptoServiceTest(12) 통과.
-- **미수행/제약:** 아래 6개 항목은 코드·단위 테스트는 완료됐으나, 외부 서비스 계약·자격증명·독립 브라우저 세션이 없어 GUI/E2E 검증이 불가하다. 필요 조건 충족 시 GUI 확인 후 "구현 및 검증완료"로 이동한다.
-  - **중복로그인방지:** 같은 계정으로 두 개의 독립 브라우저 세션(쿠키 공유 없는 별도 프로필/시크릿 창)에서 동시 로그인 → 이전 세션 만료·"세션 종료" 안내 확인. Chrome 프로필 간 쿠키 공유로 자동화 불가. 단위 테스트 `LoginSessionRegistryTest`(5)로 매핑·만료·정리 규칙 검증 완료.
-  - **OAuth 2.0 (네이버·카카오·구글):** 네이버/카카오/구글 개발자 콘솔에서 클라이언트 ID·Secret 발급 + 콜백 URL 등록 후 `Globals.{provider}.clientId` 설정. 현재 미설정 시 소셜 버튼 클릭 → "준비중" 알림. `OauthControllerTest`(3)로 미지원·미설정·잘못된 state 거부 검증 완료.
-  - **SMS 보내기:** 알리고(Aligo) 계정 생성 → `ARKIVE_SMS_ENABLED=true`, `arkive.sms.aligo.id`, `arkive.sms.aligo.api-key`, `arkive.sms.aligo.sender`(발신번호) 환경변수 주입. 게시글 중요글 등록 시 수신 동의(`SMS_YN='Y'`) 사용자에게 실제 SMS 발송 확인. 인증번호 전송 기능은 미구현(게시글 알림만 구현). `AligoSmsSenderTest`(7), `SmsServiceImplTest`(5) 통과.
-  - **Mail 보내기 + @Async:** SMTP 서버·계정 확보 → `arkive.mail.enabled=true`, `arkive.mail.from`, `spring.mail.host/port/username/password` 설정. 회원가입 환영 메일·비밀번호 재설정 메일·게시글 중요글 알림 메일 수신 확인. `MailServiceImplTest`(10) 통과.
-  - **중요글 알림 채널 분리 (SSE·메일·SMS):** 위 Mail·SMS 활성화 + SSE 스트림 개방 상태에서 중요글 등록 → 3개 채널(SSE 브라우저 알림, 메일 수신, SMS 수신) 독립 발송 확인. SSE 채널은 이미 "구현 및 검증완료"에서 GUI 확인 완료. 메일·SMS 채널은 위 두 항목의 조건 충족 시 검증 가능. `BoardNotificationEventListenerTest`(13) 통과.
-  - **본인인증 (NICE/휴대폰):** NICE 계약 체결 → `Globals.nice.siteCode`, `Globals.nice.sitePassword`, `Globals.nice.returnUrl`, `Globals.nice.errorUrl` 설정. `/login/nice/start` 접근 → NICE 인증 페이지 이동 → 콜백 → 세션 `NICE_VERIFIED` 저장 확인. 현재 미계약 시 "NICE 미계약 상태입니다" 에러 페이지 표시(확인 완료). `NiceVerifyControllerTest`(2) 통과. 회원가입·비밀번호 찾기 화면에서 인증 진입 링크는 미연결(코드만 존재).
-
-### 2.12. 2026-11-15: 전 화면 도움말 ? 아이콘 전환
-
-- **목적:** 메뉴 관리에만 있던 `?` 도움말을 화면 공통 규격으로 정리하고, 페이지 상단의 설명 문단을 제목 옆 `?` 아이콘 호버 방식으로 통일.
-- **변경 파일:** `krds-local.css`(`.menu-help` → `.help-tip`), `system/menuList.html`, `system/auditLogList.html`, `stats/statsList.html`, `comm/sitemap.html`, `batch/batchList.html`, `board/boardViewStats.html`, `terms/termsList.html`, `login/termsAgree.html`, `login/totpSetup.html`, `login/apiDemo.html`, `survey/participateList.html`, `lecture/lectureList.html`, `lecture/myLecture.html`, `lecture/completionList.html`, `map/mapList.html`, `chat/chat.html`, `user/qna/qnaWrite.html`.
-- **변경 내용:** 페이지 레벨 설명 문단 17개 화면(도움말 18개)을 `<span class="help-tip" data-tip="...">?</span>`로 제목(`h2`) 옆으로 옮겼다. 폼 필드 단위 12px 안내문과 조건부 운영 경고(`FFmpeg 인코딩 꺼짐`, `카카오 지도 키 미설정`)는 화면에 그대로 남긴다. 말품선은 `::after` + `content: attr(data-tip)` CSS 전용이라 JS와 요청이 늘지 않는다.
-- **GUI 검증 (ego-browser 0.6.3.14, 1280×720, 캐시 비활성):** 15개 URL에서 `::after`가 `opacity 0 / visibility hidden` → 호버 시 `1 / visible` → 마우스 이탈 시 `0 / hidden`. 말품선 260px 폭이 제목 오른쪽에 표시되고 화면 밖으로 나가지 않으며, 각 화면 가로 넘침 0. 확인 URL: `/system/menuList`(도움말 2개), `/system/auditLogList`, `/stats/statsList`, `/batch/batchList`, `/sitemap`, `/lecture/lectureList`, `/map/mapList`, `/board/viewStats`, `/survey/participateList`, `/chat/chat`, `/terms`, `/user/qna/qnaWrite`, `/login/totpSetup`, `/login/apiDemo`.
-- **증거:** `ego-browser-shot-545921.png`(배치관리, 호버 상태).
-- **미확인/대상 아님:** `/login/termsAgree`는 이미 동의한 admin 계정에서 `/user/userMain`으로 리다이렉트되어 화면 미노출(미동의 계정 필요). `/qna/qnaWrite`(관리자 Q&A 등록)는 원래 설명 문구가 없어 `?` 대상이 아니다.
-- **13.3인치 실기기 확인:** 미수행(실기기 미보유, 이번 변경은 제목 옆 아이콘 위치 이동뿐).
-- **자동 검증:** `verify.cmd` → Tests run 338, Failures 0, Errors 0, JaCoCo 충족, BUILD SUCCESS(02:35 min).
+- **미수행/제약:** 중복로그인방지·OAuth 2.0·SMS·Mail·중요글 알림 채널 분리·본인인증(NICE) 6개는 외부 서비스 계약·자격증명·독립 브라우저 세션이 없어 GUI/E2E를 수행하지 못했다. 항목별 GUI 확인 조건과 관련 테스트는 [README의 GUI 확인 대기 목록](../../../README.md#구현-자동-테스트-통과--gui-확인-대기)에서 관리한다.
 
 ---
 
@@ -261,7 +256,9 @@
 
 ---
 
-## 6. 주요 동작 변경 이력
+## 6. 주요 동작·문서 구조 변경 이력
 
+- **2026-11-18 문서 중복 정리:** 기능 카탈로그의 구현·검증 상태 분류(체크박스·3단 분류)를 없애고 상태는 `README.md`에서만 관리하도록 일원화했다. 카탈로그 4절은 테스트 클래스 목록 대신 범위·남은 공백만 남기고, 이 로그 2절은 날짜순으로 재정렬했다. 일회성 계획서 `docs/ai/docs-optimization-plan.md`는 아래 이력만 남기고 삭제했다. 기능 단위 이식에는 쓰지 않는 준비 점검 스크립트 `doctor.cmd`도 삭제했다(점검 항목은 `PORTING.md` 2절에 그대로 있다).
+- **2026-11-13 `docs/ai/project/` 통폐합 (10개 → 4개):** `project-overview`·`architecture`·`change-impact`(공유 지점)·`error-code` → `project-context.md`, `feature-status`·`function-inventory`·`api-contract` → `feature-catalog.md`, `current-state-analysis`·`migration`·`change-impact`(작업별 기록) → `verification-log.md`, `database-schema.md`는 유지. 같은 기능을 여러 파일이 관점별로 반복 기술하던 중복을 없애기 위한 것이다(검토안 A 가벼운 정리 / B 기능 중심 통합 / C README 통합 중 B 채택). `README.md` 기능 체크 목록, `common/`·`portable/`·트랙 문서, `AGENTS.md`·`PORTING.md`는 구조를 유지했다.
 - **2026-11-07 조회수 집계 방식 개선:** 세션 무기한 1회에서 **게시글당 브라우저 24시간 1회**로 전환. 세션 조회 시각과 `boardView_<boardId>` 쿠키(`Max-Age=86400`, HttpOnly)를 복합 검사하여 24시간 내 중복 조회를 차단하고 일별 통계의 정확성을 확보.
 - **2026-11-03 게시판 검색 범위 분리:** 제목/내용/제목+내용 분리 검색 적용.

@@ -53,7 +53,6 @@
 
 실행 조건·실제 결과·근거·미수행 사유는 [Evidence](evidence-report-template.md#검증-결과)에 연결한다. 적용되지 않는 항목과 미수행은 [판정 기준](../common/test-standard.md#실행과-기록)으로 구분한다.
 
-- [ ] `doctor.cmd` 통과
 - [ ] `verify.cmd` 통과(빌드·테스트·JaCoCo)
 - [ ] ego-browser로 화면 정상 입력/필수값 누락/권한 없음 확인
 - [ ] 화면/CSS 변경이면 13.3인치 노트북 필수 확인·해상도/배율/viewport 기록 및 나머지 화면 유동 대응 확인(실기기 미확인은 별도 `미수행`):
