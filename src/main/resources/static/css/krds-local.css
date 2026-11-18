@@ -241,6 +241,9 @@
 @media (max-width: 1023px) {
   #container > .inner.sub {
     flex-direction: column;
+    /* [변경] 세로로 쌓을 때 폭을 본문에 늘린다. flex-start로 두면 본문 영역이
+       min-content 폭(나란히 놓인 표 2개 등)까지 벌어져 화면을 밀어낸다. */
+    align-items: stretch;
   }
   #container > .inner.sub nav.krds-side-navigation {
     flex: none;
@@ -833,9 +836,14 @@
 .menu-path-empty {
   color: #b8bec9;
 }
-@media (max-width: 1023px) {
+/* [변경] 1023px이면 트리(300px)와 하위메뉴 표가 나란히 서면서 표 최소 폭 때문에
+   페이지가 약 20px 넘쳤다. 한 단계 넓게 잡아 1024~1099px에서도 세로로 쌓는다. */
+@media (max-width: 1099px) {
   .menu-cols {
     flex-direction: column;
+    /* [변경] 세로로 쌓을 때 패널 폭을 본문에 맞춘다. flex-start면 두 패널이
+       min-content 폭으로 벌어져 화면을 밀어낸다. */
+    align-items: stretch;
   }
   .menu-cols > .menu-tree {
     flex: none;
@@ -976,6 +984,29 @@
 #jstree .jstree-children {
   padding-left: 4px;
 }
+/* [추가] 대시보드 하단 2단(공지사항·자료실). 좁은 화면에서는 세로로 쌓는다.
+   [기본] 화면마다 인라인 스타일로 2단을 만들었음. */
+.dash-split {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  margin-top: 24px;
+}
+.dash-split > .dash-split-col {
+  flex: 1 1 0;
+  min-width: 0;
+}
+@media (max-width: 1023px) {
+  .dash-split {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .dash-split > .dash-split-col {
+    flex: none;
+    width: 100%;
+  }
+}
+
 .menu-table table {
   min-width: 720px;
 }
