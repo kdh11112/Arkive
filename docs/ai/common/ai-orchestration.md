@@ -25,9 +25,9 @@
   - 대상 예: 원인 불명 오류 추적, 권한·인증·데이터 정합성에 영향을 주는 수정, 여러 계층에 걸친 변경, 소스 프로젝트 기능의 Arkive 이식 설계, DB 스키마·마이그레이션 변경, 설계 판단.
 - 단순 조회, 설명, 한두 줄 수정에는 제안하지 않는다. 같은 작업에서 반복해서 제안하지 않는다.
 - 사용자가 거절하면 현재 강도로 진행하되, 검증을 더 꼼꼼히 하고 불확실한 점을 보고에 명시한다.
-- Worker 모델·강도: Freebuff는 Orca `--model`/`--effort`로 지정할 수 없다(Orca `worker-start --help`: 지원 목록에 없고 자체 설정 모델로 실행). 바꿔야 하면 사용자에게 요청한다. Freebuff 화면에서 `/model` → ↑↓로 모델 선택, Tab으로 추론 강도(reasoning) 변경, Enter로 확정한다(2026-11-18 사용자 화면 확인). OpenCode(Sol)는 Orca `--effort`가 지원되지 않는다.
+- Worker 쪽 모델·강도는 총괄이 직접 지정할 수 없다. 지정 방법은 3장 "모델·강도 지정"에 있다.
 
-## 3. 역할 구성 (2026-11-18 실측 기준)
+## 3. 역할 구성과 모델 (2026-11-18 실측 기준)
 
 | 역할 | 에이전트 (Orca agent id) | 실제 모델 | 사용 기준 |
 | --- | --- | --- | --- |
@@ -35,38 +35,53 @@
 | Worker 1 (주력) | Freebuff (`freebuff`) | DeepSeek V4.1 Flash · high (2x, 기본값. 2026-11-18 이 PC의 Freebuff 화면 하단 표시로 확인) | 대부분의 분석·구현·검증. 무료, 아래 시간 규칙 적용 |
 | Worker 2 (보조·대체) | OpenCode2 (`opencode2`) | GPT-6.1 Sol (AgentRouter, `ar-sol/gpt-6.1-sol`) | Freebuff가 불가할 때, 또는 어렵고 중요한 판단·최종 리뷰 |
 
-- **⚠ 2026-11-18 Freebuff 이용 정책 경고:** Orca로 넘긴 작업을 Freebuff가 "Driven by another agent" 정책 위반으로 거부하고 경고(strike) 1회를 기록했다. 원문: "Freebuff is not a worker for other agents." 따라서 **사용자가 역할 구성을 다시 정할 때까지 Freebuff를 Orca Worker로 새로 띄우지 않는다.** 감지를 피하려고 지시 문구를 바꾸는 등 정책을 우회하지 않는다. 이전 작업(휴가관리·A1·H)은 받아들여져 완료됐지만 같은 정책 범위에 있다.
 - Worker는 **Freebuff를 우선** 사용한다. Freebuff가 시작 실패, 제한 도달, 반복 오류일 때만 OpenCode2(GPT-6.1 Sol)로 전환한다.
 - **GPT-6.1 Sol은 유료(AgentRouter 잔액 차감)이며 하루 약 $20 이내로 사용한다.** 범위를 좁히고 읽을 파일을 지정해 토큰을 줄인다. 오늘 사용량이 한도에 가까운지 판단이 서지 않으면 Sol에 맡기기 전에 사용자에게 확인한다.
 - 실행된 모델이 위 표와 다르면 임의로 진행하지 말고 먼저 사용자에게 알린다.
+- **모델·강도 지정:** Freebuff는 Orca `--model`/`--effort`로 지정할 수 없다(Orca `worker-start --help`: 지원 목록에 없고 자체 설정 모델로 실행). 바꿔야 하면 사용자에게 요청한다. Freebuff 화면에서는 `/model` → ↑↓로 모델 선택, Tab으로 추론 강도(reasoning) 변경, Enter로 확정한다(2026-11-18 사용자 화면 확인). OpenCode(Sol)는 Orca `--effort`가 지원되지 않는다.
 - **OpenCode2의 전제 조건: KR bridge가 켜져 있어야 한다.** OpenCode 설정(`~/.config/opencode/opencode.jsonc`)의 `ar-sol` provider는 AgentRouter에 직접 붙지 않고 로컬 KR bridge(`http://127.0.0.1:8790/v1`, `~/.config/opencode/kr-bridge/proxy.js`)를 거친다. 브리지는 한글 때문에 `400 content-blocked`가 나면 이스케이프로 1회 재시도한다.
   - 브리지가 꺼졌거나 멈추면 OpenCode2는 오류 없이 응답을 기다리기만 한다. Sol을 배정하기 전에 `netstat -ano | findstr "127.0.0.1:8790"`으로 LISTENING을 확인한다.
   - 실행: 바탕화면 바로가기 `AgentRouter KR bridge` → `kr-bridge/start-bg.cmd`(창 없이 실행, 로그 `kr-bridge/bridge.log`, 이미 실행 중이면 알림만 표시). 종료: `kr-bridge/stop.cmd`. 재부팅하면 다시 실행해야 한다.
   - 콘솔 창 방식(`kr-bridge/start.cmd`)은 창 안을 클릭해 제목에 "선택"이 붙으면 로그 출력이 막혀 프록시 전체가 멈춘다(2026-11-18 관측). 이 경우 창에서 `Esc`를 누르거나 브리지를 다시 시작한다.
 
-## 4. Freebuff 사용 시간 규칙
+## 4. Freebuff 사용 규칙
+
+### 4.1 시간과 차감
 
 - 하루 사용 가능 시간은 15시간(기본 12 + 연속 사용 보너스 3)이며 00:00(Asia/Seoul)에 리셋된다. 1시간 = 5 freebucks.
 - 세션 1개는 실제 1시간 동안 쓸 수 있고, 시작할 때 모델 배수만큼 일일 시간이 차감된다 (Flash Fast 3x = 3시간, Flash 2x = 2시간, Muse Spark 3x = 3시간).
 - 세션 만료 시각은 시작 시점에 고정된다. 터미널을 닫아도 남은 시간은 계속 흐른다.
+- Freebuff 작업은 세션이 살아 있는 1시간 안에 몰아서 배정하고, 짧은 작업 하나를 위해 새 세션을 열지 않는다.
+- 남은 일일 시간이 다음 세션 차감량보다 적거나, 세션이 없는데 작업이 짧다면 Freebuff 대신 총괄이 직접 처리하거나 사용자에게 확인한다.
+- 사용자 허락 없이 Freebuff의 `End session`을 누르거나 세션을 종료하지 않는다. 종료 후 새로 시작하면 남은 시간을 잃고 배수만큼 다시 차감된다.
+
+### 4.2 세션 소유와 이어받기
+
 - **세션은 살아 있는 Freebuff 프로세스 하나가 소유한다** (2026-11-18 이 PC 실측, Freebuff 0.2.36).
   - 소유 정보는 `~/.config/manicode/freebuff-live-<PID>.json`의 `instanceId`·`ownerPid`·`expiresAt`·`model`에 있다(같은 파일의 `tokenKey` 등 인증 값은 출력·기록하지 않는다).
   - 소유 프로세스가 꺼진 세션은 새 Freebuff 프로세스가 **이어받는다.** 같은 `instanceId`·`expiresAt`을 그대로 쓰며 일일 시간이 차감되지 않는다(사용자가 23:02에 연 탭이 22:44 시작 세션을 이어받음, 23:30에 메시지 없이 띄운 Freebuff가 `35m left`·`2/15 hours` 그대로 이어받음 확인).
   - 소유 프로세스가 살아 있는 세션은 공유하지 못한다. 그 상태에서 새로 띄운 Worker는 **새 세션**을 열어 배수만큼 차감했다(23:04 Worker가 사용자 탭 세션과 별도로 00:04 만료 세션을 받음).
   - 새 프로세스의 첫 화면에 `○m left`가 보이면 이어받은 것이고, "Your first message starts the session"이 보이면 첫 메시지에서 새 세션이 시작된다.
+- **세션을 아끼는 절차:**
+  1. 띄우기 전에 `~/.config/manicode/freebuff-live-*.json`과 `Get-Process freebuff`로 세션별 만료 시각과 소유 프로세스 생존 여부를 **보조 수단으로** 확인한다. 소유 프로세스가 없고 만료 전인 세션이 있으면 이어받을 수 있다. **단, 이 방법으로 활성 세션을 찾지 못한 사례가 있다(2026-11-21, 9장 참고). 파일·프로세스에 없다고 세션이 없는 것이 아니므로 최종 판단은 Freebuff 화면의 `○m left`와 `○/15 hours remaining`으로 하고, 화면에 세션이 살아 있으면 새 Worker/Freebuff를 띄우지 않는다.**
+  2. 이어받을 세션이 있으면 `worker-start --agent freebuff`로 띄운다. Flash Fast 창이 뜨면 4.3절 방법으로 Flash로 제출하고, 첫 화면의 `○m left`와 `○/15 hours remaining`이 그대로인지 확인한다.
+  3. 한 Worker가 끝나 자동으로 닫히면 그 세션이 다시 주인 없는 상태가 되므로, 다음 묶음은 새 Worker로 띄워 이어받는다. Freebuff Worker는 `--keep-open`을 쓰지 않는다(5장).
+  4. 이어받을 세션이 없을 때만 새 세션을 열며, 일일 시간 차감을 사용자에게 먼저 알린다.
+- **실행 중인 Freebuff에 이어서 작업을 넣는 방식은 쓰지 않는다.** `orchestration send`(follow-up)나 `worker-start --terminal`로 넣은 지시는 입력창에 첨부(📄)로만 붙고 제출되지 않았으며, Orca로 보낸 Enter·지우기 키에도 반응하지 않았다(2026-11-18 23:17~23:27, 원인 미확인).
+
+### 4.3 모델 고정과 Flash Fast 제출
+
 - **Freebuff 기본 모델은 DeepSeek V4.1 Flash · high (2x)로 고정한다.** 사용자가 다른 모델을 지시하지 않는 한 Flash Fast(3x)나 다른 모델로 세션을 시작하지 않는다(2026-11-18 사용자 지시). Freebuff 설정(`~/.config/manicode/settings.json`의 `freebuffModelKey`)에는 이미 Flash가 저장돼 있지만, Freebuff에는 시작 모델을 지정하는 실행 옵션이 없고(`--model` 없음, 0.2.36 확인) 카탈로그를 불러오기 전 첫 제출은 기본값 Flash Fast를 쓴다. 그래서 아래처럼 총괄이 띄울 때마다 확인한다.
 - **Orca로 새로 띄운 Worker의 첫 제출은 Flash Fast(3x)로 시도된다.** 하단 표시는 Flash(2x)여도, 일일 남은 시간이 3시간 미만이면 "Not enough hours for DeepSeek V4.1 Flash Fast" 창이 뜨고 멈춘다. 이때 `orca terminal send --terminal <handle> --text $'\r'`(Git Bash) 또는 ``orca terminal send --terminal <handle> --text "`r"``(PowerShell)로 Enter를 보내 모델 선택 창을 열고(Flash가 선택된 상태), 한 번 더 Enter를 보내면 Flash로 제출되어 작업을 시작한다(2026-11-18 A1·H Worker에서 확인).
   - 이어받은 Flash 세션이 있는 상태에서 Flash Fast로 제출되면 Freebuff 코드상 "새 세션 시작" 확인 창이 뜬다. 이 창에서도 진행하지 말고 모델 선택에서 Flash를 고른다.
   - **위험(미확인):** 이어받을 세션이 없고 남은 시간이 3시간 이상이면 창 없이 Flash Fast 새 세션(3시간 차감)으로 바로 시작될 수 있다. 확인 전까지는 이 조건에서 Worker를 띄우기 전에 사용자에게 알리고, 띄운 직후 하단 모델과 `○/15 hours remaining` 감소량(2시간인지)을 확인한다.
+
+### 4.4 동시 실행 시 계정 분리
+
 - **Worker 여러 개를 동시에 돌릴 때 같은 계정을 쓰지 않는다.** Arkive는 중복 로그인 방지가 있어 한 Worker가 admin으로 로그인하면 다른 Worker의 admin 세션이 끊긴다(2026-11-18 A1·H 동시 실행 중 H가 로그인 화면으로 튕김). 접속 호스트(`127.0.0.1`/`localhost`)를 나눠도 막을 수 없다. 관리자 기능 묶음은 한 번에 하나씩 돌리거나 Worker별 관리자 테스트 계정을 따로 둔다.
-- **실행 중인 Freebuff에 이어서 작업을 넣는 방식은 쓰지 않는다.** `orchestration send`(follow-up)나 `worker-start --terminal`로 넣은 지시는 입력창에 첨부(📄)로만 붙고 제출되지 않았으며, Orca로 보낸 Enter·지우기 키에도 반응하지 않았다(2026-11-18 23:17~23:27, 원인 미확인).
-- 따라서 Freebuff 세션을 아끼는 절차는 다음과 같다.
-  1. 띄우기 전에 `~/.config/manicode/freebuff-live-*.json`과 `Get-Process freebuff`로 세션별 만료 시각과 소유 프로세스 생존 여부를 **보조 수단으로** 확인한다. 소유 프로세스가 없고 만료 전인 세션이 있으면 이어받을 수 있다. **단, 이 방법으로 활성 세션을 찾지 못한 사례가 있다(2026-11-21, 9장 참고). 파일·프로세스에 없다고 세션이 없는 것이 아니므로 최종 판단은 Freebuff 화면의 `○m left`와 `○/15 hours remaining`으로 하고, 화면에 세션이 살아 있으면 새 Worker/Freebuff를 띄우지 않는다.**
-  2. 이어받을 세션이 있으면 `worker-start --agent freebuff`로 띄운다. Flash Fast 창이 뜨면 위 방법으로 Flash로 제출하고, 첫 화면의 `○m left`와 `○/15 hours remaining`이 그대로인지 확인한다.
-  3. 한 Worker가 끝나 자동으로 닫히면 그 세션이 다시 주인 없는 상태가 되므로, 다음 묶음은 새 Worker로 띄워 이어받는다. Freebuff Worker는 `--keep-open`을 쓰지 않는다.
-  4. 이어받을 세션이 없을 때만 새 세션을 열며, 일일 시간 차감을 사용자에게 먼저 알린다.
-- Freebuff 작업은 세션이 살아 있는 1시간 안에 몰아서 배정하고, 짧은 작업 하나를 위해 새 세션을 열지 않는다.
-- 사용자 허락 없이 Freebuff의 `End session`을 누르거나 세션을 종료하지 않는다. 종료 후 새로 시작하면 남은 시간을 잃고 배수만큼 다시 차감된다.
+
+### 4.5 잔여 시간·만료 확인
+
 - 남은 시간과 현재 세션 만료 시각 확인 (읽기 전용, 인증 정보는 출력하지 않음). 원 기록 PC에서는 RECS workspace의 스크립트를 썼다:
   `node D:/project/eGovFrameDev_RECS/workspace/.freebuff-usage/usage.mjs --once --full`
   - **이 PC에서는 `미확인`:** 위 경로가 없다(D 드라이브 없음, 2026-11-18 확인). 확인 방법을 정하기 전에는 활성 세션·남은 시간을 미리 알 수 없으므로, Freebuff Worker를 새로 띄우기 전에 일일 시간 차감(기본 모델 Flash 2x 기준 2시간) 가능성을 사용자에게 알린다. 완성 방법: 스크립트를 이 PC로 옮기거나 대체 확인 방법을 찾아 이 항목을 갱신한다.
@@ -75,13 +90,13 @@
     - 필요한 근거/확인자: 실제 세션 소유 주체와 상태 저장 위치(사용자 환경 확인).
     - 완성 방법: `usage.mjs`를 이 PC로 옮기거나 화면 표시를 읽는 대체 확인 방법을 정해 4장 세션 절차와 함께 갱신.
     - 완료 기준: 새 세션을 열기 전에 남은 일일 시간과 만료 시각을 사전에 알 수 있어, 새 세션 차감 여부를 미리 판단할 수 있게 되는 것.
-- 남은 일일 시간이 다음 세션 차감량보다 적거나, 세션이 없는데 작업이 짧다면 Freebuff 대신 총괄이 직접 처리하거나 사용자에게 확인한다.
 
-## 5. Freebuff 세션 유지 규칙 (실측)
+## 5. Worker 종료·재개 동작 (실측)
 
 - Orca가 띄운 Worker는 작업이 끝나면 **자동으로 닫히고**, 닫힌 Freebuff는 대화 세션이 사라진다.
 - 닫힌 Worker에 `send`를 보내면 Orca가 **새 Freebuff를 띄운다** (`delivery: started_fresh`). 이전 대화 기억은 없고, Orca가 이전 보고 요약만 전달한다.
-- 같은 맥락에서 여러 번 이어서 일을 시킬 Worker는 처음부터 `--keep-open`으로 시작하고, 후속 작업은 `send` 또는 `--terminal <handle>`로 같은 터미널에 보낸다. **단, Freebuff는 이어서 넣은 지시가 제출되지 않으므로(4장) 이 방식을 쓰지 않는다.**
+- Worker는 작업을 마치면 `reclaimable` 상태가 되고, 약 10분 뒤(`autoReleaseAt`) Orca가 자동으로 닫는다.
+- 같은 맥락에서 여러 번 이어서 일을 시킬 Worker는 처음부터 `--keep-open`으로 시작하고, 후속 작업은 `send` 또는 `--terminal <handle>`로 같은 터미널에 보낸다. **단, Freebuff는 이어서 넣은 지시가 제출되지 않으므로(4.2절) 이 방식을 쓰지 않는다.**
 - 1회성 작업(조사, 검증)은 `--keep-open` 없이 시작해 자동으로 닫히게 둔다.
 - `--keep-open`으로 연 Worker는 작업이 모두 끝나면 사용자에게 알리고, 사용자가 원하면 닫는다.
 
@@ -139,7 +154,7 @@ Worker는 화면 조작을 수행하고, 검증완료 판정은 총괄만 한다
 orca status --json
 orca terminal list --json          # 열린 Freebuff/OpenCode 터미널 handle 확인 (agentIdentity 필드)
 
-# Freebuff Worker 새로 시작 (확인됨). 이어서 쓸 거면 --keep-open 추가
+# Freebuff Worker 새로 시작 (확인됨). Freebuff는 --keep-open을 쓰지 않는다(5장)
 # spec이 길거나 따옴표가 많으면 --spec 대신 --spec-file <파일>을 쓴다 (확인됨)
 orca orchestration worker-start --agent freebuff --worktree current --spec "<자기완결적 작업 지시>" --json
 
@@ -147,8 +162,8 @@ orca orchestration worker-start --agent freebuff --worktree current --spec "<자
 # 같은 Run에 묶으려면 --run <runId>를 붙인다 (확인됨)
 orca orchestration worker-start --agent opencode2 --worktree current --run <runId> --spec-file <spec 파일> --json
 
-# 이미 열린 터미널(Freebuff·OpenCode2 Sol 등)에 작업 넣기 (확인됨). --worktree, --model 같이 쓰지 않음
-# Freebuff는 새 세션 차감을 피하려고 이 방식을 우선한다(4장). 사용자가 대화 중인 터미널에는 넣지 않는다
+# 이미 열린 터미널(OpenCode2 Sol 등)에 작업 넣기 (확인됨). --worktree, --model 같이 쓰지 않음
+# 단, 실행 중인 Freebuff에 넣은 지시는 제출되지 않으므로 쓰지 않는다(4.2절). 사용자가 대화 중인 터미널에도 넣지 않는다
 orca orchestration worker-start --terminal <term_handle> --spec "<작업 지시>" --json
 
 # 결과 수신: Worker를 모두 시작한 뒤 총괄은 차례를 끝낸다. Worker가 보고하면 Orca가 총괄을 깨우고
@@ -166,10 +181,9 @@ orca orchestration worker-list --run <runId> --json
 ```
 
 - **결과를 기다리려고 `check --wait`를 돌리거나 `check`를 반복 실행하지 않는다.** 현재 Orca 가이드(`orca skills get orchestration`)에 따르면 직접 실행한 `check`가 메일을 가져가 버려 Orca가 총괄을 깨울 신호가 사라진다. 원 기록의 `check --wait` 방식은 쓰지 않는다.
-- Worker는 작업을 마치면 `reclaimable` 상태가 되고, 약 10분 뒤(`autoReleaseAt`) Orca가 자동으로 닫는다.
 - `--agent opencode`(OpenCode 1)는 Orca에서 비활성 상태다 (`agent_unconfigured`).
 - `worker-start`가 실패하면 같은 명령을 그대로 다시 실행하지 말고 `failedStage`를 확인한다 (`orca skills get orchestration --reference references/recovery-and-cleanup.md`).
-- 별도 Orca 데스크톱 화면 없이 CLI만으로 제어할 수 있다. 상세 사용법은 `orca skills get orchestration --full`.
+- 별도 Orca 데스크톱 화면 없이 CLI만으로 제어할 수 있다. 상세 사용법은 `orca skills get orchestration --full`. Worker 종료 상태(`reclaimable`·`autoReleaseAt`)는 5장에 있다.
 
 ## 9. 동작 테스트 기록
 
