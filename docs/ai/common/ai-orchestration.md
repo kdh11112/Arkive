@@ -136,7 +136,6 @@ Worker는 화면 조작을 수행하고, 검증완료 판정은 총괄만 한다
 
 - **문체:** 서브에이전트(Claude Agent 등)에게 지시할 때는 `Task:`·`Requirements:` 같은 딱딱한 머리표 대신, 동료 개발자에게 설명하듯 자연스러운 한국어 문장으로 쓴다(2026-11-18 사용자 지시).
 - **내용은 줄이지 않는다:** 문체만 바꾸고, 아래 표의 항목(목적, 읽을 파일, 수정 허용 범위, 금지, 근거 규칙, 완료 증거)과 시나리오의 URL·입력값·기대 결과·정리 단계·보고 형식은 길어지더라도 빠뜨리지 않는다. 보고 형식처럼 대조에 쓰는 부분은 표 형태를 유지해도 된다.
-- 이 문체 규칙은 서비스 정책 감지를 피하는 용도가 아니다. 이용 정책상 Worker로 쓸 수 없는 도구(3장 Freebuff 경고)에는 적용하지 않는다.
 
 | 항목 | 적을 내용 |
 | --- | --- |
@@ -191,9 +190,8 @@ orca orchestration worker-list --run <runId> --json
 | --- | --- | --- | --- |
 | 2026-11-18 | Arkive 작업 PC, Orca 1.4.263, Freebuff 0.2.36, OpenCode v2.0.22, 기준 SHA `3dcc202` | Run `run_7feeb672f354`에 Freebuff·OpenCode2 Worker를 `--worktree current`로 각각 시작. 같은 읽기 전용 spec(`src/test/java`의 테스트 클래스 수·`@Test` 수 집계, 수정·빌드·커밋 금지) | 둘 다 `worker_done`·`succeeded`, 둘 다 84개 / 338개 / `@ParameterizedTest` 0개로 정답(`src/test/README.md`)과 일치. 작업 전후 `git status` 동일(수정 없음). Orca 깨움으로 결과 수신 확인. Freebuff는 빠르고 첫 집계 오류(`@TestPropertySource` 혼입)를 스스로 수정, OpenCode2는 느리지만 기준 SHA·전후 상태까지 보고. Sol 비용은 진행 중 화면 기준 $0.07 이상(최종 금액 미확인) |
 | 2026-11-18 | Arkive 작업 PC, Orca 1.4.263, Freebuff(DeepSeek V4.1 Flash · high), ego-browser 0.6.3.14, 기준 SHA `c4614c7` | Run `run_e61903ccce8c`, Dispatch `ctx_721fbb5df7ed`. 6.1절 분담 첫 적용: 휴가관리 GUI 시나리오(신청→빈 사유 오류→승인→사용 연차 +1→취소 원복) | Worker가 ego-browser 작업 공간을 만들어 6단계 수행, 스크린샷 12장 저장, 단계별 표 보고(약 5분). 총괄이 스크린샷 대조와 ego-browser 재조회로 최종 상태 일치 확인. Worker는 png 외 파일 수정 없음(`git status` 확인). 같은 시점 사용자 Freebuff 탭과 남은 시간이 달라 새 세션이 시작된 것으로 판단(4장) |
-| 2026-11-21 | Arkive 작업 PC, Freebuff(`~/.config/manicode/freebuff.exe`), 기준 HEAD `f0c5da4` | 문서 4장 사전 확인 방법 재검증 및 세션 이어받기 확인 (Dispatch `ctx_9c9ff1468c44`) | `Get-Process freebuff`·라이브 파일 정상 동작. 20:35에는 세션 등록 전이라 프로세스·파일이 없었으나(프로세스 20:38:23 시작, 세션 20:42:51 등록), 이후 PID 14484·ownerPid 14484·만료 21:42:51 확인. 탭을 끈 뒤 Worker로 `hi` 전달 → 같은 `instanceId`·`expiresAt` 이어받기, 2시간 차감 없음(화면 `39m left`). 단순 지시에서 정책 거부 없었으나 11-18 경고는 유지. 일일 잔여 시간 스크립트(`usage.mjs`)는 이 PC에 없어 해당 항목은 `미확인` 유지 |
+| 2026-11-21 | Arkive 작업 PC, Freebuff(`~/.config/manicode/freebuff.exe`), 기준 HEAD `f0c5da4` | 문서 4장 사전 확인 방법 재검증 및 세션 이어받기 확인 (Dispatch `ctx_9c9ff1468c44`) | `Get-Process freebuff`·라이브 파일 정상 동작. 20:35에는 세션 등록 전이라 프로세스·파일이 없었으나(프로세스 20:38:23 시작, 세션 20:42:51 등록), 이후 PID 14484·ownerPid 14484·만료 21:42:51 확인. 탭을 끈 뒤 Worker로 `hi` 전달 → 같은 `instanceId`·`expiresAt` 이어받기, 2시간 차감 없음(화면 `39m left`). 일일 잔여 시간 스크립트(`usage.mjs`)는 이 PC에 없어 해당 항목은 `미확인` 유지 |
 
 - 아직 검증하지 않은 것: `--worktree new-child`(별도 작업 폴더) 생성·병합·정리 흐름, 파일을 수정하는 Worker와 검증 Worker를 나눈 실제 작업, 이 PC의 Freebuff 일일 남은 시간 확인 방법, `worker-start --terminal`로 사용자가 연 Freebuff 터미널에 넣었을 때 세션 추가 차감이 없는지.
 - 확인된 것: Orca Worker(Freebuff)가 ego-browser를 실제로 조작하고 스크린샷을 저장할 수 있다(위 2026-11-18 휴가관리 시험).
-- 2026-11-18 23:45 Run `run_e61903ccce8c` Dispatch `ctx_6889111ab75e`(E 일정·근무 묶음): Flash 새 세션(2시간 차감, 남은 시간 0/15)이 열린 뒤 첫 지시가 Freebuff 이용 정책("Driven by another agent")으로 거부되고 strike 1이 기록됨. 총괄은 추가 전송 없이 Dispatch를 abandon 처리했다. 같은 Run의 A1(`ctx_defe583019a5`)·H(`ctx_ef8279d920c7`)는 앞서 정상 수행·보고됐다.
 - 참고 사례: 커밋 `6a7ad0d`(2026-11-16)는 Worker가 항목별 GUI 기록 없이 `README.md`의 33개 항목을 「구현 및 검증완료」로 직접 옮겼다. 6.1절은 이 재발을 막기 위한 규칙이다.
