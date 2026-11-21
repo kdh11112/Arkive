@@ -61,7 +61,7 @@
 - **Worker 여러 개를 동시에 돌릴 때 같은 계정을 쓰지 않는다.** Arkive는 중복 로그인 방지가 있어 한 Worker가 admin으로 로그인하면 다른 Worker의 admin 세션이 끊긴다(2026-11-18 A1·H 동시 실행 중 H가 로그인 화면으로 튕김). 접속 호스트(`127.0.0.1`/`localhost`)를 나눠도 막을 수 없다. 관리자 기능 묶음은 한 번에 하나씩 돌리거나 Worker별 관리자 테스트 계정을 따로 둔다.
 - **실행 중인 Freebuff에 이어서 작업을 넣는 방식은 쓰지 않는다.** `orchestration send`(follow-up)나 `worker-start --terminal`로 넣은 지시는 입력창에 첨부(📄)로만 붙고 제출되지 않았으며, Orca로 보낸 Enter·지우기 키에도 반응하지 않았다(2026-11-18 23:17~23:27, 원인 미확인).
 - 따라서 Freebuff 세션을 아끼는 절차는 다음과 같다.
-  1. 띄우기 전에 `~/.config/manicode/freebuff-live-*.json`과 `Get-Process freebuff`로 세션별 만료 시각과 소유 프로세스 생존 여부를 확인한다. 소유 프로세스가 없고 만료 전인 세션이 있으면 이어받을 수 있다.
+  1. 띄우기 전에 `~/.config/manicode/freebuff-live-*.json`과 `Get-Process freebuff`로 세션별 만료 시각과 소유 프로세스 생존 여부를 **보조 수단으로** 확인한다. 소유 프로세스가 없고 만료 전인 세션이 있으면 이어받을 수 있다. **단, 이 방법으로 활성 세션을 찾지 못한 사례가 있다(2026-11-21, 9장 참고). 파일·프로세스에 없다고 세션이 없는 것이 아니므로 최종 판단은 Freebuff 화면의 `○m left`와 `○/15 hours remaining`으로 하고, 화면에 세션이 살아 있으면 새 Worker/Freebuff를 띄우지 않는다.**
   2. 이어받을 세션이 있으면 `worker-start --agent freebuff`로 띄운다. Flash Fast 창이 뜨면 위 방법으로 Flash로 제출하고, 첫 화면의 `○m left`와 `○/15 hours remaining`이 그대로인지 확인한다.
   3. 한 Worker가 끝나 자동으로 닫히면 그 세션이 다시 주인 없는 상태가 되므로, 다음 묶음은 새 Worker로 띄워 이어받는다. Freebuff Worker는 `--keep-open`을 쓰지 않는다.
   4. 이어받을 세션이 없을 때만 새 세션을 열며, 일일 시간 차감을 사용자에게 먼저 알린다.
@@ -70,6 +70,11 @@
 - 남은 시간과 현재 세션 만료 시각 확인 (읽기 전용, 인증 정보는 출력하지 않음). 원 기록 PC에서는 RECS workspace의 스크립트를 썼다:
   `node D:/project/eGovFrameDev_RECS/workspace/.freebuff-usage/usage.mjs --once --full`
   - **이 PC에서는 `미확인`:** 위 경로가 없다(D 드라이브 없음, 2026-11-18 확인). 확인 방법을 정하기 전에는 활성 세션·남은 시간을 미리 알 수 없으므로, Freebuff Worker를 새로 띄우기 전에 일일 시간 차감(기본 모델 Flash 2x 기준 2시간) 가능성을 사용자에게 알린다. 완성 방법: 스크립트를 이 PC로 옮기거나 대체 확인 방법을 찾아 이 항목을 갱신한다.
+  - **2026-11-21 관측 (`미확인` 유지):** Orca 탭의 Freebuff 화면에 `50m left · 50.9K (5%)`, `DeepSeek V4.1 Flash · high`로 활성 세션이 보였으나 `Get-Process freebuff`에는 프로세스가 없었고 `~/.config/manicode/freebuff-live-*.json`에는 2026-11-20 00:06 만료·소유 프로세스 종료된 파일 하나뿐이었다. 즉 위 세션 절차 1번의 사전 확인 방법으로는 이 세션을 찾지 못했다. 원인은 **미확인**(웹/클라우드 세션이라 로컬 프로세스·라이브 파일에 안 남는지, 라이브 파일 위치가 다른지 등). 현재 신뢰할 수 있는 근거는 화면 표시뿐이다.
+    - 미완성 항목: 새 Freebuff/Worker를 띄우기 전에 남은 시간을 사전에 확인하는 수단 없음.
+    - 필요한 근거/확인자: 실제 세션 소유 주체와 상태 저장 위치(사용자 환경 확인).
+    - 완성 방법: `usage.mjs`를 이 PC로 옮기거나 화면 표시를 읽는 대체 확인 방법을 정해 4장 세션 절차와 함께 갱신.
+    - 완료 기준: 새 세션을 열기 전에 남은 일일 시간과 만료 시각을 사전에 알 수 있어, 새 세션 차감 여부를 미리 판단할 수 있게 되는 것.
 - 남은 일일 시간이 다음 세션 차감량보다 적거나, 세션이 없는데 작업이 짧다면 Freebuff 대신 총괄이 직접 처리하거나 사용자에게 확인한다.
 
 ## 5. Freebuff 세션 유지 규칙 (실측)
@@ -172,6 +177,7 @@ orca orchestration worker-list --run <runId> --json
 | --- | --- | --- | --- |
 | 2026-11-18 | Arkive 작업 PC, Orca 1.4.263, Freebuff 0.2.36, OpenCode v2.0.22, 기준 SHA `3dcc202` | Run `run_7feeb672f354`에 Freebuff·OpenCode2 Worker를 `--worktree current`로 각각 시작. 같은 읽기 전용 spec(`src/test/java`의 테스트 클래스 수·`@Test` 수 집계, 수정·빌드·커밋 금지) | 둘 다 `worker_done`·`succeeded`, 둘 다 84개 / 338개 / `@ParameterizedTest` 0개로 정답(`src/test/README.md`)과 일치. 작업 전후 `git status` 동일(수정 없음). Orca 깨움으로 결과 수신 확인. Freebuff는 빠르고 첫 집계 오류(`@TestPropertySource` 혼입)를 스스로 수정, OpenCode2는 느리지만 기준 SHA·전후 상태까지 보고. Sol 비용은 진행 중 화면 기준 $0.07 이상(최종 금액 미확인) |
 | 2026-11-18 | Arkive 작업 PC, Orca 1.4.263, Freebuff(DeepSeek V4.1 Flash · high), ego-browser 0.6.3.14, 기준 SHA `c4614c7` | Run `run_e61903ccce8c`, Dispatch `ctx_721fbb5df7ed`. 6.1절 분담 첫 적용: 휴가관리 GUI 시나리오(신청→빈 사유 오류→승인→사용 연차 +1→취소 원복) | Worker가 ego-browser 작업 공간을 만들어 6단계 수행, 스크린샷 12장 저장, 단계별 표 보고(약 5분). 총괄이 스크린샷 대조와 ego-browser 재조회로 최종 상태 일치 확인. Worker는 png 외 파일 수정 없음(`git status` 확인). 같은 시점 사용자 Freebuff 탭과 남은 시간이 달라 새 세션이 시작된 것으로 판단(4장) |
+| 2026-11-21 | Arkive 작업 PC, Orca 탭의 Freebuff 화면 (`50m left · 50.9K (5%)`, DeepSeek V4.1 Flash · high) | 문서 4장의 사전 확인 방법(`Get-Process freebuff`, `freebuff-live-*.json`)으로 이 활성 세션을 찾을 수 있는지 확인 | 프로세스 없음, 라이브 파일은 11-20 만료분뿐 → 화면의 살아 있는 세션과 불일치. 원인 `미확인` 유지, 화면 표시를 최종 근거로 4장 세션 절차·남은 시간 확인 항목 갱신 |
 
 - 아직 검증하지 않은 것: `--worktree new-child`(별도 작업 폴더) 생성·병합·정리 흐름, 파일을 수정하는 Worker와 검증 Worker를 나눈 실제 작업, 이 PC의 Freebuff 일일 남은 시간 확인 방법, `worker-start --terminal`로 사용자가 연 Freebuff 터미널에 넣었을 때 세션 추가 차감이 없는지.
 - 확인된 것: Orca Worker(Freebuff)가 ego-browser를 실제로 조작하고 스크린샷을 저장할 수 있다(위 2026-11-18 휴가관리 시험).
