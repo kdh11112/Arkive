@@ -296,6 +296,7 @@
 			AND LEAVE_YEAR = #{leaveYear}
 	</update>
 
+	<!-- 해당 연도의 연차 잔여 행 존재 여부 확인 (건수) -->
 	<select id="countBalance" parameterType="egovMap" resultType="int">
 		SELECT COUNT(*)
 		FROM LEAVE_BALANCE

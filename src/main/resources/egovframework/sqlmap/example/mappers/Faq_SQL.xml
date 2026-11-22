@@ -4,7 +4,7 @@
 
 	<!-- FAQ 목록. BOARD 테이블을 BOARD_TYPE='FAQ' 고정으로 재사용한다.
 	     참고: BLMS TN_PST_MNG+BBS_ID='04'(BoardController.java:533), pony NOTICE 단순 CRUD(noticeMapper.xml:8-12).
-	     BOARD_TYPE 단일 테이블 다종 게시판 패턴을 따른다. 페이징은 CK와 같은 LIMIT/OFFSET(HSQLDB)이다. -->
+	     BOARD_TYPE 단일 테이블 다종 게시판 패턴을 따른다. 페이징은 CK와 같은 PostgreSQL LIMIT/OFFSET이다. -->
 	<select id="selectFaqList" parameterType="egovMap" resultType="egovMap">
 		SELECT
 			BOARD_ID,

@@ -108,7 +108,7 @@
         </table>
     </div>
 
-    <script>
+    <script th:inline="javascript">
         var docId = /*[[${detail['docId']}]]*/ '';
         function postAction(url, data, done) {
             $.ajax({

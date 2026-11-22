@@ -57,6 +57,21 @@
 		</repository>
 	</repositories>
 
+	<!-- 테스트 전용 임베디드 PostgreSQL 바이너리 버전 고정. 실제 Supabase와 같은 PG17.12를 쓴다.
+	     import 범위 BOM은 버전 관리 정보만 제공하고 의존성을 직접 추가하지 않는다. 실제 embedded 의존성은
+	     아래 test 범위로 선언되어 운영 패키징(JAR)에는 포함되지 않는다. -->
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>io.zonky.test.postgres</groupId>
+				<artifactId>embedded-postgres-binaries-bom</artifactId>
+				<version>17.12.0</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<dependencies>
 
 		<dependency>
@@ -170,10 +185,23 @@
 			<optional>true</optional>
 		</dependency>
 		
-		<!-- HSQLDB (경량 인메모리 데이터베이스, 주로 테스트용) -->
+
+		<!-- Spring Boot JDBC. DataSource·HikariCP·트랜잭션 자동 구성을 Batch 전이 의존성에 기대지 않고 명시한다. -->
 		<dependency>
-			<groupId>org.hsqldb</groupId>
-			<artifactId>hsqldb</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-jdbc</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<!-- PostgreSQL 드라이버. PostgreSQL 단일 DB(관리형 PG 포함) 접속에 사용한다. -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
 		</dependency>
 		
 		<!-- Lombok (컴파일 타임 코드 생성으로 개발 생산성 향상) -->
@@ -189,6 +217,15 @@
 			<scope>test</scope>
 		</dependency>
 		
+		<!-- 테스트 전용 임베디드 PostgreSQL. Docker 없이 프로세스 안에서 로컬 PG17을 띄운다.
+		     test 범위이므로 운영 JAR에는 테스트 바이너리가 포함되지 않는다. -->
+		<dependency>
+			<groupId>io.zonky.test</groupId>
+			<artifactId>embedded-postgres</artifactId>
+			<version>2.1.0</version>
+			<scope>test</scope>
+		</dependency>
+
 		<!-- Selenium Java (웹 UI 자동화 및 테스트 도구) -->
 		<dependency>
 			<groupId>org.seleniumhq.selenium</groupId>
@@ -196,10 +233,6 @@
 			<scope>test</scope>
 		</dependency>
 		
-		<dependency>
-		    <groupId>org.apache.commons</groupId>
-		    <artifactId>commons-dbcp2</artifactId>
-		</dependency>
 
 		<!-- bcrypt 전용. starter-security 전체가 아니라 암호화만 쓴다(세션 로그인은 커스텀 인터셉터). -->
 		<dependency>

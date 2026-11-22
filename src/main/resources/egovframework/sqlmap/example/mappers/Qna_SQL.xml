@@ -118,12 +118,13 @@
 	</delete>
 
 	<!-- Q&A 답변 저장(등록·수정 겸용 UPSERT). V9 메뉴 MERGE와 같은 HSQLDB MERGE 패턴이다.
-	     MyBatis DTD에 merge 태그가 없어 update로 감싼다. -->
+	     MyBatis DTD에 merge 태그가 없어 update로 감싼다.
+	     UPDATE SET의 대상 컬럼에는 target. 수식어를 쓰지 않는다(PostgreSQL 비호환). -->
 	<update id="saveQnaAnswer" parameterType="egovMap">
 		MERGE INTO QNA_ANSWER target
 		USING (VALUES (#{boardId}, #{answerContent}, #{answerer})) source(board_id, answer_content, answerer)
 		ON target.BOARD_ID = source.board_id
-		WHEN MATCHED THEN UPDATE SET target.ANSWER_CONTENT = source.answer_content, target.ANSWERER = source.answerer, target.ANSWER_DT = CURRENT_TIMESTAMP
+		WHEN MATCHED THEN UPDATE SET ANSWER_CONTENT = source.answer_content, ANSWERER = source.answerer, ANSWER_DT = CURRENT_TIMESTAMP
 		WHEN NOT MATCHED THEN INSERT (BOARD_ID, ANSWER_CONTENT, ANSWERER, ANSWER_DT) VALUES (source.board_id, source.answer_content, source.answerer, CURRENT_TIMESTAMP)
 	</update>
 

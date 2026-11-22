@@ -107,6 +107,7 @@
 		LIMIT #{rowLimit}
 	</select>
 
+	<!-- 게시판 유형·검색조건별 글 수 조회 (페이징용) -->
 	<select id="selectBoardListTotCnt" parameterType="egovMap" resultType="int">
 		SELECT COUNT(*)
 		FROM BOARD
@@ -239,7 +240,7 @@
 		WHERE CONTENT LIKE '%downloadFileId=' || #{fileId} || '%'
 	</select>
 
-	<!-- 조회수 증가 -->
+	<!-- 게시글 조회수 1 증가 -->
 	<update id="updateViewCnt" parameterType="string">
 		UPDATE BOARD
 		SET VIEW_CNT = COALESCE(VIEW_CNT, 0) + 1
@@ -279,7 +280,7 @@
 		ORDER BY REGIST_DT ASC, COMMENT_ID ASC
 	</select>
 
-	<!-- 댓글 건수 -->
+	<!-- 게시글 댓글 수 조회 -->
 	<select id="selectCommentCount" parameterType="string" resultType="int">
 		SELECT COUNT(*)
 		FROM BOARD_COMMENT

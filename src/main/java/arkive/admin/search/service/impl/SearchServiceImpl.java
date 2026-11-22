@@ -19,7 +19,7 @@ import jakarta.annotation.Resource;
  * 통합검색 서비스 구현.
  *
  * <p>본문은 에디터 HTML이므로 화면에 그대로 넘기지 않고 태그를 제거한 요약문으로 바꾼다.
- * HSQLDB CLOB은 JDBC Clob으로 올 수 있어 문자열로 변환한다.</p>
+ * DB 이식 시 본문이 JDBC Clob으로 반환되면 문자열로 변환한다.</p>
  */
 @Service("searchService")
 public class SearchServiceImpl extends EgovAbstractServiceImpl implements SearchService {

@@ -15,7 +15,7 @@ import arkive.admin.search.event.SearchIndexEvent;
 import jakarta.annotation.Resource;
 
 /**
- * FAQ 서비스 구현. 상세 조회 시 HSQLDB CLOB을 문자열로 변환한다(Board 패턴).
+ * FAQ 서비스 구현. DB 이식 시 JDBC Clob으로 반환되는 본문도 문자열로 변환한다(Board 패턴).
  */
 @Service("faqService")
 public class FaqServiceImpl extends EgovAbstractServiceImpl implements FaqService {

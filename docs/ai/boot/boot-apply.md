@@ -16,15 +16,17 @@
 
 ## 설정
 
-- `src/main/resources/application.properties` + `Globals.*` 키가 설정 진실 공급원이다.
-  확인된 키: `Globals.DbType`, `Globals.hsql_server.*`(Driver·Url·User·DatabasePath·Port),
-  `Globals.dumpPath`, `Globals.jwt.*`, `Globals.naver.*`, `Globals.kakao.*`.
+- `src/main/resources/application.properties`가 설정 진실 공급원이다.
+  DB는 `spring.datasource.*`·`spring.datasource.hikari.*`로 지정한다.
+  기능 설정은 `Globals.jwt.*`, `Globals.naver.*`, `Globals.kakao.*`, `arkive.*` 등 해당 키를 확인한다.
   비밀값(시크릿·키)은 커밋하지 말고 환경·시크릿 저장소에서 주입한다.
 - 테스트 오버라이드는 `application-test.properties.template`을 대상 DB에 맞게 채워
   `src/test/resources/application-test.properties`로 저장하고, `@TestPropertySource`를 묶은
   합성 애노테이션(`ArkiveIntegrationTest` → 대상에서는 `IntegrationTest`)으로 적용한다.
   동명 `application.properties`를 test에 두지 않는다(main 전체가 가려진다).
-  `Globals.hsql_server.Port`와 `Globals.hsql_server.Url`의 포트는 반드시 같아야 한다(Arkive 테스트는 9002).
+  Arkive는 `PostgresTestDatabaseInitializer`를 `@ContextConfiguration`으로 연결해
+  `target/test-postgres/<UUID>`·자동 선택 포트의 격리 PostgreSQL을 사용한다.
+  대상 테스트 DB 준비는 스펙 담당자가 별도로 수행한다.
 - 로그인 세션은 `TestSessions`로 만들고, 테스트별 복사·수정은
   [test-porting-sheet.md](../portable/test-porting-sheet.md)에 기록한다.
 
@@ -35,6 +37,6 @@
 
 ## 의존성
 
-- 확인된 starters: web, thymeleaf, validation, mail, quartz, actuator, log4j2, devtools, test.
+- 확인된 starters: web, thymeleaf, validation, jdbc, mail, quartz, actuator, log4j2, devtools, test.
   `selenium-java(test)`, `springdoc-openapi`가 있다. 스타터 버전은 parent에서 상속하며 개별 라이브러리 버전은 `pom.xml`에서 확인한다.
 - `NiceID_v1_1.jar`는 `src/main/resources/lib` systemPath 참조다. 타 프로젝트로 가져가면 저장소·좌표부터 해결한다.

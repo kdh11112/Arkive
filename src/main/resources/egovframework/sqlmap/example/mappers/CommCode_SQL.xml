@@ -21,7 +21,7 @@
 		ORDER BY MASTR_CODE
 	</select>
 
-	<!-- 상세 목록 -->
+	<!-- 마스터코드의 상세코드 목록 조회 -->
 	<select id="selectDetailList" parameterType="egovMap" resultType="egovMap">
 		SELECT
 			MASTR_CODE,
@@ -84,7 +84,7 @@
 			AND DETAIL_CODE = #{detailCode}
 	</select>
 
-	<!-- 등록 -->
+	<!-- 공통코드 1건 등록 (마스터·상세 코드) -->
 	<insert id="insertCode" parameterType="egovMap">
 		INSERT INTO COMM_CODE (
 			MASTR_CODE,
@@ -115,7 +115,7 @@
 		)
 	</insert>
 
-	<!-- 수정 -->
+	<!-- 공통코드 1건 수정 (코드명·설명·순서·사용여부) -->
 	<update id="updateCode" parameterType="egovMap">
 		UPDATE COMM_CODE
 		SET

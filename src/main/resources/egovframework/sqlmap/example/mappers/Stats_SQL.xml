@@ -2,6 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="arkive.admin.stats.service.impl.StatsMapper">
 
+	<!-- 게시판 유형별 게시글 수 집계 -->
 	<select id="selectBoardStats" resultType="egovMap">
 		SELECT BOARD_TYPE, COUNT(*) AS CNT
 		FROM BOARD
@@ -9,6 +10,7 @@
 		ORDER BY BOARD_TYPE
 	</select>
 
+	<!-- 기간 내 감사 이벤트 유형별 발생 건수 집계 -->
 	<select id="selectEventStats" parameterType="egovMap" resultType="egovMap">
 		SELECT EVENT_TYPE, COUNT(*) AS CNT
 		FROM AUDIT_LOG
@@ -17,6 +19,7 @@
 		ORDER BY CNT DESC, EVENT_TYPE
 	</select>
 
+	<!-- 기간 내 일자별 로그인 성공 건수 집계 -->
 	<select id="selectDailyLoginStats" parameterType="egovMap" resultType="egovMap">
 		SELECT CAST(REGIST_DT AS DATE) AS STAT_DATE, COUNT(*) AS CNT
 		FROM AUDIT_LOG
@@ -26,6 +29,7 @@
 		ORDER BY STAT_DATE
 	</select>
 
+	<!-- 기간 내 일자별 메뉴·개인정보·API 접근 건수 집계 -->
 	<select id="selectDailyAccessStats" parameterType="egovMap" resultType="egovMap">
 		SELECT CAST(REGIST_DT AS DATE) AS STAT_DATE, COUNT(*) AS CNT
 		FROM AUDIT_LOG
@@ -35,6 +39,7 @@
 		ORDER BY STAT_DATE
 	</select>
 
+	<!-- 기간 내 개인정보 다운로드 대상 유형별 건수 집계 -->
 	<select id="selectDownloadStats" parameterType="egovMap" resultType="egovMap">
 		SELECT TARGET_TYPE, COUNT(*) AS CNT
 		FROM AUDIT_LOG

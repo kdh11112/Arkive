@@ -9,7 +9,7 @@
 | --- | --- | --- |
 | 단위 테스트 | JUnit5 (`starter-test`) | JUnit4 + `spring-test`(버전은 프로젝트 Spring에 맞춤) |
 | 컨텍스트 로딩 | `@SpringBootTest` | `@RunWith(SpringJUnit4ClassRunner.class)` + `@ContextConfiguration`에 기존 `context-*.xml` 지정 |
-| Mapper 테스트 | 위와 동일 + HSQLDB/Testcontainers | `SqlSessionFactory`를 XML 설정에서 로드. `EgovAbstractMapper` 상속 DAO는 그대로 쓴다 |
+| Mapper 테스트 | 위와 동일 + 대상 DB의 격리 인스턴스/Testcontainers | `SqlSessionFactory`를 XML 설정에서 로드. `EgovAbstractMapper` 상속 DAO는 그대로 쓴다 |
 | Controller 테스트 | `@WebMvcTest` 또는 MockMvc | `spring-test` MockMvc + `@WebAppConfiguration`, JSP 렌더링 대신 JSON·Model 값 검증 |
 | BDD | Cucumber-JUnit5 (`cucumber-junit-platform-engine`) | Cucumber-JVM 6.x + `cucumber-junit` (JUnit4 Runner). feature 문법 동일이라 feature 파일은 공유 가능 |
 | 커버리지 | JaCoCo 0.8.12 (Boot 예제) | 대상 Java·빌드 JDK·Maven과 호환되는 버전을 확인한다. Java 8이라는 이유만으로 0.8.8 상한을 적용하지 않는다 |

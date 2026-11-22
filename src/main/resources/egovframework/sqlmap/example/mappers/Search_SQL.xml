@@ -35,12 +35,14 @@
 		LIMIT #{limit}
 	</select>
 
+	<!-- 게시글 제목의 초성 색인 값 갱신 -->
 	<update id="updateSearchChosung" parameterType="egovMap">
 		UPDATE BOARD
 		SET SEARCH_CHOSUNG = #{searchChosung}
 		WHERE BOARD_ID = #{boardId}
 	</update>
 
+	<!-- 초성 색인 대상 게시글 ID 전체 조회 (재색인용) -->
 	<select id="selectIndexableBoardIds" resultType="string">
 		SELECT BOARD_ID
 		FROM BOARD
@@ -48,6 +50,7 @@
 		ORDER BY BOARD_ID
 	</select>
 
+	<!-- 통합검색 결과 총 건수 조회 (페이징용) -->
 	<select id="selectSearchListTotCnt" parameterType="egovMap" resultType="int">
 		SELECT COUNT(*)
 		FROM BOARD

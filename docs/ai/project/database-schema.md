@@ -16,18 +16,21 @@
 
 ## 확인된 연결·초기화 설정
 
-- `application.properties`는 `Globals.DbType=hsql_server`와 `Globals.hsql_server.Port=9001`을 설정한다. `EgovConfigDatasource.java`는 이 값에서 `./data/ArkiveDB` 파일 HSQLDB 서버를 시작한다. 테스트는 `application-test.properties`에서 경로 `target/test-db`, 포트 9002로 분리한다.
-- 2026-11-08부터 `src/main/resources/db/schema.sql`에 54개 기능 테이블과 최종 컬럼·PK/FK·Unique·인덱스를, `db/seed.sql`에 필수 초기값을 둔다. `spring.sql.init.mode=never`를 유지하고 `HsqlDemoDatabaseInitializer`가 빈 로컬 DB에만 `schema` → `seed`를 한 번 실행한다. 근거: 두 SQL, `EgovConfigDatasource.java`, `HsqlDemoDatabaseInitializer.java`.
-- 초기화기의 `ARKIVE_DB_INIT`은 기능 스키마 밖의 데모 상태표다. 완료 상태·초기화 SQL 체크섬·객체 메타데이터 서명을 확인하고 일반 재시작은 DDL/시드를 실행하지 않는다. 파일 변경·불완전 초기화·구조 불일치는 자동 삭제나 갱신 없이 시작을 중단한다. 구 체인 전체 적용 이력과 구조가 일치하는 DB는 전환 때 한 번 인수하며 기존 데이터는 유지한다. 자세한 조건과 새 DB 경로 사용은 [검증 및 변경 로그](verification-log.md#4-db-마이그레이션-현황-및-개발자-사용법)를 따른다.
+- 현재 `application.properties`의 `spring.datasource.*`로 PostgreSQL에 접속하며 Boot JDBC가 HikariCP를 자동 구성한다. 근거: `pom.xml`, `application.properties`, `EgovConfigWeb.java`.
+- 현재 단일 원본은 `src/main/resources/db/postgres/schema.sql`(54개 기능 테이블)·`seed.sql`이다. 새 대상 DB에만 담당자가 schema→seed 순서로 적용한다.
+- 테스트는 `src/test/java/arkive/support/PostgresTestDatabaseInitializer.java`가 로컬 embedded PostgreSQL 17.12를 `target/test-postgres/<UUID>`·자동 선택 포트로 기동하고 schema→seed를 적용한다. 접속 정보를 최우선으로 덮어써 실제 Supabase와 분리한다.
+- 기존 DB의 스키마 변경·백필·복구는 별도 마이그레이션으로 수행한다. [DB 갱신·보존 주의](verification-log.md#4-db-마이그레이션-현황-및-개발자-사용법)를 따른다.
 - `seed.sql`은 메뉴 63행, 개발용 admin 1행, 역할 2행, 사용자-역할 1행, 역할-메뉴 권한 92행, `IDS.SAMPLE=1`, 약관 자리표시자 3행을 준비한다. 샘플 CRUD 레코드·회의실·자동 연차 부여·업무 로그·토큰·사용자 동의는 넣지 않는다. 구 DB를 인수할 때 이 시드를 재실행하지 않는다.
-- 전환 전 `db/versions/`의 V1~V18·V30~V35(24개, V19~V29 없음)은 최신 정의로 통합해 제거했다. 덤프 표시용 주석 `db/data.sql`도 제거했으며 `DBJob`은 이 리소스를 읽지 않는다. 구 SQL·실행 결과는 아래 변경 기록과 Git 이력에 남긴다.
-- `db/baseline_schema.sql`(구 복사용 밑그림, V10 시절에서 멈춤)과 `db/sampledb.sql`(레거시, `DROP TABLE` 포함)은 2026-10-11에 삭제했다. `db/system.sql`은 저장소에 이미 없고 문서에만 남아 있던 언급이라 함께 정리했다.
-- HSQLDB 런타임 파일은 프로젝트 `data/` 아래에 만들어지며 `.lck`는 실행 중 잠금 파일이다. 현재 `.gitignore`에서 `data/`를 제외해 DB 파일은 Git에 올리지 않는다.
+- 실제 PostgreSQL 데이터는 접속 대상 서버에서 관리한다. `data/vod/`는 `arkive.vod.path`로 지정하는 동영상 파일 저장 경로다. 근거: `FfmpegVideoEncodingService.java`, `application.properties`.
+- 접속 설정은 `application.properties`의 `spring.datasource.driver-class-name/url/username/password`에서 변경하고 앱을 재시작한다. 현재 연결은 Session pooler 5432 + `sslmode=require`를 사용한다. 실제 비밀번호가 포함된 properties·JAR는 공유·커밋하지 않는다.
+- 풀은 `spring.datasource.hikari.*`(10/2/10000/3000/600000/1800000), 시간대는 `connection-init-sql=SET TIME ZONE 'Asia/Seoul'`이다. `QuartzConfig`는 매일 03시 임시파일 정리를 예약한다. 자동 PostgreSQL 백업은 미구현이다.
+- 접속 함정: Supabase 직접 연결 호스트(`db.<ref>.supabase.co`)는 **IPv6 전용**이라 IPv4만 있는 네트워크에서는 이름 해석부터 실패한다. 이 환경은 Session pooler(`aws-1-ap-southeast-1.pooler.supabase.com:5432`, 사용자 `postgres.<ref>`)로 접속했다. 기존 기록의 MERGE 검증은 현행 Mapper 전체 검증과 구분한다. 후속 검토에서 Q&A·공휴일의 `UPDATE SET target.컬럼`이 PostgreSQL 비호환임을 발견하여 대상 수식어를 제거했다. 변경 후 실제 PostgreSQL에서 해당 두 MERGE의 INSERT·UPDATE 각각 1행, 같은 키 1행 유지·값 반영·검증 레코드 삭제를 확인했다. 근거: `Qna_SQL.xml`, `Schedule_SQL.xml`, [PG 17 MERGE](https://www.postgresql.org/docs/17/sql-merge.html), [실제 Supabase 쓰기 기록](verification-log.md#219-2026-11-22-supabase-hikaricp-실접속업무-쓰기-검증).
+- 자동 테스트는 격리 PostgreSQL을 사용하며 실제 Supabase에 쓰지 않는다. 실제 Supabase Q&A·공휴일 쓰기는 [2.19절](verification-log.md#219-2026-11-22-supabase-hikaricp-실접속업무-쓰기-검증), 단일 DB 구성의 검증은 [2.21절](verification-log.md#221-2026-11-22-postgresql-단일-dbboot-자동-구성-정리)을 따른다. 전체 PostgreSQL 업무·백업/복원·Data API/RLS 전체 검증을 완료했다는 뜻은 아니다.
 - 운영 DB 제품/버전과 운영 스키마: 미확인.
 
 ## 주요 테이블 (최신 정의)
 
-현행 객체의 원본은 `db/schema.sql`, 필수 초기값의 원본은 `db/seed.sql`이다. 같은 객체에 대한 변경 결과를 최종 CREATE에 반영하며 기존 DB용 ALTER/백필과 구분한다. [SQL 배치 기준](../common/sql-standard.md#db-변경을-어느-파일에-넣을지)을 따른다.
+현행 객체의 원본은 `db/postgres/schema.sql`, 필수 초기값의 원본은 `db/postgres/seed.sql`이다. 같은 객체에 대한 변경 결과를 최종 CREATE에 반영하며 기존 DB용 ALTER/백필과 구분한다. 아래 표의 `schema.sql`·`seed.sql`은 이 PostgreSQL 경로를 뜻한다. [SQL 배치 기준](../common/sql-standard.md#db-변경을-어느-파일에-넣을지)을 따른다.
 
 | 테이블 | 확인된 용도/구조 | 주의 |
 | --- | --- | --- |
@@ -35,7 +38,7 @@
 | `ATCH_FILE` | 파일 ID·그룹 ID·원본/물리 파일명·경로·크기·확장자·등록 정보 (`USE_YN` 없음) | hard delete. 기존 `OTHER_` 그룹은 `DROPZONE_`으로 이전된 상태 |
 | `SAMPLE` | eGovFrame CRUD 대상. 빈 DB에 샘플 레코드는 넣지 않음 | 매퍼가 살아 있어 테이블 유지 |
 | `IDS` | eGovFrame 샘플 ID 생성기. `SAMPLE` 다음 ID 1로 초기화 | 샘플 레코드가 없으므로 1부터 등록 가능 |
-| `BOARD` | 게시판. `BOARD_TYPE`: CK·TOAST·FAQ·QNA. `CONTENT CLOB`, 첨부 `BOARD_` 그룹, 공지·중요글·Q&A 공개 구분·초성·메일/SMS 발송 상태를 최종 정의에 포함 | 공지·중요글·발송 선점은 기본 'N', `ASK_TYPE` 기본 'PUBLIC'. TOAST 커서 목록은 공지 고정 정렬을 쓰지 않음 |
+| `BOARD` | 게시판. `BOARD_TYPE`: CK·TOAST·FAQ·QNA. `CONTENT TEXT`, 첨부 `BOARD_` 그룹, 공지·중요글·Q&A 공개 구분·초성·메일/SMS 발송 상태를 최종 정의에 포함 | 공지·중요글·발송 선점은 기본 'N', `ASK_TYPE` 기본 'PUBLIC'. TOAST 커서 목록은 공지 고정 정렬을 쓰지 않음 |
 | `COMM_CODE` | 공통코드. 마스터는 `MASTR_CODE = DETAIL_CODE`인 행 | 별도 마스터 테이블 없음 |
 | `QNA_ANSWER` | Q&A 답변. `BOARD`와 1:1, 질문 삭제 시 cascade | 답변 존재 여부로 상태 판정 |
 | `MEMO_REPORT` | 메모보고. 상태 보고→확인/의견 |  |
@@ -59,7 +62,7 @@
 
 ## 추가 기능별 객체 (최신 정의)
 
-아래 객체도 모두 `db/schema.sql`에 최종 정의가 있다. 메뉴·역할·권한 초기값은 `seed.sql`에서 필요한 부분만 가져간다. 과거 버전 경로와 실행 증거는 [변경 기록](#스키마-변경-기록)에 보존하고 현재 실행 검증과 구분한다.
+아래 객체도 모두 `db/postgres/schema.sql`에 최종 정의가 있다. 메뉴·역할·권한 초기값은 `db/postgres/seed.sql`에서 필요한 부분만 가져간다. 과거 버전 경로와 실행 증거는 [변경 기록](#스키마-변경-기록)에 보존하고 현재 실행 검증과 구분한다.
 
 | 객체/영역 | 현재 SQL | 확인된 용도/구조 | 주의 (DB종속·보존·백업) |
 | --- | --- | --- | --- |

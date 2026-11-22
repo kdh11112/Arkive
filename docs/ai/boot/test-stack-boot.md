@@ -37,31 +37,21 @@ class ArkiveSmokeTest {
 @SpringBootTest(classes = EgovBootApplication.class)
 @AutoConfigureMockMvc
 @TestPropertySource("classpath:/application-test.properties")
+@ContextConfiguration(initializers = PostgresTestDatabaseInitializer.class)
 public @interface ArkiveIntegrationTest {
 }
 ```
 
-대상 프로젝트에서는 `IntegrationTest`로 이름을 바꾸고 `classes`를 대상 앱 클래스로 바꾼다.
+대상 프로젝트에서는 `IntegrationTest`로 이름을 바꾸고 `classes`를 대상 앱 클래스로 바꾼다. 초기화기와 테스트 DB 의존성은 대상 DB에 맞춰 스펙 담당자가 별도로 준비한다.
 
-테스트 DB는 main 설정을 덮어쓰는 별도 파일로 분리한다.
-
-```properties
-# src/test/resources/application-test.properties
-Globals.hsql_server.DatabasePath=./target/test-db/ArkiveDB
-Globals.hsql_server.Port=9002
-Globals.hsql_server.Url=jdbc:log4jdbc:hsqldb:hsql://127.0.0.1:9002/ArkiveDB
-# 예약 덤프도 앱 DB와 분리한다. 대상 스펙 담당자가 테스트 설정으로 준비한다.
-Globals.dumpPath=./target/test-backup/ArkiveDB.sql
-# 실제 SMTP로 나가지 않게 테스트에서는 메일을 끈다. 필요하면 테스트 클래스에서 목으로 대체한다.
-arkive.mail.enabled=false
-```
+테스트 설정은 `application-test.properties`로 분리하고 실제 값은 원본의 `src/test/resources/application-test.properties.template`을 참고한다. Arkive는 `PostgresTestDatabaseInitializer`가 컨텍스트 시작 전에 로컬 PostgreSQL을 기동하고 `spring.datasource.*`를 격리 접속 정보로 덮어쓴다. 초기화기의 `embedded-postgres` 테스트 전용 의존성과 바이너리 버전은 원본 `pom.xml`에서 확인한다.
 
 주의:
 
 - `src/test/resources/application.properties`를 두면 main 설정 전체가 가려진다. 키가 다른 별도 파일 + `@TestPropertySource`를 쓴다.
-- `Globals.hsql_server.Port`와 `Globals.hsql_server.Url`의 포트는 반드시 같아야 한다.
-- Arkive 데모는 빈 테스트 DB에도 같은 `db/schema.sql` → `db/seed.sql`을 한 번 적용한다. 기존 테스트 DB는 재사용하며 초기화 SQL 변경 시 명시적으로 갱신하거나 새 테스트 경로를 선택한다. 기존 DB가 있는 대상은 해당 프로젝트의 마이그레이션을 재사용한다(스키마 단일 진실 공급원).
-- Arkive의 현재 `application-test.properties`는 예약 덤프 경로를 별도로 지정하지 않는다. 구현 에이전트가 테스트 파일을 바꾸지 않고 검증할 때는 `verify.cmd -DGlobals.dumpPath=./target/test-backup/ArkiveDB.sql`처럼 격리 경로를 명시한다. SQL 덤프를 완전한 복구 백업으로 가정하지 않는다.
+- Arkive 테스트 DB는 `target/test-postgres/<UUID>`·자동 선택 포트를 사용하며 실제 Supabase와 분리된다. Docker·별도 PostgreSQL 설치는 필요 없다.
+- 초기화기는 새 테스트 DB에 `db/postgres/schema.sql` → `db/postgres/seed.sql`을 한 번 적용한다. 테스트 JVM 안에서 DB를 공유하며 `spring.sql.init.mode=never`로 Boot의 중복 적용을 막는다. 대상은 해당 프로젝트의 마이그레이션·스키마를 재사용한다.
+- 테스트에서는 메일·SMS 등 외부 발송과 예약 작업을 비활성화한다. 운영 접속 정보·비밀값을 테스트 설정에 넣지 않는다.
 - 여러 통합 테스트가 서로 다른 `@SpringBootTest` 설정을 쓰면 컨텍스트가 갈라져 같은 DB 포트를 두 번 열 수 있다. 공통 합성 애노테이션으로 설정을 통일한다.
 
 ## 2. JaCoCo (핵심 클래스 한정)
@@ -142,7 +132,7 @@ AGENTS.md 품질 관문의 실행 주체다. Secrets(DB URL·키)는 프로젝�
 - Controller/API 테스트를 기능별로 넓힌다. 최소한 로그인·권한·파일 업로드·엑셀부터.
 - Cucumber: feature 파일은 인간 승인 후 고정, 구현 에이전트의 테스트 파일 수정 금지(AGENTS.md 품질 관문 참조).
 - PIT: 변경 모듈의 핵심 클래스 한정 + 야간 전체 실행. 전체 상시는 빌드가 길어진다.
-- Testcontainers: 대상 DB가 Oracle/PostgreSQL이면 해당 제품으로 Mapper/SQL을 추가 검증한다. HSQLDB 테스트만으로 이식 완료를 판단하지 않는다.
+- 대상 DB에 맞는 격리 인스턴스 또는 Testcontainers로 Mapper/SQL을 검증한다. 다른 DB 제품의 테스트 결과만으로 이식 완료를 판단하지 않는다.
 
 ## 이식 체크리스트
 

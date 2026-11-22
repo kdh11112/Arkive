@@ -29,6 +29,7 @@
 - [x] 아이디 저장 체크 (localStorage) — [GUI 검증 기록](docs/ai/project/verification-log.md#215-2026-11-18-a1-계정-묶음-gui-재검증-worker-수행--총괄-대조)
 - [x] 약관동의 (버전·동의이력) — [GUI 검증 기록](docs/ai/project/verification-log.md#215-2026-11-18-a1-계정-묶음-gui-재검증-worker-수행--총괄-대조)
 - [x] 회원가입 + 아이디 찾기(마스킹) + 비밀번호 찾기 — [GUI 검증 기록](docs/ai/project/verification-log.md#215-2026-11-18-a1-계정-묶음-gui-재검증-worker-수행--총괄-대조)
+- [x] 공휴일관리(달력) — Supabase/HikariCP에서 등록·동일 날짜 이름 수정·삭제 및 DB 1행 유지 확인 — [GUI 검증 기록](docs/ai/project/verification-log.md#219-2026-11-22-supabase-hikaricp-실접속업무-쓰기-검증)
 
 ### 구현 (재검증 대기)
 
@@ -39,7 +40,7 @@
 - [x] Swagger (API 문서)
 - [x] 이중등록방지 Thymeleaf 적용
 - [x] FAQ관리
-- [x] Q&A관리 (질문·답변 분리)
+- [x] Q&A관리 (질문·답변 분리) — 질문 등록·관리자 답변 등록/수정·삭제는 [Supabase GUI 확인](docs/ai/project/verification-log.md#219-2026-11-22-supabase-hikaricp-실접속업무-쓰기-검증). 질문 수정·권한별 전체 GUI 시나리오는 재검증 대기.
 - [x] 통합검색 + 초성검색 (DB LIKE, Elasticsearch 선택)
 - [x] 로그인 (세션 기반, 실패 잠금, 단일 진입)
 - [x] 사이트맵 (로그인 사용자 권한별 메뉴)
@@ -50,7 +51,6 @@
 - [x] 강의-설문 연계형 수료
 - [x] 개인정보 보호 (마스킹·감사 로그·연락처 암호화)
 - [x] 공지 고정 (CK 공지, TOAST 제외)
-- [x] 공휴일관리(달력)
 - [x] 동영상 인코딩 + 강의형 콘텐츠 (FFmpeg 선택 실행) — 강의관리 화면 및 FFmpeg 비활성 상태 표시 확인
 - [x] 권한관리 (역할별 메뉴 조회·쓰기, 서버 검사)
 - [x] 글쓰기 본문 sanitize (Lucy core)
@@ -68,7 +68,7 @@
 - [x] 상담관리
 - [x] 설문관리 세트 (템플릿→설문→질문→항목→참여→통계)
 - [x] 약도관리 (카카오 지도 키가 있을 때 지도 표시)
-- [x] 약식결재 (단일 결재자)
+- [x] 약식결재 (단일 결재자) — 상세 화면의 문서 ID 전달 결함 확인. 최소 수정·상신→승인→이력 GUI 재검증 대기 — [현재 상태](docs/ai/project/verification-log.md#221-2026-11-22-postgresql-단일-dbboot-자동-구성-정리)
 - [x] 엑셀 업로드/다운로드 + 양식 일괄등록
 - [x] 온라인POLL (세션 중복투표 차단)
 - [x] 일정관리(개인)·일지관리·메모할일
@@ -106,14 +106,29 @@ verify.cmd
 ```
 
 - 기본 주소: `http://localhost:8080`
-- 앱 DB: `data/ArkiveDB`, HSQLDB 9001. 테스트 DB: `target/test-db`, 9002로 분리.
-- Java 17·Maven 준비 후 Git checkout을 실행하면 HSQLDB도 자동 시작한다. 별도 DB 설치·접속 설정은 필요 없다(최초 Maven 의존성 다운로드에는 네트워크가 필요할 수 있다).
-- 빈 DB에만 `src/main/resources/db/schema.sql` → `seed.sql`을 한 번 실행한다. Java·화면 코드를 수정하고 서버를 재시작해도 기존 DB를 다시 CREATE하거나 시드를 덮어쓰지 않는다.
-- 초기화 SQL이 바뀌거나 기존 DB가 비호환이면 자동 삭제·갱신하지 않고 시작을 중단한다. [DB 갱신·새 경로 사용법](docs/ai/project/verification-log.md#4-db-마이그레이션-현황-및-개발자-사용법)을 따른다.
+- DB는 PostgreSQL 단일 구성이며 기본 접속 대상은 Supabase다. Java 17·Maven을 준비하고 `src/main/resources/application.properties`의 `spring.datasource.url`·`username`·`password`를 확인한다. 연결 풀은 Spring Boot가 HikariCP로 자동 구성한다.
+- 동영상 파일 저장 기본 경로는 `data/vod/`이며 `arkive.vod.path`·`VOD_PATH`로 지정한다.
+- 자동 테스트는 `PostgresTestDatabaseInitializer`가 로컬 PostgreSQL **17.12**를 격리 기동한다. `target/test-postgres/<UUID>`와 자동 선택 포트를 사용하며 실제 Supabase에 접속하지 않는다. Docker·별도 PostgreSQL 설치는 필요 없다.
+- 새 DB에만 `src/main/resources/db/postgres/schema.sql` → `seed.sql`을 담당자가 적용하고, 기존 DB에는 시드를 다시 실행하지 않는다.
+- 기존 DB의 스키마 변경은 별도 마이그레이션으로 처리한다. [DB 갱신·보존 주의](docs/ai/project/verification-log.md#4-db-마이그레이션-현황-및-개발자-사용법)를 따른다.
+- `verify.cmd`는 `clean verify`를 실행한다. IDE가 같은 `target/classes`를 쓰거나 JAR를 실행 중이면 먼저 빌드 시점을 조율한다. 별도 빌드 복사본에서 검증하는 경우 원본과의 동일성을 확인한다.
 - 개발용 로그인은 `admin` / `Admin1234!`이며 처음 로그인하면 약관 자리표시자에 대한 동의 화면을 거친다. 실제 서비스에 이 계정·문구를 그대로 이식하지 않는다. 게시물·회의실·연차 등 업무 데이터는 화면에서 등록한다.
-- schema/seed 전환의 실제 기동·GUI·파일 DB 재시작 결과와 미검증 범위는 [전환 검증 기록](docs/ai/project/verification-log.md#22-2026-11-08-최신-schemaseed-초기화-전환-검증)에 남긴다.
+- 자동 테스트 결과는 [테스트 실행 현황](src/test/README.md#최신-실행-결과), 기능별 GUI·실행 결과는 [검증 기록](docs/ai/project/verification-log.md)을 따른다.
 - 메일 등 외부 연동은 기본 비활성·미설정이다. 실제 발송·계약·운영 환경까지 검증됐다는 뜻은 아니다.
-- Java 17, eGovFrame Boot 5.0.0, Maven, Thymeleaf, MyBatis, HSQLDB 기반이다.
+- Java 17, eGovFrame Boot 5.0.0, Maven, Thymeleaf, MyBatis, Spring Boot JDBC·HikariCP, PostgreSQL 기반이다.
+
+### 기본 DB: Supabase PostgreSQL + HikariCP
+
+Spring Boot JDBC·HikariCP로 Supabase PostgreSQL에 연결한다.
+
+- 접속·풀 설정: `src/main/resources/application.properties`의 `spring.datasource.*`·`spring.datasource.hikari.*`.
+- DB가 일시정지돼 연결되지 않으면 [Supabase 프로젝트](https://supabase.com/dashboard/project/xzjcvayeseiiohoebyvr)에서 **Resume project** 후 앱을 다시 실행한다.
+- 실제 비밀번호가 포함된 properties·JAR는 공유·커밋하지 않는다.
+
+## 디자인 참고
+
+- [DESIGN SPECTRUM — 디자인 샘플 선택기](https://yupkidangju.github.io/design_sample_selector/): 20개 디자인 스타일을 웹·모바일·게임·대시보드 예제로 비교하고, 한국어·영어 AI 구현 프롬프트를 확인할 수 있다.
+- 화면 개편·기능 이식 시 원하는 스타일을 고르고 AI에게 UI 구현을 요청하는 참고 자료다. Arkive 메인·통계에는 벤토 UI, 업무 목록·입력 화면에는 단정한 그리드 구성을 참고할 수 있다. 현재 Arkive에 해당 디자인을 적용했다는 뜻은 아니다.
 
 ## 필요한 문서부터 읽기
 

@@ -155,7 +155,7 @@
 		WHEN NOT MATCHED THEN INSERT (CARD_ID, USER_NM, REGIST_DT) VALUES (source.card_id, source.user_nm, CURRENT_TIMESTAMP)
 	</update>
 
-	<!-- 사용등록 취소 -->
+	<!-- 카드 사용등록 취소 (CARD_USER 매핑 삭제) -->
 	<delete id="cancelUseCard" parameterType="egovMap">
 		DELETE FROM CARD_USER
 		WHERE CARD_ID = #{cardId}

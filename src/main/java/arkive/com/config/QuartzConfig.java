@@ -12,28 +12,13 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class QuartzConfig {
 
+    // TempFileCleanupJob이 스케줄러 컨텍스트에서 ApplicationContext를 꺼내므로 이 연결은 유지한다.
+    // DB 백업 작업은 예약하지 않는다. PostgreSQL 백업은 pg_dump 등 별도 도구로 수행한다.
     @Bean
     public SchedulerFactoryBeanCustomizer schedulerFactoryBeanCustomizer() {
         return schedulerFactoryBean -> {
             schedulerFactoryBean.setApplicationContextSchedulerContextKey("applicationContext");
         };
-    }
-
-    @Bean
-    public JobDetail DBJobDetail() {
-        return JobBuilder.newJob(DBJob.class)
-            .withIdentity("DBJob")
-            .storeDurably()
-            .build();
-    }
-
-    @Bean
-    public Trigger sampleJobTrigger() {
-        return TriggerBuilder.newTrigger()
-            .forJob(DBJobDetail())
-            .withIdentity("DBTrigger")
-            .withSchedule(CronScheduleBuilder.cronSchedule("0 0/10 * * * ?")) // 10분마다 실행
-            .build();
     }
 
     @Bean

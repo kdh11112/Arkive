@@ -24,16 +24,16 @@ Arkive는 기능 이식용 아카이브/레퍼런스 프로젝트다. 아래는 
 | 빌드 | Maven, artifact `Arkive:Arkive:1.0.0` | `pom.xml` |
 | Java / 프레임워크 | Java 17, eGovFrame Boot parent 5.0.0, Spring Boot 의존성 사용 | `pom.xml` |
 | 웹 화면 | Thymeleaf, 템플릿은 `src/main/resources/templates/thymeleaf/` | `pom.xml`, `application.properties` |
-| 데이터 접근 | MyBatis, Java Config, Mapper/XML | `egovframework.example.config.EgovConfigMapper`, `EgovConfigDatasource` |
+| 데이터 접근 | MyBatis, Java Config, Mapper/XML, Boot JDBC 자동 구성의 HikariCP 연결 풀 | `egovframework.example.config.EgovConfigMapper`, `pom.xml`, `application.properties` |
 | 기본 포트 | 8080 | `application.properties` |
-| 현재 설정 DB | `Globals.DbType=hsql_server`; `./data/ArkiveDB` 파일 DB를 `Globals.hsql_server.Port=9001`에서 제공. 테스트는 9002 | `application.properties`, `EgovConfigDatasource.java` |
-| 데모 DB 초기화 | 빈 DB에 최신 `schema.sql` → 필수 `seed.sql` 1회. 정상 재시작은 읽기 확인 후 재사용, 불일치는 자동 삭제 없이 중단 | `EgovConfigDatasource`, `HsqlDemoDatabaseInitializer`, `src/main/resources/db/schema.sql`·`seed.sql`; 상세는 [검증 및 변경 로그](verification-log.md#4-db-마이그레이션-현황-및-개발자-사용법) |
+| 현재 설정 DB | PostgreSQL 단일 구성, 기본 접속 대상 Supabase. 테스트는 로컬 embedded PostgreSQL 17.12·자동 선택 포트 | `application.properties`, `pom.xml`, `src/test/java/arkive/support/PostgresTestDatabaseInitializer.java` |
+| DB 초기화 | 새 대상 DB에만 수동 schema→seed, 테스트는 격리 DB에 초기화기가 적용 | `src/main/resources/db/postgres/schema.sql`·`seed.sql`, 테스트 초기화기; 상세는 [검증 및 변경 로그](verification-log.md#4-db-마이그레이션-현황-및-개발자-사용법) |
 | 모니터링 | Actuator `health,info,metrics`, `health.show-details=always`; 메일 헬스 기본 비활성 | `application.properties`; 운영 공개 범위 미확인 |
 | 운영 배포 / 실서비스 DB | 미확인. 로컬 설정으로 운영 구성을 추정하지 않는다. | 운영 담당자 확인 필요 |
 
 ### 실행 전 확인할 환경 설정
 
-근거는 `src/main/resources/application.properties`다. 실제 자격증명은 환경변수로 주입하고 문서·로그·이식 파일에 복사하지 않는다. 아래 기본값만으로 실연동·운영 안전성을 보장하지 않는다.
+근거는 `src/main/resources/application.properties`다. DB는 사용자 요청에 따라 로컬 properties 직접 입력값을 보존한다. 공유/배포 시 실제 자격증명은 대상의 비밀관리 수단으로 분리하며 문서·로그·이식 파일에 복사하지 않는다. 아래 기본값만으로 실연동·운영 안전성을 보장하지 않는다.
 
 | 기능 | 키 / 기본값 | 확인할 것 |
 | --- | --- | --- |
@@ -46,8 +46,11 @@ Arkive는 기능 이식용 아카이브/레퍼런스 프로젝트다. 아래는 
 | 필드 암호화 | `ARKIVE_FIELD_KEY` 빈 값 | TOTP·연락처·사용자 휴대전화 저장이 거부됨. 키 분실 시 암호문 복구 불가 |
 | SSE | `layout.html`의 `ARKIVE_SSE_ENABLED=false` | 환경변수가 아닌 화면 설정; 활성화·화면별 옵션은 [기능 카탈로그](feature-catalog.md#3-알림-설정과-실패-처리-sse-mail-sms) |
 
-- **로컬 데모 실행:** Java 17·Maven이 준비된 환경에서 `mvn spring-boot:run` 실행 시 HSQLDB가 자동 구동된다. DB URL과 `Globals.hsql_server.Port`를 일치시킨다. `data/`는 로컬 DB이며 실행 중 `.lck`를 직접 삭제하지 않는다.
-- **예약 백업:** `QuartzConfig`는 10분 Trigger로 `DBJob`을 호출해 `Globals.dumpPath`(기본 `./backup/ArkiveDB.sql`)에 HSQLDB `SCRIPT` 덤프를 남긴다.
+- **기본 실행:** Java 17·Maven을 준비하고 `src/main/resources/application.properties`의 `spring.datasource.driver-class-name/url/username/password`를 직접 수정한 뒤 `mvn spring-boot:run`으로 PostgreSQL에 연결한다. Boot가 HikariDataSource를 구성한다. 풀은 `spring.datasource.hikari.*`(10/2/10000/3000/600000/1800000), 시간대는 `connection-init-sql=SET TIME ZONE 'Asia/Seoul'`이다.
+- **로컬 설정 주의:** 현재 properties에는 실제 비밀번호가 있으므로 파일과 이를 포함한 JAR를 공유·커밋하지 않는다. 배포/공유 시에는 비밀번호를 제거하고 대상의 비밀관리 수단을 사용한다.
+- **파일 저장소:** `data/vod/`는 `arkive.vod.path=${VOD_PATH:./data/vod/}`의 동영상 저장 기본 경로다. `FfmpegVideoEncodingService`가 업로드 시 디렉터리를 생성하며 저장소 내용은 `.gitignore`로 제외한다.
+- **예약 작업·백업:** `QuartzConfig`는 매일 03시 `TempFileCleanupJob`을 예약하며 ApplicationContext 전달 customizer를 사용한다. PostgreSQL 자동 백업·복원은 미구현이며 `pg_dump` 등 별도 준비가 필요하다.
+- **검증 안전:** `verify.cmd`는 `clean verify`이므로 IDE와 같은 `target/classes`를 사용하는 빌드는 시점을 조율한다. 현재 구성의 격리 PostgreSQL 자동 검증과 GUI 잔여 항목은 [최신 정리 기록](verification-log.md#221-2026-11-22-postgresql-단일-dbboot-자동-구성-정리)을 따른다.
 
 ---
 
@@ -73,7 +76,7 @@ flowchart TD
     subgraph DataLayer["데이터 계층 (Data Layer)"]
         Mapper["MyBatis Mapper Interface"]
         MapperXml["Mapper XML (SQL)"]
-        DB[(HSQLDB / 운영 DB)]
+        DB[(PostgreSQL 단일 / 테스트는 격리 PG)]
     end
 
     Client -->|HTTP Request| Filter
@@ -126,7 +129,7 @@ Thymeleaf + JS → Controller → Service/Impl → Mapper 인터페이스 → Ma
 | --- | --- |
 | 게시글 알림 | `BoardController` → `BoardNotificationEvent` → `BoardNotificationEventListener` → SSE·메일·SMS 채널 격리 발송. 구독·수신 동의·선점·실패 규칙은 [기능 카탈로그](feature-catalog.md#3-알림-설정과-실패-처리-sse-mail-sms) 참조 |
 | 비동기 메일 | 회원가입·OAuth 가입·관리자 등록·비밀번호 찾기 → `MailAsyncService` → `@Async("mailTaskExecutor")` → `MailServiceImpl` → `JavaMailSender`. Executor는 `EgovConfigAsync`, 기본 비활성 |
-| DB 자동 백업 | `arkive.com.config.QuartzConfig`의 10분 Trigger → `DBJob` → HSQLDB `SCRIPT` 덤프. 경로·기존 파일 삭제 주의점은 [검증 및 변경 로그](verification-log.md#44-보존복구-주의) 참조 |
+| 임시파일 정리 / DB 백업 | `QuartzConfig` → 매일 03시 `TempFileCleanupJob`. DB 자동 백업은 미구현. [보존·복구 주의](verification-log.md#44-보존복구-주의) 참조 |
 | 일일 집계 배치 | `BatchConfig`의 `@EnableBatchProcessing`·`DefaultBatchConfiguration` (`ResourcelessJobRepository`·`txManager` 사용). `dailyStatsJob` → `dailyStatsStep` → `DailyStatsTasklet` → `DailyStatsAggregator` → `BatchMapper` → `STAT_DAILY`. 수동 실행만 지원하며 재집계 시 기존 집계 삭제 후 재삽입(멱등) |
 
 ---
@@ -140,8 +143,8 @@ Thymeleaf + JS → Controller → Service/Impl → Mapper 인터페이스 → Ma
 | 시스템 메뉴 Mapper/SQL | `SystemController` → `SystemService` → `SystemMapper` → `System_SQL.xml` | 메뉴 화면·AJAX 호출, 메뉴 초기 데이터 및 테이블 구조 |
 | 파일 공통 처리 | `FileController` → `FileService` / 파일 유틸 → `File_SQL.xml` 및 파일 시스템 | 업로드 방식(일반/TUS/드롭존), 다운로드·삭제 호출처, 저장 경로, 파일 접근 권한 |
 | 공통 화면 조각/정적 자원 | Thymeleaf `layout/`, `comm/`, `static/` | 레이아웃을 include하는 전체 화면 렌더링 및 UI 반응형 깨짐 여부 |
-| DB 초기화/예약 작업 | `EgovConfigDatasource`, `HsqlDemoDatabaseInitializer`, `application.properties`, `db/schema.sql`·`seed.sql`, `QuartzConfig`, `DBJob` | 빈 DB 1회 초기화, 기존 DB 호환성 검증, 체크섬 검증, 덤프 스케줄 |
-| 메뉴 시드·사이드바 | `db/seed.sql` → `MENU`·`APP_ROLE`·`APP_USER_ROLE`·`APP_ROLE_MENU`, `MenuInterceptor` | 메뉴 ID·상위 관계·순서·역할 권한 유지, 새 메뉴 추가 시 초기값 반영 |
+| DB 접속/초기화/예약 작업 | Boot JDBC 자동 구성, `application.properties`, `db/postgres/schema.sql`·`seed.sql`, `QuartzConfig`, 테스트 초기화기 | 앱 자동 초기화 없음, 새 DB 수동 적용·기존 DB 별도 마이그레이션, 테스트 격리, 임시파일 정리 |
+| 메뉴 시드·사이드바 | `db/postgres/seed.sql` → `MENU`·`APP_ROLE`·`APP_USER_ROLE`·`APP_ROLE_MENU`, `MenuInterceptor` | 메뉴 ID·상위 관계·순서·역할 권한 유지, 새 메뉴 추가 시 초기값 반영 |
 | 메뉴 권한 검사 | `PermissionService`, `MenuPermissionInterceptor`, `MenuInterceptor`, `RoleManageController` | 컨트롤러 URL→메뉴 ID 매핑, READ/WRITE 판정, 관리자 우회, 사이드바 노출 |
 | 로그인 세션·역할 | `LoginController`, `OauthController`, `LoginSessionRegistry`, `AuthServiceImpl`, `PermissionService` | 로그인·로그아웃·세션 만료, 중복 로그인 제어, 사용자 삭제 시 역할 정리 |
 | 메일 발송 | `MailAsyncService` → `MailServiceImpl` → `JavaMailSender`, `EgovConfigAsync` | 회원가입·OAuth·비밀번호 찾기·게시판 알림 호출처, SMTP 설정 및 수신 동의 필터 |

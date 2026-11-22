@@ -27,9 +27,9 @@
 - [ ] 이벤트 / 리스너:
 - [ ] Mapper 인터페이스:
 - [ ] Mapper XML:
-- [ ] `db/schema.sql` 중 기능별 테이블·컬럼·제약조건·인덱스:
-- [ ] `db/seed.sql` 중 필요한 메뉴·역할·사용자-역할·메뉴 권한·필수 초기값:
-- [ ] 기존 대상 DB 갱신 절차·데모 HSQLDB 서버/초기화기 제외 여부:
+- [ ] `db/postgres/schema.sql` 중 기능별 테이블·컬럼·제약조건·인덱스:
+- [ ] `db/postgres/seed.sql` 중 필요한 메뉴·역할·사용자-역할·메뉴 권한·필수 초기값:
+- [ ] 기존 대상 DB 갱신 절차:
 - [ ] `application.properties`의 `Globals.*` 키:
 - [ ] 메일·비동기 설정(`spring.mail.*`, `arkive.mail.*`, Executor):
 - [ ] `pom.xml` 의존성:

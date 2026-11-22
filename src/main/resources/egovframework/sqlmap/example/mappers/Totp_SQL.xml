@@ -2,17 +2,20 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="arkive.admin.totp.service.impl.TotpMapper">
 
+	<!-- 사용자 TOTP 설정 조회 (암호화 시크릿·활성여부·확인시각) -->
 	<select id="selectTotp" parameterType="string" resultType="egovMap">
 		SELECT USER_ID, SECRET_ENC, ENABLED_YN, REGIST_DT, CONFIRMED_DT, UPDT_DT
 		FROM APP_USER_TOTP
 		WHERE USER_ID = #{userId}
 	</select>
 
+	<!-- 사용자 TOTP 시크릿 신규 발급 저장 (미활성 상태) -->
 	<insert id="insertTotp" parameterType="egovMap">
 		INSERT INTO APP_USER_TOTP (USER_ID, SECRET_ENC, ENABLED_YN, REGIST_DT)
 		VALUES (#{userId}, #{secretEnc}, 'N', CURRENT_TIMESTAMP)
 	</insert>
 
+	<!-- TOTP 시크릿 재발급 및 활성 해제 -->
 	<update id="updateTotpSecret" parameterType="egovMap">
 		UPDATE APP_USER_TOTP
 		SET SECRET_ENC = #{secretEnc},
@@ -22,6 +25,7 @@
 		WHERE USER_ID = #{userId}
 	</update>
 
+	<!-- TOTP 인증 활성화 (확인 시각 기록) -->
 	<update id="enableTotp" parameterType="string">
 		UPDATE APP_USER_TOTP
 		SET ENABLED_YN = 'Y',
@@ -30,21 +34,25 @@
 		WHERE USER_ID = #{userId}
 	</update>
 
+	<!-- 사용자 TOTP 설정 삭제 -->
 	<delete id="deleteTotp" parameterType="string">
 		DELETE FROM APP_USER_TOTP
 		WHERE USER_ID = #{userId}
 	</delete>
 
+	<!-- 사용자 복구코드 전체 삭제 (재발급 전 정리) -->
 	<delete id="deleteRecoveryCodes" parameterType="string">
 		DELETE FROM APP_USER_TOTP_RECOVERY
 		WHERE USER_ID = #{userId}
 	</delete>
 
+	<!-- 복구코드 1건 저장 (해시·미사용 상태) -->
 	<insert id="insertRecoveryCode" parameterType="egovMap">
 		INSERT INTO APP_USER_TOTP_RECOVERY (RECOVERY_ID, USER_ID, CODE_HASH, USED_YN, REGIST_DT)
 		VALUES (#{recoveryId}, #{userId}, #{codeHash}, 'N', CURRENT_TIMESTAMP)
 	</insert>
 
+	<!-- 미사용 복구코드 1건 조회 (해시 기준) -->
 	<select id="selectRecoveryCode" parameterType="string" resultType="egovMap">
 		SELECT RECOVERY_ID, USER_ID
 		FROM APP_USER_TOTP_RECOVERY
@@ -52,6 +60,7 @@
 			AND USED_YN = 'N'
 	</select>
 
+	<!-- 복구코드 사용 처리 (사용여부·사용시각) -->
 	<update id="markRecoveryCodeUsed" parameterType="string">
 		UPDATE APP_USER_TOTP_RECOVERY
 		SET USED_YN = 'Y',
@@ -60,6 +69,7 @@
 			AND USED_YN = 'N'
 	</update>
 
+	<!-- 사용자의 미사용 복구코드 개수 조회 -->
 	<select id="countUnusedRecoveryCodes" parameterType="string" resultType="int">
 		SELECT COUNT(*)
 		FROM APP_USER_TOTP_RECOVERY

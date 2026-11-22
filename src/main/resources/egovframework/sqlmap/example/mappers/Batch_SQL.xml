@@ -8,6 +8,7 @@
 		WHERE STAT_DATE = CAST(#{statDate} AS DATE)
 	</delete>
 
+	<!-- 게시판 유형별 글 수를 일별 통계로 적재 -->
 	<insert id="insertBoardStats" parameterType="egovMap">
 		INSERT INTO STAT_DAILY (STAT_DATE, STAT_TYPE, STAT_KEY, STAT_VALUE, REGIST_DT)
 		SELECT CAST(#{statDate} AS DATE), 'BOARD', BOARD_TYPE, COUNT(*), CURRENT_TIMESTAMP
@@ -16,6 +17,7 @@
 		GROUP BY BOARD_TYPE
 	</insert>
 
+	<!-- 일자별 로그인 성공 총 건수를 일별 통계로 적재 -->
 	<insert id="insertLoginStats" parameterType="egovMap">
 		INSERT INTO STAT_DAILY (STAT_DATE, STAT_TYPE, STAT_KEY, STAT_VALUE, REGIST_DT)
 		SELECT CAST(#{statDate} AS DATE), 'LOGIN', 'TOTAL', COUNT(*), CURRENT_TIMESTAMP
@@ -24,6 +26,7 @@
 			AND REGIST_DT &gt;= #{startDate} AND REGIST_DT &lt; #{endDate}
 	</insert>
 
+	<!-- 일자별 메뉴·개인정보·API 접근 총 건수를 적재 -->
 	<insert id="insertAccessStats" parameterType="egovMap">
 		INSERT INTO STAT_DAILY (STAT_DATE, STAT_TYPE, STAT_KEY, STAT_VALUE, REGIST_DT)
 		SELECT CAST(#{statDate} AS DATE), 'ACCESS', 'TOTAL', COUNT(*), CURRENT_TIMESTAMP
@@ -32,6 +35,7 @@
 			AND REGIST_DT &gt;= #{startDate} AND REGIST_DT &lt; #{endDate}
 	</insert>
 
+	<!-- 일자별 강의 수료 건수를 일별 통계로 적재 -->
 	<insert id="insertLectureCompleteStats" parameterType="egovMap">
 		INSERT INTO STAT_DAILY (STAT_DATE, STAT_TYPE, STAT_KEY, STAT_VALUE, REGIST_DT)
 		SELECT CAST(#{statDate} AS DATE), 'LECTURE_COMPLETE', 'TOTAL', COUNT(*), CURRENT_TIMESTAMP
@@ -40,6 +44,7 @@
 			AND COMPLETED_DT &gt;= #{startDate} AND COMPLETED_DT &lt; #{endDate}
 	</insert>
 
+	<!-- 일자별 설문 참여 건수를 일별 통계로 적재 -->
 	<insert id="insertSurveyParticipationStats" parameterType="egovMap">
 		INSERT INTO STAT_DAILY (STAT_DATE, STAT_TYPE, STAT_KEY, STAT_VALUE, REGIST_DT)
 		SELECT CAST(#{statDate} AS DATE), 'SURVEY_PARTICIPATION', 'TOTAL', COUNT(*), CURRENT_TIMESTAMP
@@ -47,6 +52,7 @@
 		WHERE SUBMIT_DT &gt;= #{startDate} AND SUBMIT_DT &lt; #{endDate}
 	</insert>
 
+	<!-- 해당 일자의 일별 통계 목록 조회 -->
 	<select id="selectDailyStats" parameterType="egovMap" resultType="egovMap">
 		SELECT STAT_DATE, STAT_TYPE, STAT_KEY, STAT_VALUE, REGIST_DT
 		FROM STAT_DAILY

@@ -18,7 +18,7 @@
 ## 1. 기능별 상세 및 주의점
 
 - **게시판 조회수 통계**
-  - **위치:** `arkive.admin.board.web.BoardController` (`/board/viewStats`), `BoardMapper`, `Board_SQL.xml`, `templates/thymeleaf/board/viewStats.html`, `db/schema.sql` (`BOARD_VIEW_LOG`)
+  - **위치:** `arkive.admin.board.web.BoardController` (`/board/viewStats`), `BoardMapper`, `Board_SQL.xml`, `templates/thymeleaf/board/viewStats.html`, `db/postgres/schema.sql` (`BOARD_VIEW_LOG`)
   - **동작 및 주의점:** 24시간 집계 창을 통과할 때만 로그 1건 적재. 일별 추이는 `CAST(VIEW_DT AS DATE)` 그룹핑, 빈 날짜는 0, 막대는 최대값 대비 % 표시. 순위의 `BOARD.VIEW_CNT`에는 로그 도입 전 누적값도 포함. 640px 이하 모바일 폭 대응 적용(격일 라벨 표시, 오늘 항상 표시). 누적 순위 표는 5열로 좁은 화면에서 가로 스크롤 발생. 조회 로그 보관·정리 정책 미확인.
   - **테스트:** `BoardViewStatsControllerTest` (3)
 - **게시판 검색 범위 분리 (제목/내용/제목+내용)**
@@ -26,7 +26,7 @@
   - **동작 및 주의점:** `searchCondition` 분기(`title`/`content`/`all`) 적용, 미지원 값은 `title`로 폴백. 본문 검색은 CONTENT 원문 LIKE라 `table`·`style` 태그 문자열도 검색될 수 있음(평문 컬럼 또는 DB별 `REGEXP_REPLACE` 필요).
   - **테스트:** `BoardSearchScopeControllerTest` (7)
 - **게시판 기본 기능 (공지사항·자료실, CK·TOAST, HWP 복붙, 이미지 업로드, 댓글)**
-  - **위치:** `arkive.admin.board.*`, `Board_SQL.xml`, `templates/thymeleaf/board/*`, `db/schema.sql` (`BOARD`, `BOARD_COMMENT`)
+  - **위치:** `arkive.admin.board.*`, `Board_SQL.xml`, `templates/thymeleaf/board/*`, `db/postgres/schema.sql` (`BOARD`, `BOARD_COMMENT`)
   - **동작 및 주의점:** HTML sanitize, 이중등록 방지, 첨부파일 삭제, 오프셋/커서 페이징, CLOB 변환, 초성 색인 이벤트 구현. 조회수는 게시글당 브라우저 24시간 1회 쿠키·세션 복합 집계. 댓글은 1단 평문 저장(대댓글 없음), 작성자 및 관리자만 삭제 가능.
   - **테스트:** `BoardMapperTest` (4), `BoardServiceImplTest` (11), `BoardControllerTest` (5), `BoardCommentControllerTest` (3), `BoardViewCountDailyWindowTest` (6)
 - **페이징 (공지사항: 오프셋, 자료실: 커서+더보기)**
@@ -76,7 +76,7 @@
   - **주의점:** CK 공지 목록 상단 우선 정렬(`NOTICE_YN DESC, REGIST_DT DESC`). 관리자만 변경 가능. 화면에서 '공지' 배지로 식별.
   - **테스트:** `BoardNoticeMapperTest` (2), `BoardNoticeControllerTest` (4)
 - **부서일정 / 개인일정 / 일지 / 메모할일 / 공휴일**
-  - **위치:** `arkive.admin.schedule.*`, `Schedule_SQL.xml`, `templates/thymeleaf/schedule/`, `db/schema.sql` (`SCHEDULE`, `HOLIDAY`)
+  - **위치:** `arkive.admin.schedule.*`, `Schedule_SQL.xml`, `templates/thymeleaf/schedule/`, `db/postgres/schema.sql` (`SCHEDULE`, `HOLIDAY`)
   - **주의점:** `SCHEDULE_TYPE`(`DEPT`/`PERSONAL`/`DAILY`/`TODO`) 단일 테이블 및 공통 쿼리 재사용. 공휴일(`HOLIDAY`)과 연계 렌더링.
   - **테스트:** `ScheduleControllerTest` (3)
 - **카테고리 설정 (jstree형 / 컬럼 드릴다운형)**
@@ -314,7 +314,7 @@
 
 ## 6. 기능 유지 기준
 
-- 기능을 추가하거나 변경할 때는 실제 화면(HTML/JS), Controller, Service, Mapper/SQL, DDL(`db/schema.sql`), 시드(`db/seed.sql`) 및 의존성을 함께 갱신한다.
-- Arkive는 타 프로젝트 이식을 위한 레퍼런스이므로 특정 DB 전용 문법(HSQLDB 전용 함수 등) 사용을 지양하고 표준 SQL을 우선한다.
+- 기능을 추가하거나 변경할 때는 실제 화면(HTML/JS), Controller, Service, Mapper/SQL, DDL(`db/postgres/schema.sql`), 시드(`db/postgres/seed.sql`) 및 의존성을 함께 갱신한다.
+- Arkive는 타 프로젝트 이식을 위한 레퍼런스이므로 특정 DB 전용 문법 사용을 지양하고 표준 SQL을 우선한다.
 - `@RequestMapping` 선언만 있고 화면이나 비즈니스 로직이 미완성인 경우 '구현완료'로 표시하지 않고 주의점에 제약을 명시한다.
 - 이식 수행 기록은 [feature-porting-sheet.md](../portable/feature-porting-sheet.md), 테스트 이식은 [test-porting-sheet.md](../portable/test-porting-sheet.md)에 남긴다.

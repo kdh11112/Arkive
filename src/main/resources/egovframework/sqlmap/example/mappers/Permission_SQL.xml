@@ -17,12 +17,14 @@
 		ORDER BY R.ROLE_ID
 	</select>
 
+	<!-- 역할 1건 상세 조회 -->
 	<select id="selectRoleDetail" parameterType="string" resultType="egovMap">
 		SELECT ROLE_ID, ROLE_NM, DESCRIPTION, USE_YN, REGIST_DT, UPDT_DT
 		FROM APP_ROLE
 		WHERE ROLE_ID = #{roleId}
 	</select>
 
+	<!-- 역할 ID 중복 여부 확인 (건수) -->
 	<select id="countRoleId" parameterType="string" resultType="int">
 		SELECT COUNT(*) FROM APP_ROLE WHERE ROLE_ID = #{roleId}
 	</select>
@@ -32,11 +34,13 @@
 		SELECT COUNT(*) FROM APP_USER WHERE USER_ID = #{userId} AND USE_YN = 'Y'
 	</select>
 
+	<!-- 역할 1건 등록 -->
 	<insert id="insertRole" parameterType="egovMap">
 		INSERT INTO APP_ROLE (ROLE_ID, ROLE_NM, DESCRIPTION, USE_YN, REGIST_DT)
 		VALUES (#{roleId}, #{roleNm}, #{description}, #{useYn}, CURRENT_TIMESTAMP)
 	</insert>
 
+	<!-- 역할 1건 수정 (이름·설명·사용여부) -->
 	<update id="updateRole" parameterType="egovMap">
 		UPDATE APP_ROLE
 		SET ROLE_NM = #{roleNm},
@@ -46,23 +50,28 @@
 		WHERE ROLE_ID = #{roleId}
 	</update>
 
+	<!-- 역할 1건 삭제 -->
 	<delete id="deleteRole" parameterType="string">
 		DELETE FROM APP_ROLE WHERE ROLE_ID = #{roleId}
 	</delete>
 
+	<!-- 역할의 메뉴 권한 전체 삭제 (권한 재설정용) -->
 	<delete id="deleteRoleMenus" parameterType="string">
 		DELETE FROM APP_ROLE_MENU WHERE ROLE_ID = #{roleId}
 	</delete>
 
+	<!-- 역할에 배정된 사용자 매핑 전체 삭제 -->
 	<delete id="deleteRoleUsers" parameterType="string">
 		DELETE FROM APP_USER_ROLE WHERE ROLE_ID = #{roleId}
 	</delete>
 
+	<!-- 역할-메뉴 권한 1건 등록 (읽기·쓰기) -->
 	<insert id="insertRoleMenu" parameterType="egovMap">
 		INSERT INTO APP_ROLE_MENU (ROLE_ID, MENU_ID, READ_YN, WRITE_YN, REGIST_DT)
 		VALUES (#{roleId}, #{menuId}, #{readYn}, #{writeYn}, CURRENT_TIMESTAMP)
 	</insert>
 
+	<!-- 역할-사용자 매핑 1건 등록 -->
 	<insert id="insertRoleUser" parameterType="egovMap">
 		INSERT INTO APP_USER_ROLE (USER_ID, ROLE_ID, REGIST_DT)
 		VALUES (#{userId}, #{roleId}, CURRENT_TIMESTAMP)
@@ -104,6 +113,7 @@
 		ORDER BY USER_ID
 	</select>
 
+	<!-- 사용자에게 배정된 유효 역할 ID 목록 조회 -->
 	<select id="selectUserRoleIds" parameterType="string" resultType="string">
 		SELECT UR.ROLE_ID
 		FROM APP_USER_ROLE UR
@@ -113,10 +123,12 @@
 		ORDER BY UR.ROLE_ID
 	</select>
 
+	<!-- 사용자에게 배정된 역할 매핑 전체 삭제 -->
 	<delete id="deleteUserRoles" parameterType="string">
 		DELETE FROM APP_USER_ROLE WHERE USER_ID = #{userId}
 	</delete>
 
+	<!-- 사용자-역할 매핑 1건 등록 -->
 	<insert id="insertUserRole" parameterType="egovMap">
 		INSERT INTO APP_USER_ROLE (USER_ID, ROLE_ID, REGIST_DT)
 		VALUES (#{userId}, #{roleId}, CURRENT_TIMESTAMP)

@@ -94,12 +94,13 @@
 		ORDER BY HOLIDAY_DE
 	</select>
 
-	<!-- 공휴일 등록 (MERGE: 같은 날짜 재등록 시 이름 갱신) -->
+	<!-- 공휴일 등록 (MERGE: 같은 날짜 재등록 시 이름 갱신).
+	     UPDATE SET의 대상 컬럼에는 target. 수식어를 쓰지 않는다(PostgreSQL 비호환). -->
 	<update id="insertHoliday" parameterType="egovMap">
 		MERGE INTO HOLIDAY target
 		USING (VALUES (#{holidayDe}, #{holidayNm})) source(holiday_de, holiday_nm)
 		ON target.HOLIDAY_DE = source.holiday_de
-		WHEN MATCHED THEN UPDATE SET target.HOLIDAY_NM = source.holiday_nm
+		WHEN MATCHED THEN UPDATE SET HOLIDAY_NM = source.holiday_nm
 		WHEN NOT MATCHED THEN INSERT (HOLIDAY_DE, HOLIDAY_NM) VALUES (source.holiday_de, source.holiday_nm)
 	</update>
 

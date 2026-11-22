@@ -52,7 +52,6 @@ import nz.net.ultraq.thymeleaf.layoutdialect.LayoutDialect;
 @Import({
         EgovConfigAspect.class,
         EgovConfigCommon.class,
-        EgovConfigDatasource.class,
         EgovConfigIdGeneration.class,
         EgovConfigMapper.class,
         EgovConfigProperties.class,

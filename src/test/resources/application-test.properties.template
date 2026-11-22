@@ -1,7 +1,27 @@
 # 테스트 전용 템플릿. 복사 후 application-test.properties로 이름을 바꾼다.
 # main application.properties를 덮어쓰므로 테스트에 필요한 키만 둔다.
-# 대상 프로젝트의 DB 제품에 맞게 URL·드라이버·경로를 바꾼다.
-# 아래는 HSQLDB 예시다. Oracle/PostgreSQL이면 대상 datasource 키로 교체한다.
-Globals.hsql_server.DatabasePath=./target/test-db/CHANGE_ME
-Globals.hsql_server.Port=9002
-Globals.hsql_server.Url=jdbc:log4jdbc:hsqldb:hsql://127.0.0.1:9002/CHANGE_ME
+#
+# 이 프로젝트의 테스트는 격리 PostgreSQL(embedded-postgres, test 범위)을 쓴다.
+# - 접속 URL·포트·사용자·암호는 PostgresTestDatabaseInitializer가 컨텍스트 시작 전에
+#   target/test-postgres/<고유 UUID> 아래 로컬 PG 인스턴스로 덮어쓴다.
+# - 아래 값은 그 초기화가 없을 때의 로컬 자리표시자다. 운영 DB URL이나 실제 자격증명을
+#   이 파일에 넣지 않는다. 운영 값이 테스트로 흘러가지 않게 로컬 값만 둔다.
+# - 스키마·시드는 초기화기가 classpath:db/postgres/schema.sql, seed.sql로 한 번만 적용한다.
+#   spring.sql.init.mode=never를 유지해 Boot가 중복 실행하지 않게 한다.
+#
+# 대상 프로젝트로 옮길 때:
+# - DB 제품이 PostgreSQL이면 Globals.DbType/Globals.postgresql.*, spring.datasource.*만 맞춘다.
+# - 제품이 다르면(예: Oracle) 초기화기와 스키마·시드 경로를 대상 DB에 맞게 별도 작업한다.
+#   테스트 준비·맞춤 수정은 스펙 담당자의 별도 작업이며 기대 결과 변경은 인간 승인이 필요하다.
+Globals.DbType=postgresql
+Globals.postgresql.DriverClassName=org.postgresql.Driver
+Globals.postgresql.Url=jdbc:postgresql://127.0.0.1:55432/CHANGE_ME_LOCAL_ONLY
+Globals.postgresql.UserName=postgres
+Globals.postgresql.Password=postgres
+Globals.postgresql.TimeZone=Asia/Seoul
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.datasource.url=jdbc:postgresql://127.0.0.1:55432/CHANGE_ME_LOCAL_ONLY
+spring.datasource.username=postgres
+spring.datasource.password=postgres
+spring.datasource.hikari.connection-init-sql=SET TIME ZONE 'Asia/Seoul'
+spring.sql.init.mode=never

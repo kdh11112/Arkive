@@ -15,7 +15,7 @@ import arkive.admin.search.event.SearchIndexEvent;
 import jakarta.annotation.Resource;
 
 /**
- * 게시판 서비스 구현. 상세 조회 시 HSQLDB CLOB을 문자열로 변환한다.
+ * 게시판 서비스 구현. DB 이식 시 JDBC Clob으로 반환되는 본문도 문자열로 변환한다.
  */
 @Service("boardService")
 public class BoardServiceImpl extends EgovAbstractServiceImpl implements BoardService {
@@ -45,7 +45,7 @@ public class BoardServiceImpl extends EgovAbstractServiceImpl implements BoardSe
 	public EgovMap selectBoardDetail(String boardId) throws Exception {
 		EgovMap detail = boardMapper.selectBoardDetail(boardId);
 		if (detail != null) {
-			// HSQLDB CLOB은 EgovMap에 JDBCClob 객체로 담기므로 문자열로 변환한다. (DB 이식성 유지)
+			// PostgreSQL TEXT는 문자열로 받으며, JDBC Clob을 반환하는 이식 대상도 처리한다.
 			Object content = detail.get("content");
 			if (content instanceof Clob clob) {
 				try (Reader reader = clob.getCharacterStream()) {

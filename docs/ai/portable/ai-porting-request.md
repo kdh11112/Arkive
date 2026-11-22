@@ -73,4 +73,4 @@ Arkive 레퍼런스: C:\work\Arkive
 - 대상 프로젝트의 패키지·DB 제품·인증 방식
 - 대상에서 이미 다른 이름으로 존재하는 테이블·메뉴·URL
 - 금지 범위: Arkive 기록·비밀값 이전, 구현 에이전트의 테스트 생성·수정, 테스트 삭제·skip
-- 완료 기준: 승인·준비된 테스트와 전체 `verify.cmd` 통과, ego-browser 화면 확인, 대상 DB 확인. HSQLDB 결과만으로 Oracle/PostgreSQL 이식을 완료로 보지 않는다.
+- 완료 기준: 승인·준비된 테스트와 전체 `verify.cmd` 통과, ego-browser 화면 확인, 대상 DB 확인. 다른 DB 제품의 테스트 결과만으로 대상 DB 이식을 완료로 보지 않는다.

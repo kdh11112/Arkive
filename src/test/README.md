@@ -4,13 +4,29 @@
 
 ## 최신 실행 결과
 
-2026-11-08 `verify.cmd` 기준: **84개 클래스·338개 테스트 통과**, 실패·오류·skip 0. JaCoCo instruction **52.0%**, branch **43.9%**, line **52.7%**, 설정된 클래스별 게이트 통과.
+2026-11-22 워커의 `verify.cmd` 재실행(`verify-final-2.log`, 19:09 완료) 및 총괄의 XML 대조 기준: **84개 클래스·338개 테스트 통과**, 실패·오류·skip 0. 테스트 DB는 격리 PostgreSQL **17.12**다. JaCoCo instruction **51.4%**, branch **43.6%**, line **52.2%**, 설정된 클래스별 게이트 통과.
 
-근거: `target/surefire-reports/TEST-*.xml`, `target/site/jacoco/jacoco.xml`, `pom.xml`. 갱신할 때 전체 검증을 실행하고 보고서와 아래 클래스별 개수를 함께 대조한다. 숫자는 업무·GUI·외부 연동의 검증완료를 뜻하지 않는다.
+첫 실행은 JUnit test discovery 단계에서 실패했고 재실행에서 통과했다. 사용자 IDE와 원본 `target/classes`의 `clean` 빌드 경합이 확인되어 추가 루트 빌드는 조율 전 수행하지 않는다. 이후 발견된 결재 GUI의 문서 ID 전달 결함은 이 자동 테스트 결과로 검증된 것이 아니며, 최소 수정·별도 빌드 복사본 재검증은 아직 대기 중이다. [최신 정리 기록](../../docs/ai/project/verification-log.md#221-2026-11-22-postgresql-단일-dbboot-자동-구성-정리)을 따른다.
+
+근거: `target/surefire-reports/TEST-*.xml`, `target/site/jacoco/jacoco.xml`, `pom.xml`, 외부 임시 `arkive-worker1-gui-20261122/logs/verify-final-2.log`, `arkive-hy4-postfix-final-review-report.md`. 숫자는 업무·GUI·외부 연동의 검증완료를 뜻하지 않는다. 이번 문서 갱신은 기존 실행 보고서 대조이며 총괄이 새 `verify.cmd`를 실행했다는 뜻은 아니다.
 
 ## 이식 책임과 선택
 
 이 폴더를 통째로 가져가지 않고 공통 팩과 해당 기능의 테스트·fixture만 선택한다. 테스트 준비·맞춤 수정은 스펙 담당자의 별도 작업이며 기대 결과 변경은 인간 승인이 필요하다. 구현 에이전트는 테스트 파일을 만들거나 수정하지 않고 필요한 변경점을 보고한다. 아래 맞춤 항목은 수정 권한이 아니다.
+
+## 0. 테스트 DB 준비 (격리 PostgreSQL)
+
+테스트는 운영 Supabase나 사용자가 쓰는 PostgreSQL에 접속하지 않고, `io.zonky.test:embedded-postgres`(test 범위)로
+프로세스 안에서 로컬 PostgreSQL 17.12를 띄워 쓴다. Docker·로컬 PostgreSQL 설치가 필요 없다.
+
+- `support/PostgresTestDatabaseInitializer.java`가 Spring 컨텍스트 시작 전에 인스턴스를 한 번 만들고,
+  `classpath:db/postgres/schema.sql` → `seed.sql`을 적용한 뒤 접속 정보를 1순위 property source로 덮어쓴다.
+- 데이터 디렉터리·네이티브 바이너리 추출 경로는 `target/test-postgres/<고유 UUID>` 아래로 한정한다.
+  포트는 빈 포트를 자동 선택하고 `listen_addresses=127.0.0.1`로 루프백에서만 접속을 받는다.
+- PG 서버 기본 시간대는 UTC로 두고, 테스트 세션과 앱 커넥션은 `SET TIME ZONE 'Asia/Seoul'`로 맞춘다.
+- 최초 실행은 Maven이 `embedded-postgres-binaries-*` 아티팩트를 내려받고 `initdb`를 수행하므로 시간이 걸린다.
+  바이너리 기동에 실패하면(예: Visual C++ 재배포 패키지 누락) 라이브러리 로그의 정확한 오류를 확인한다.
+- 테스트가 끝나면 shutdown hook이 postmaster를 내리고 임시 데이터 디렉터리를 정리한다.
 
 ## 1. 공통 테스트 팩 (거의 그대로 복사)
 
@@ -18,6 +34,7 @@
 | --- | --- |
 | `support/ArkiveIntegrationTest.java` | `IntegrationTest`로 이름 변경, `classes = 대상Application.class` |
 | `support/TestSessions.java` | 세션 키, 사용자 객체 형태(`EgovMap` → 대상 VO/UserDetails) |
+| `support/PostgresTestDatabaseInitializer.java` | 대상 `Application` 클래스는 영향 없음. 스키마·시드 classpath 경로, PG 주 버전, 시간대 |
 | `resources/application-test.properties.template` | DB 제품·URL·경로·포트 |
 | `pom.xml` 테스트 의존성 | 대상 프로젝트에 없는 의존성만 추가 |
 | `pom.xml` JaCoCo 설정 | `includes`를 대상 클래스로 교체 |
@@ -126,7 +143,8 @@ verify.cmd
 rem 단독 실행 예: mvn -Dtest=BoardMapperTest test
 ```
 
-- 테스트 DB는 `target/test-db`, 포트 9002를 써서 앱(9001) 실행 중에도 돈다.
+- 테스트 DB는 `target/test-postgres/<UUID>`와 자동 선택 포트로 앱 DB와 분리된다. 다만 `verify.cmd`의 `clean`은 원본 `target/classes`를 삭제하므로 IDE 실행 중에는 빌드 시점을 조율하거나 동일성이 확인된 별도 빌드 복사본을 사용한다.
 - `@ArkiveIntegrationTest`는 `@SpringBootTest` + `@AutoConfigureMockMvc` + 테스트 properties를 묶은 합성 애노테이션이다.
-  통합 테스트마다 직접 `@SpringBootTest`를 붙이면 설정 차이로 컨텍스트가 갈라져 같은 DB 포트를 두 번 열 수 있다.
+  통합 테스트마다 직접 `@SpringBootTest`를 붙여 초기화기를 빠뜨리면 테스트 DB 격리가 보장되지 않는다. 제공된 합성 애노테이션을 재사용한다.
+- 테스트 준비 단계의 `Globals.DbType`·`Globals.postgresql.*` 호환 키와 주석은 테스트 자산에 남아 있지만 현재 앱은 Boot 표준 `spring.datasource.*`를 소비한다. 테스트 코드·properties 정리는 스펙 담당자의 별도 작업으로 남기며 여기서는 변경하지 않는다.
 - `src/test/resources/application.properties`를 두지 않는다. main 설정 전체가 가려진다.

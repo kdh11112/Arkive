@@ -204,12 +204,14 @@
 		WHERE USER_ID = #{userId}
 	</select>
 
+	<!-- 사용자의 미사용 비밀번호 재설정 토큰 폐기 -->
 	<delete id="deleteUnusedPasswordResetTokens" parameterType="string">
 		DELETE FROM PASSWORD_RESET_TOKEN
 		WHERE USER_ID = #{userId}
 			AND USED_YN = 'N'
 	</delete>
 
+	<!-- 비밀번호 재설정 토큰 1건 발급 저장 -->
 	<insert id="insertPasswordResetToken" parameterType="egovMap">
 		INSERT INTO PASSWORD_RESET_TOKEN (
 			TOKEN_HASH,
@@ -226,6 +228,7 @@
 		)
 	</insert>
 
+	<!-- 유효한(미사용·미만료) 비밀번호 재설정 토큰 조회 -->
 	<select id="selectValidPasswordResetToken" parameterType="string" resultType="egovMap">
 		SELECT TOKEN_HASH, USER_ID, EXPIRES_DT
 		FROM PASSWORD_RESET_TOKEN
@@ -234,6 +237,7 @@
 			AND EXPIRES_DT &gt; CURRENT_TIMESTAMP
 	</select>
 
+	<!-- 비밀번호 재설정 토큰 사용 처리 -->
 	<update id="markPasswordResetTokenUsed" parameterType="string">
 		UPDATE PASSWORD_RESET_TOKEN
 		SET USED_YN = 'Y'
