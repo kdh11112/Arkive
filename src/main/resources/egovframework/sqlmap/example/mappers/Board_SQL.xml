@@ -318,6 +318,13 @@
 		)
 	</insert>
 
+	<!-- 댓글 수정. 내용만 갱신한다. -->
+	<update id="updateComment" parameterType="egovMap">
+		UPDATE BOARD_COMMENT
+		SET CONTENT = #{content}
+		WHERE COMMENT_ID = #{commentId}
+	</update>
+
 	<!-- 댓글 삭제 -->
 	<delete id="deleteComment" parameterType="string">
 		DELETE FROM BOARD_COMMENT

@@ -187,4 +187,9 @@ public class BoardServiceImpl extends EgovAbstractServiceImpl implements BoardSe
 	public void deleteComment(String commentId) throws Exception {
 		boardMapper.deleteComment(commentId);
 	}
+
+	@Override
+	public void updateComment(EgovMap egovMap) throws Exception {
+		boardMapper.updateComment(egovMap);
+	}
 }

@@ -273,7 +273,16 @@ public class BoardController {
 			neighborParam.put("registDt", detail.get("registDt"));
 			model.put("prev", boardService.selectPrevOne(neighborParam));
 			model.put("next", boardService.selectNextOne(neighborParam));
-			model.put("commentList", boardService.selectCommentList(boardId));
+			// 목록 마스킹 인터셉터가 register를 가리므로, 작성자 본인 여부는 화면 렌더링 전에 서버에서 판단한다.
+			List<EgovMap> commentList = boardService.selectCommentList(boardId);
+			EgovMap commentLoginUser = getLoginUser(request);
+			String commentLoginUserId = commentLoginUser == null ? null
+					: String.valueOf(commentLoginUser.get("userId"));
+			for (EgovMap comment : commentList) {
+				comment.put("myComment", commentLoginUserId != null
+						&& commentLoginUserId.equals(String.valueOf(comment.get("register"))) ? "Y" : "N");
+			}
+			model.put("commentList", commentList);
 			model.put("commentCount", boardService.selectCommentCount(boardId));
 		}
 		if (detail != null && detail.get("atchFileGrpid") != null) {
@@ -615,6 +624,49 @@ public class BoardController {
 			result.put("commentId", param.get("commentId"));
 		} catch (Exception e) {
 			logger.error("insertComment failed", e);
+			result.put("success", false);
+			result.put("message", e.getMessage());
+		}
+		return result;
+	}
+
+	@Operation(summary = "댓글 수정 (작성자)")
+	@RequestMapping(value = "/updateComment.json", method = RequestMethod.POST)
+	@ResponseBody
+	public Map<String, Object> updateComment(HttpServletRequest request) {
+		Map<String, Object> result = new HashMap<>();
+		try {
+			EgovMap loginUser = getLoginUser(request);
+			if (loginUser == null) {
+				throw new IllegalStateException("로그인이 필요합니다.");
+			}
+			String commentId = cmmUtil.convertHtml(request, "commentId");
+			if (commentId == null || commentId.isEmpty()) {
+				throw new IllegalArgumentException("댓글 ID가 없습니다.");
+			}
+			EgovMap comment = boardService.selectCommentDetail(commentId);
+			if (comment == null) {
+				throw new IllegalArgumentException("댓글이 없습니다.");
+			}
+			// 삭제와 달리 수정은 작성자 본인만 허용한다. 관리자 대리 수정은 하지 않는다.
+			if (!String.valueOf(loginUser.get("userId")).equals(String.valueOf(comment.get("register")))) {
+				throw new IllegalStateException("수정 권한이 없습니다.");
+			}
+			String content = cmmUtil.convertHtml(request, "content");
+			if (content == null || content.trim().isEmpty()) {
+				throw new IllegalArgumentException("댓글 내용을 입력하세요.");
+			}
+			content = content.trim();
+			if (content.length() > 1000) {
+				throw new IllegalArgumentException("댓글은 1000자 이내로 입력하세요.");
+			}
+			EgovMap param = new EgovMap();
+			param.put("commentId", commentId);
+			param.put("content", content);
+			boardService.updateComment(param);
+			result.put("success", true);
+		} catch (Exception e) {
+			logger.error("updateComment failed", e);
 			result.put("success", false);
 			result.put("message", e.getMessage());
 		}

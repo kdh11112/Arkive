@@ -59,5 +59,7 @@ public interface BoardService {
 
 	void insertComment(EgovMap egovMap) throws Exception;
 
+	void updateComment(EgovMap egovMap) throws Exception;
+
 	void deleteComment(String commentId) throws Exception;
 }

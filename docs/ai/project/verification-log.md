@@ -26,7 +26,7 @@
 | 메뉴 관리 | `/system/menuList` 화면에서 Controller → Service → Mapper/XML로 조회·등록·수정·삭제 처리 | `SystemController`, `SystemServiceImpl`, `SystemMapper`, `System_SQL.xml` | 화면 호출 상세, 메뉴 정책, 오류 계약 |
 | 파일 처리 | `FileController`가 일반 멀티파트, TUS, 드롭존 업로드 및 다운로드·삭제 제공. temp 업로드 후 본문 저장 시 확정(`MP_`) | `FileController`, `FileServiceImpl`, `File_SQL.xml`, `application.properties` | 파일 접근 권한, 보존·삭제 정책, 대용량 스토리지 연동 |
 | DB 접속/초기화 | Boot JDBC·HikariCP 자동 구성. 앱 자동 DDL·시드 없음. 새 대상 DB에 수동 적용, 테스트만 격리 PG 초기화기가 schema→seed 적용 | `application.properties`, `pom.xml`, `db/postgres/schema.sql`·`seed.sql`, `PostgresTestDatabaseInitializer` | 기존 데이터 갱신 절차, 운영 DB 마이그레이션 도구 연동 |
-| 게시글 댓글 | 게시글 상세에서 댓글 목록/건수 조회. 로그인 사용자는 `/board/insertComment.json` 등록, 작성자/관리자만 `/board/deleteComment.json` 삭제. 1단 평문 저장, 게시글 삭제 시 cascade | `BoardController`, `BoardServiceImpl`, `BoardMapper`, `Board_SQL.xml`, `db/postgres/schema.sql` (`BOARD_COMMENT`), `boardDetail.html` | 댓글 수정·신고 정책, 알림 연계 |
+| 게시글 댓글 | 게시글 상세에서 댓글 목록/건수 조회. 로그인 사용자는 `/board/insertComment.json` 등록, 작성자 본인은 `/board/updateComment.json` 수정, 작성자/관리자는 `/board/deleteComment.json` 삭제. 1단 평문 저장, 게시글 삭제 시 cascade. 목록 마스킹 때문에 화면 소유 여부는 서버가 `myComment`로 계산해 내려준다 | `BoardController`, `BoardServiceImpl`, `BoardMapper`, `Board_SQL.xml`, `db/postgres/schema.sql` (`BOARD_COMMENT`), `boardDetail.html` | 댓글 신고 정책, 알림 연계 |
 | 쪽지 관리 | `/message/inbox`·`/sent` 목록·검색·페이징, `/message/write` 발송, `/message/detail` 읽음 처리, `/message/deleteMessage.json` 함별 소프트 삭제 | `MessageController`, `MessageServiceImpl`, `MessageMapper`, `Message_SQL.xml`, `db/postgres/schema.sql` (`MESSAGE`) | 쪽지 보존·파기 정책, 알림 연계 |
 | 공지 고정 | CK 목록 `NOTICE_YN DESC, REGIST_DT DESC` 정렬. `/board/updateNotice.json`으로 관리자 세션에서만 고정/해제. 목록·상세에 '공지' 배지 노출 | `BoardController`, `BoardServiceImpl`, `BoardMapper`, `Board_SQL.xml`, `db/postgres/schema.sql` (`BOARD`) | 고정 개수 제한, TOAST 확장 여부 |
 | 메뉴 권한 | `PermissionServiceImpl`이 `APP_USER_ROLE`→`APP_ROLE_MENU`를 사용자별로 조회해 메뉴별 OR 집계. `MenuPermissionInterceptor`가 READ/WRITE 검사(`ADMIN_YN` 우회). `MenuInterceptor`는 사이드바 필터링 | `PermissionServiceImpl`, `Permission_SQL.xml`, `MenuPermissionInterceptor`, `EgovConfigWeb`, `db/postgres/schema.sql`·`seed.sql` | 새 Controller 메뉴 매핑 누락 방지 |
@@ -494,12 +494,47 @@
 
 ---
 
+### 2.26. 2026-11-25: 댓글 수정 기능 추가
+
+<!--
+문서 상태: 부분 미완성
+미완성 항목: 비관리자 세션 GUI 확인, 관리자 대리 수정 정책 확정, 13.3인치 실기기 확인, 수정 이력 저장, 댓글 신고 기능.
+필요한 근거/확인자: 일반 사용자 계정으로의 화면·권한 확인(총괄), 관리자 대리 수정 정책 결정(기능 담당자), 13.3인치 실기기 확인(사용자).
+완성 방법: 일반 사용자 세션에서 수정 버튼 노출·타인 댓글 차단을 확인하고, 정책 확정 시 관리자 분기와 수정일 컬럼을 추가하며, 실기기에서 폼 레이아웃을 확인한다.
+완료 기준: 위 항목의 확인 결과가 이 절에 기록되고 자동 검증이 계속 통과한다.
+-->
+
+- **범위:** 1단 댓글의 작성자 본인 수정 기능(화면·Controller·Service·Mapper/XML). 관리자 대리 수정, 댓글 신고, 알림 연계는 이번 범위가 아니다.
+- **한 것(완료):**
+  1. `BOARD_COMMENT.CONTENT` 갱신용 `updateComment` 쿼리·Mapper·Service·ServiceImpl 추가.
+  2. `BoardController`의 `/board/updateComment.json` 추가 — 로그인·작성자 본인 확인, 빈 내용/1~1000자 검증, 성공/실패 JSON 응답.
+  3. `MenuPermissionInterceptor.isExempt`에 경로 등록으로 메뉴 CRUD 권한과 분리.
+  4. `boardDetail.html`에 작성자 전용 수정 버튼, 인라인 편집 폼(textarea), `fnEditComment`/`fnSaveComment`/`fnCancelComment`, 편집 폼 CSS 추가.
+  5. 마스킹으로 깨져 있던 소유자 판별 수정 — 상세 조회에서 댓글별 `myComment`(`Y`/`N`) 계산, 수정·삭제 버튼 공통 적용.
+  6. README 기능 체크 목록, `feature-catalog.md`, 이 기록(2.26절·3절 표) 갱신.
+  7. `verify.cmd` 실행, ego-browser 화면 확인, 검증용 글·댓글 데이터 정리.
+- **못한 것(미수행·미확인):**
+  1. 비관리자 일반 사용자 세션에서 버튼 노출과 타인 댓글 수정 시 권한 거부 응답을 직접 확인하지 않았다(서버 로직만 작성자 본인 통과로 구현).
+  2. 관리자 대리 수정 정책은 `미확인`이며 현재 코드는 허용하지 않는다. 정책 확정 시 별도 작업 필요.
+  3. 13.3인치 실기기 확인 미수행 — 이번 화면 확인은 viewport 1080×663 CSS px, DPR 1.5 대체 환경이다.
+  4. 댓글 신고 기능은 미구현 상태로 남아 있다.
+  5. 수정 이력(수정일·수정자) 저장은 미수행 — `BOARD_COMMENT`에 해당 컬럼이 없어 내용만 갱신한다.
+  6. 변이 테스트, 실제 Supabase 대상 시나리오 검증은 이번에 수행하지 않았다.
+- **핵심 변경:** `/board/updateComment.json`(작성자 본인만, 내용 1~1000자), `Board_SQL.xml`의 `updateComment`(내용만 갱신), `MenuPermissionInterceptor`의 메뉴 CRUD 예외 등록, `boardDetail.html`의 수정 버튼·인라인 편집 폼·JS.
+- **발견·수정한 결함:** 댓글 목록은 `MaskingInterceptor`가 `register`를 마스킹하므로 화면에서 `session.LOGIN_USER['userId']`와 비교해도 소유자 판별이 되지 않았다(기존 삭제 버튼도 같은 이유로 일반 작성자에게 숨겨졌다). 상세 조회 시 서버에서 각 댓글에 `myComment`(`Y`/`N`)를 계산해 내려주도록 고치고 수정·삭제 버튼 모두 이 값을 쓴다. 마스킹 자체는 약화하지 않았다.
+- **화면 확인: 통과.** ego-browser로 admin 세션에서 검증용 글·댓글을 만든 뒤 수정 버튼 노출 → 편집 폼 펼침(본문 숨김, 기존 내용 채움) → `수정된 댓글 내용입니다` 저장 → 새로고침 후 수정된 내용 표시까지 확인했다. 검증용 글·댓글은 삭제했고 게시글은 `/board/deleteBoard.json` 성공으로 확인했으며 댓글은 cascade 삭제된다. 대체 viewport 1080×663 CSS px, DPR 1.5.
+- **자동 검증: 통과.** `verify.cmd` exit 0, 338 tests·실패 0·오류 0·skip 0, JaCoCo 기준 충족, BUILD SUCCESS(3분 41초). `myComment` 서버 계산과 템플릿 조건 변경을 반영한 뒤 재빌드·화면 재확인을 거쳤고, 최종 변경분에 대해서도 `verify.cmd`를 다시 실행해 exit 0, 338 tests·실패 0·오류 0, JaCoCo 충족, `BUILD SUCCESS`(2026-11-26 00:12 KST)를 확인했다.
+- **모델:** DeepSeek V4.1 Flash Efficient(1x). 테스트 파일은 수정하지 않았다.
+- **남은 위험:** 관리자 대리 수정 여부는 정책 `미확인`이며 현재 코드는 허용하지 않는다. 일반 사용자(비관리자) 세션에서의 버튼 노출·권한 거부는 이번에 직접 확인하지 않았다(서버 검증 로직은 작성자 본인만 통과하도록 구현).
+
+---
+
 ## 3. 작업별 변경 영향 및 검증 기록
 
 | 작업 일시 및 기능 | 직접 호출자 | 공통 사용처 | 정책 및 권한 | DB 및 외부 영향 | 검증 근거 |
 | --- | --- | --- | --- | --- | --- |
 | **2026-11-08 최신 schema/seed 초기화** | DataSource 빈 생성 | 전체 DB 소비 기능, 로그인, 메뉴, eGov ID 생성기 | 기존 최종 메뉴·역할 유지, 개발 admin | 빈 DB만 생성, 기존 DB 자동 삭제 없음, 체크섬 불일치 차단 | `verify.cmd` 338/338 통과, JAR 격리 기동 검증 통과 |
-| **게시글 댓글** | `boardDetail.html` AJAX | 게시판 상세, 댓글 API | 로그인 사용자 작성, 작성자/관리자 삭제 | `BOARD_COMMENT` 신규, `BOARD` 삭제 시 cascade | `BoardMapperTest`, `BoardCommentControllerTest`, `verify.cmd` 통과 |
+| **게시글 댓글** | `boardDetail.html` AJAX | 게시판 상세, 댓글 API | 로그인 사용자 작성, 작성자 본인 수정, 작성자/관리자 삭제 | `BOARD_COMMENT` 신규, `BOARD` 삭제 시 cascade | `BoardMapperTest`, `BoardCommentControllerTest`, `verify.cmd` 통과, 2.26절 GUI 확인 |
 | **쪽지 관리** | `thymeleaf/message/*` | `/message/**`, 레이아웃 메뉴 | 로그인 사용자, 발신/수신 본인만 열람·삭제 | `MESSAGE` 신규, 쪽지 메뉴 4행 | `MessageMapperTest`, `MessageControllerTest`, `verify.cmd` 통과 |
 | **공지 고정** | `boardList.html` 토글, `noticeList.html` 배지 | CK 공지 목록 대시보드·사용자 메인 | 관리자 전용, CK 게시판 한정 | `BOARD.NOTICE_YN`, `IDX_BOARD_NOTICE` | `BoardNoticeMapperTest`, `BoardNoticeControllerTest`, `verify.cmd` 통과 |
 | **중복 로그인 방지** | 로그인 성공 경로 (폼·OAuth) | 세션 로그인 화면 전체, `AuthInterceptor` | 새 로그인 우선(이전 세션 만료) | 메모리 레지스트리 (단일 인스턴스) | `LoginSessionRegistryTest`, `LoginSessionControllerTest`, `verify.cmd` 통과 |

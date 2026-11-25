@@ -27,7 +27,7 @@
   - **테스트:** `BoardSearchScopeControllerTest` (7)
 - **게시판 기본 기능 (공지사항·자료실, CK·TOAST, HWP 복붙, 이미지 업로드, 댓글)**
   - **위치:** `arkive.admin.board.*`, `Board_SQL.xml`, `templates/thymeleaf/board/*`, `db/postgres/schema.sql` (`BOARD`, `BOARD_COMMENT`)
-  - **동작 및 주의점:** HTML sanitize, 이중등록 방지, 첨부파일 삭제, 오프셋/커서 페이징, CLOB 변환, 초성 색인 이벤트 구현. 조회수는 게시글당 브라우저 24시간 1회 쿠키·세션 복합 집계. 댓글은 1단 평문 저장(대댓글 없음), 작성자 및 관리자만 삭제 가능.
+  - **동작 및 주의점:** HTML sanitize, 이중등록 방지, 첨부파일 삭제, 오프셋/커서 페이징, CLOB 변환, 초성 색인 이벤트 구현. 조회수는 게시글당 브라우저 24시간 1회 쿠키·세션 복합 집계. 댓글은 1단 평문 저장(대댓글 없음), 작성자 및 관리자만 삭제 가능. 수정은 작성자 본인만 가능하며(`/board/updateComment.json`), 관리자 대리 수정은 없다.
   - **테스트:** `BoardMapperTest` (4), `BoardServiceImplTest` (11), `BoardControllerTest` (5), `BoardCommentControllerTest` (3), `BoardViewCountDailyWindowTest` (6)
 - **페이징 (공지사항: 오프셋, 자료실: 커서+더보기)**
   - **위치:** `BoardController`, `Board_SQL.xml`, `user/board/*`
@@ -203,7 +203,7 @@
 | `/login/oauth` | `admin.auth.web.OauthController` | `/{provider}`, `/{provider}Callback`, `/link.json` | 화면 GET+POST, 연계 POST |
 | `/login/nice` | `admin.auth.web.NiceVerifyController` | `/start`, `/callback`, `/status.json`, `/clear.json` | GET+POST 혼합, 해제 POST |
 | `/api` | `admin.auth.web.ApiController` | `/login.json`, `/noticeList.json`, `/noticeDetail.json`, `/faqList.json` | POST 또는 GET+POST |
-| `/board` | `admin.board.web.BoardController` | `/ckeditorList`, `/toastList`, `/toastList.json`, `/ckeditorWrite`, `/toastWrite`, `/detail`, `/viewStats`, `/insertBoard.json`, `/updateBoard.json`, `/deleteBoard.json`, `/updateNotice.json`, `/insertComment.json`, `/deleteComment.json`, `/subscribe`, `/editorImageUpload.json` | 화면 GET+POST, `.json` POST, SSE GET |
+| `/board` | `admin.board.web.BoardController` | `/ckeditorList`, `/toastList`, `/toastList.json`, `/ckeditorWrite`, `/toastWrite`, `/detail`, `/viewStats`, `/insertBoard.json`, `/updateBoard.json`, `/deleteBoard.json`, `/updateNotice.json`, `/insertComment.json`, `/updateComment.json`, `/deleteComment.json`, `/subscribe`, `/editorImageUpload.json` | 화면 GET+POST, `.json` POST, SSE GET |
 | `/sitemap` | `admin.comm.web.SitemapController` | `/sitemap` | 화면 GET (로그인 권한별 메뉴) |
 | `/search` | `admin.search.web.SearchController` | `/search`, `/search/reindex.json` | 화면 GET(로그인 필수), 재색인 POST(관리자) |
 | `/message` | `admin.message.web.MessageController` | `/inbox`, `/sent`, `/write`, `/detail`, `/insertMessage.json`, `/deleteMessage.json` | 화면 GET+POST, `.json` POST |
@@ -289,7 +289,7 @@
 | 컨텍스트·MyBatis | 컨텍스트 로딩, SqlSessionFactory 배선 | - |
 | 게시판 CRUD·조회수 | CRUD, CLOB, 초성, Sanitize, 이중등록, 24시간 조회수 1회 집계, 통계 14일 그래프 | HWP 복붙 브라우저 동작, 조회 로그 정리 정책 |
 | 페이징·검색범위 | 공지 오프셋 페이징, 자료실 커서 페이징, 제목/내용/전체 검색 분리 | 본문 검색 HTML 태그 오탐 |
-| 댓글·공지고정 | 1단 댓글 등록/삭제, 공지 상단 고정 정렬, 권한 검증 | 댓글 신고/수정 기능 미구현 |
+| 댓글·공지고정 | 1단 댓글 등록/수정/삭제, 공지 상단 고정 정렬, 권한 검증 | 댓글 신고 기능 미구현. 댓글 수정은 작성자 본인만 허용(관리자 대리 수정 없음) |
 | 알림·SSE | SSE/메일 이벤트 분리, 역할 필터링, 채널 격리, 1회 선점 | 브라우저 실제 EventSource E2E, 실제 SMTP E2E |
 | 파일·TUS | temp→확정, TUS 청크 업로드/재개, 매직바이트 검사 | 드롭존 UI 실제 동작, 운영 스토리지 권한 |
 | 세션·보안 | 중복 로그인 방지, JWT 발급/검증, TOTP 코드 검증 및 5회 실패 잠금 | 다중 서버 공유 세션, 세션 타임아웃 |

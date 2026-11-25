@@ -25,6 +25,10 @@
         .comment-empty { padding: 16px 0; color: #666; }
         .comment-write { display: flex; gap: 8px; margin-top: 12px; align-items: flex-start; }
         .comment-write textarea { flex: 1; min-height: 70px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; }
+        /* 댓글 수정: 작성자에게만 노출되며 수정 버튼을 누를 때 펼친다. */
+        .comment-edit { margin-top: 6px; }
+        .comment-edit[hidden] { display: none; }
+        .comment-edit textarea { width: 100%; min-height: 70px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; margin-bottom: 6px; }
     </style>
     <h2 class="heading-large">
         <span class="krds-badge" th:if="${detail != null and detail['noticeYn'] == 'Y'}">공지</span>
@@ -91,11 +95,20 @@
                         <strong th:text="${c['registerNm']}">작성자</strong>
                         <span th:text="${c['registDt'] != null ? #dates.format(c['registDt'], 'yyyy-MM-dd HH:mm') : ''}">2026-01-01 00:00</span>
                         <button type="button" class="krds-btn small tertiary"
-                                th:if="${session.ADMIN_USER != null or (session.LOGIN_USER != null and #strings.equals(session.LOGIN_USER['userId'], c['register']))}"
+                                th:if="${c['myComment'] == 'Y'}"
+                                th:attr="data-comment-id=${c['commentId']}"
+                                onclick="fnEditComment(this)">수정</button>
+                        <button type="button" class="krds-btn small tertiary"
+                                th:if="${session.ADMIN_USER != null or c['myComment'] == 'Y'}"
                                 th:attr="data-comment-id=${c['commentId']}"
                                 onclick="fnDeleteComment(this)">삭제</button>
                     </div>
                     <div class="comment-body" th:text="${c['content']}">댓글 내용</div>
+                    <div class="comment-edit" hidden th:attr="data-comment-id=${c['commentId']}">
+                        <textarea maxlength="1000" rows="3" aria-label="댓글 수정" th:text="${c['content']}"></textarea>
+                        <button type="button" class="krds-btn small primary" onclick="fnSaveComment(this)">저장</button>
+                        <button type="button" class="krds-btn small secondary" onclick="fnCancelComment(this)">취소</button>
+                    </div>
                 </li>
             </ul>
             <p class="comment-empty" th:if="${commentList == null or commentList.isEmpty()}">등록된 댓글이 없습니다.</p>
@@ -161,6 +174,46 @@
         }).fail(function() {
             $btn.prop('disabled', false);
             alert('댓글 등록에 실패했습니다.');
+        });
+    }
+    // 댓글 수정 시작. 작성자에게만 버튼이 보인다.
+    function fnEditComment(btn) {
+        var $li = $(btn).closest('li');
+        var $edit = $li.find('.comment-edit');
+        if ($edit.length === 0) return;
+        $li.find('.comment-body').hide();
+        $edit.prop('hidden', false).show();
+        $edit.find('textarea').trigger('focus');
+    }
+    // 댓글 수정 취소. 원래 내용 표시로 돌린다.
+    function fnCancelComment(btn) {
+        var $li = $(btn).closest('li');
+        $li.find('.comment-edit').prop('hidden', true).hide();
+        $li.find('.comment-body').show();
+    }
+    // 댓글 수정 저장. 성공 시 새로고침해 서버 값을 다시 그린다.
+    function fnSaveComment(btn) {
+        var $li = $(btn).closest('li');
+        var $edit = $li.find('.comment-edit');
+        var content = $edit.find('textarea').val();
+        if (!content || !content.trim()) {
+            alert('댓글 내용을 입력하세요.');
+            return;
+        }
+        var commentId = $edit.attr('data-comment-id');
+        if (!commentId) return;
+        if ($(btn).prop('disabled')) return;
+        $(btn).prop('disabled', true);
+        $.post('/board/updateComment.json', { commentId: commentId, content: content }, function(res) {
+            if (res.success) {
+                location.reload();
+            } else {
+                $(btn).prop('disabled', false);
+                alert(res.message || '댓글 수정에 실패했습니다.');
+            }
+        }).fail(function() {
+            $(btn).prop('disabled', false);
+            alert('댓글 수정에 실패했습니다.');
         });
     }
     // 댓글 삭제. 작성자 또는 관리자에게만 버튼이 보인다.

@@ -306,6 +306,7 @@ public class MenuPermissionInterceptor implements HandlerInterceptor {
 	private boolean isExempt(String path) {
 		// 로그인 사용자 공통 기능(댓글·쪽지·다운로드·SSE)은 메뉴 CRUD 권한과 분리한다.
 		return path.equals("/board/insertComment.json")
+				|| path.equals("/board/updateComment.json")
 				|| path.equals("/board/deleteComment.json")
 				|| path.equals("/board/updateNotice.json")
 				|| path.equals("/board/subscribe")
